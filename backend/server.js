@@ -37,6 +37,13 @@ const sessionStoreOptions = {
 };
 const sessionStore = new MySQLStore(sessionStoreOptions);
 
+// Capturar errores de conexión a la BD para que no crashee silenciosamente
+sessionStore.onReady().then(() => {
+  console.log('✅ Sesiones de MySQL configuradas y conectadas.');
+}).catch(error => {
+  console.error('❌ Error fatal conectando MySQLStore:', error);
+});
+
 app.use(session({
   key: 'vacation_system_cookie',
   secret: process.env.SESSION_SECRET || 'secret_fallback',
