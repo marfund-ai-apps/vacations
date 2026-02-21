@@ -4,22 +4,25 @@ exports.googleLogin = passport.authenticate('google', { scope: ['profile', 'emai
 
 exports.googleCallback = (req, res, next) => {
     passport.authenticate('google', (err, user, info) => {
+        // Usa FRONTEND_URL para redirigir siempre a la web
+        const redirectBase = process.env.FRONTEND_URL || process.env.APP_URL;
+
         if (err) {
             console.error("Google Auth Error:", err.message || err);
-            return res.redirect(`${process.env.APP_URL}/login?error=oauth_failed`);
+            return res.redirect(`${redirectBase}/login?error=oauth_failed`);
         }
         if (!user) {
             if (info && info.message === 'unregistered') {
-                return res.redirect(`${process.env.APP_URL}/login?error=unregistered`);
+                return res.redirect(`${redirectBase}/login?error=unregistered`);
             }
-            return res.redirect(`${process.env.APP_URL}/login?error=true`);
+            return res.redirect(`${redirectBase}/login?error=true`);
         }
         req.logIn(user, (loginErr) => {
             if (loginErr) {
                 console.error("Login Error:", loginErr);
-                return res.redirect(`${process.env.APP_URL}/login?error=login_failed`);
+                return res.redirect(`${redirectBase}/login?error=login_failed`);
             }
-            return res.redirect(`${process.env.APP_URL}/dashboard`);
+            return res.redirect(`${redirectBase}/dashboard`);
         });
     })(req, res, next);
 };
