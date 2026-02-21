@@ -247,12 +247,12 @@ exports.processApprovalToken = async (req, res) => {
         );
 
         if (!tokens.length) {
-            return res.redirect(`${process.env.APP_URL}/token-expired`);
+            return res.redirect(`${process.env.FRONTEND_URL}/token-expired`);
         }
 
         const tokenData = tokens[0];
         if (tokenData.status !== 'pending') {
-            return res.redirect(`${process.env.APP_URL}/already-processed`);
+            return res.redirect(`${process.env.FRONTEND_URL}/already-processed`);
         }
 
         const decision = action === 'approve' ? 'approved' : 'rejected';
@@ -291,10 +291,10 @@ exports.processApprovalToken = async (req, res) => {
         });
 
         // Redirigir a página de confirmación en la app
-        res.redirect(`${process.env.APP_URL}/approval-confirmed?status=${decision}`);
+        res.redirect(`${process.env.FRONTEND_URL}/approval-confirmed?status=${decision}`);
 
     } catch (error) {
         console.error(error);
-        res.redirect(`${process.env.APP_URL}/error`);
+        res.redirect(`${process.env.FRONTEND_URL}/error`);
     }
 };
