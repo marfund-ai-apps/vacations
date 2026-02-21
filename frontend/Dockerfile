@@ -7,6 +7,8 @@ RUN npm install
 
 # Copiar el resto y compilar
 COPY . .
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # Ojo: Servir la app de forma estática pura
