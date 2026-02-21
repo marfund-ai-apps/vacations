@@ -1,0 +1,158 @@
+{
+    "name": "MAR Fund - Decisión de Solicitud (Google Workspace)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "decision-aprobacion",
+                "responseMode": "lastNode",
+                "responseData": "allEntries",
+                "options": {}
+            },
+            "id": "webhook-decision",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1,
+            "position": [
+                200,
+                300
+            ],
+            "webhookId": "decision-aprobacion-webhook-id"
+        },
+        {
+            "parameters": {
+                "operation": "lookup",
+                "documentId": {
+                    "__rl": true,
+                    "value": "15jsGttqbNogEPYDEfvGMcNGUsUYbmg2RqupxtajMMb8",
+                    "mode": "id"
+                },
+                "sheetName": {
+                    "__rl": true,
+                    "value": "empleados",
+                    "mode": "name"
+                },
+                "lookupColumn": "Correo empleado",
+                "lookupValue": "={{ $($node[\"Webhook\"].json[\"body\"][\"employee_email\"]) }}"
+            },
+            "id": "google-sheets-empleado-decision",
+            "name": "Google Sheets - Buscar Empleado",
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4,
+            "position": [
+                400,
+                300
+            ],
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": "ID_CREDENCIAL_GOOGLESHEETS",
+                    "name": "Google Sheets account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "message",
+                "subject": "=Tu solicitud {{ $($node[\"Webhook\"].json[\"body\"][\"request_number\"]) }} ha sido {{ $($node[\"Webhook\"].json[\"body\"][\"decision_label\"]) }}",
+                "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:{{ $($node[\"Webhook\"].json[\"body\"][\"decision_color\"]) }};\">{{ $($node[\"Webhook\"].json[\"body\"][\"decision_label\"]) }}</h2>\n  </div>\n  <p>Hola {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }},</p>\n  <p>Tu solicitud de <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</strong> ha sido actualizada por {{ $json[\"Nombre del jefe inmediato\"] }}.</p>\n  <p><strong>Comentarios del Jefe:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"manager_comments\"]) }}</p>\n  <p>Ve más detalles en tu portal: <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"app_url\"]) }}/my-requests\">Mis Solicitudes</a></p>\n</body>\n</html>",
+                "toList": "={{ $json[\"Correo empleado\"] }}",
+                "ccList": "={{ $json[\"Correo jefe inmediato\"] }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "gmail-empleado-decision",
+            "name": "Gmail - Notificar Empleado (Copia Jefe)",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                640,
+                200
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "ID_CREDENCIAL_GMAIL",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "message",
+                "subject": "=📋 Notificación RRHH - {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }} - {{ $($node[\"Webhook\"].json[\"body\"][\"decision_label\"]) }}",
+                "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"background:#f8fafc; border-left:4px solid {{ $($node[\"Webhook\"].json[\"body\"][\"decision_color\"]) }}; padding:16px;\">\n    <p><strong>N° Solicitud:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"request_number\"]) }}</p>\n    <p><strong>Empleado:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }}</p>\n    <p><strong>Cargo:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"employee_position\"]) }}</p>\n    <p><strong>Tipo:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</p>\n    <p><strong>Decisión:</strong> <span style=\"color:{{ $($node[\"Webhook\"].json[\"body\"][\"decision_color\"]) }}; font-weight:bold;\">{{ $($node[\"Webhook\"].json[\"body\"][\"decision_label\"]) }}</span></p>\n    <p><strong>Aprobado/Rechazado por:</strong> {{ $json[\"Nombre del jefe inmediato\"] }} ({{ $json[\"Correo jefe inmediato\"] }})</p>\n    <p><strong>Comentarios del Jefe:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"manager_comments\"]) }}</p>\n    <p><strong>Total días hábiles:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"total_days\"]) }}</p>\n  </div>\n</body>\n</html>",
+                "toList": "={{ $($node[\"Webhook\"].json[\"body\"][\"hr_emails\"].join(',')) }}",
+                "options": {
+                    "appendAttribution": false
+                }
+            },
+            "id": "gmail-rrhh-decision",
+            "name": "Gmail - Notificar RRHH",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2.1,
+            "position": [
+                640,
+                400
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "ID_CREDENCIAL_GMAIL",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "{\n  \"success\": true\n}",
+                "options": {}
+            },
+            "id": "respond-webhook-decision",
+            "name": "Respond to Webhook",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                860,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Google Sheets - Buscar Empleado",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Sheets - Buscar Empleado": {
+            "main": [
+                [
+                    {
+                        "node": "Gmail - Notificar Empleado (Copia Jefe)",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Gmail - Notificar RRHH",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    }
+}

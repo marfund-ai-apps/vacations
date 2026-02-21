@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "skills": {
+    "architecture-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "11f648f7e13be442b8279c14924580ebda3bae78fb48e335b2d0d8868f75a4ac"
+    },
+    "devops-engineer": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "computedHash": "45c07db7656b96c982244ba43569e9274e6231daaf0862c35ecca5409623a52a"
+    },
+    "dockerfile-optimizer": {
+      "source": "patricio0312rev/skills",
+      "sourceType": "github",
+      "computedHash": "e008d1b146276bed031728642839e0be477c9cb9bfdec3827423f0cea9109a80"
+    },
+    "finishing-a-development-branch": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "computedHash": "9edba9a38684c060fdc38290f640e1dc0c37de286723ac9be73bacacf7cd6f3d"
+    },
+    "git-advanced-workflows": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "96274c5eff703074436e1e4ab1f388117f3d79fdc0e6df8fec9ae00c70f47d73"
+    },
+    "git-commit": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "computedHash": "2607fc60629b82b257136dd2a7a373f0a4466c0b49df7746d845d59313c99b21"
+    },
+    "github-actions-templates": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "c86e5a6f9651b1893e7dda221083fca4503907bde97542780072df7eecd017c8"
+    },
+    "github-workflow-automation": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "a4416929c5f4cbe3f2ec3644c23a8662e649e3cc2f22b92d478eb594f712d7a7"
+    },
+    "security-requirement-extraction": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "da9ac10baf31e8af3f01946386a5040c69df4caa82f78f111ed2cf11db4cc16b"
+    },
+    "using-git-worktrees": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "computedHash": "52bbb4b6e80918e83e92a1514f3b3757712154c2a8a42de24919e48a794c54fc"
+    }
+  }
+}

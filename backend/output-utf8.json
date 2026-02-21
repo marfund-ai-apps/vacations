@@ -1,0 +1,50 @@
+[
+  {
+    "id": 2,
+    "full_name": "Ana Beatriz Rivas Chacón",
+    "position": "Coordinadora Fase 3",
+    "email": "arivas@marfund.org"
+  },
+  {
+    "id": 3,
+    "full_name": "Silvia Patricia Cabrera Chaverri ",
+    "position": "Directora Administrativa",
+    "email": "pcabrera@marfund.org"
+  },
+  {
+    "id": 8,
+    "full_name": "María José González Fuster",
+    "position": "Directora General",
+    "email": "mjgonzalez@marfund.org"
+  },
+  {
+    "id": 9,
+    "full_name": "Claudia Lorena del Rosario Ruiz Alvarado",
+    "position": "Directora RRI",
+    "email": "cruiz@marfund.org"
+  },
+  {
+    "id": 15,
+    "full_name": "Lluvia Iyanú Soto Jiménez",
+    "position": "Asistente Dirección General",
+    "email": "lsoto@marfund.org"
+  },
+  {
+    "id": 16,
+    "full_name": "Judith Adriana Morales López",
+    "position": "Directora de Proyectos SGP/F3",
+    "email": "jmorales@marfund.org"
+  },
+  {
+    "id": 18,
+    "full_name": "Amy Louise Jones",
+    "position": "Directora Proyecto MAR+Invest",
+    "email": "ajones@marfund.org"
+  },
+  {
+    "id": 25,
+    "full_name": "Elizabeth Herrera Figueroa de Durán",
+    "position": "Asistente Dirección General",
+    "email": "lherrera@marfund.org"
+  }
+]

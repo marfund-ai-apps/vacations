@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "google_id": "112189718387039906737",
+    "email": "automatizaciones.ia@marfund.org",
+    "full_name": "Automatizaciones IA",
+    "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocJrHNhdWctE6NcZ3rlVgUhry2bRlU8jyWkMI2aE_Em1JsoXAAc=s96-c",
+    "employee_number": null,
+    "position": "Encargado de IA",
+    "role": "super_admin",
+    "manager_id": null,
+    "is_active": null,
+    "created_at": "2026-02-21T06:34:56.000Z",
+    "updated_at": "2026-02-21T08:48:14.000Z",
+    "base_vacation_days": 15,
+    "assistant_email": null
+  }
+]

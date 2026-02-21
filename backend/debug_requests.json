@@ -1,0 +1,23 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "automatizaciones.ia@marfund.org",
+      "manager_id": null
+    },
+    {
+      "id": 31,
+      "email": "webmaster@marfund.org",
+      "manager_id": 1
+    }
+  ],
+  "reqs": [
+    {
+      "id": 1,
+      "employee_id": 31,
+      "request_type": "vacation",
+      "status": "approved",
+      "manager_id": 1
+    }
+  ]
+}

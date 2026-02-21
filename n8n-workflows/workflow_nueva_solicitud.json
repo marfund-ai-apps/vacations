@@ -1,0 +1,157 @@
+{
+  "name": "MAR Fund - Nueva Solicitud (Google Workspace)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nueva-solicitud",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "id": "webhook-nueva-solicitud",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "nueva-solicitud-webhook-id"
+    },
+    {
+      "parameters": {
+        "operation": "lookup",
+        "documentId": {
+          "__rl": true,
+          "value": "15jsGttqbNogEPYDEfvGMcNGUsUYbmg2RqupxtajMMb8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "empleados",
+          "mode": "name"
+        },
+        "lookupColumn": "Correo empleado",
+        "lookupValue": "={{ $($node[\"Webhook\"].json[\"body\"][\"employee_email\"]) }}"
+      },
+      "id": "google-sheets-empleado",
+      "name": "Google Sheets - Buscar Empleado",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        400,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ID_CREDENCIAL_GOOGLESHEETS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "=✅ Solicitud {{ $($node[\"Webhook\"].json[\"body\"][\"request_number\"]) }} recibida - {{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:#1e40af;\">Hemos recibido tu Solicitud</h2>\n  </div>\n  <p>Hola {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }},</p>\n  <p>Tu solicitud de <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</strong> ha sido recibida y se ha enviado a tu jefe inmediato ({{ $json[\"Nombre del jefe inmediato\"] }}) para su aprobación al correo {{ $json[\"Correo jefe inmediato\"] }}.</p>\n  <p>Te notificaremos en cuanto haya una actualización.</p>\n</body>\n</html>",
+        "toList": "={{ $json[\"Correo empleado\"] }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "gmail-empleado",
+      "name": "Gmail - Notificar Empleado",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        640,
+        180
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ID_CREDENCIAL_GMAIL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "=📋 Solicitud pendiente de aprobación - {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  \n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:#1e40af;\">Nueva Solicitud de {{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</h2>\n  </div>\n\n  <div style=\"background:#f8fafc; border-left:4px solid #3b82f6; padding:16px; margin-bottom:20px;\">\n    <p><strong>N° Solicitud:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"request_number\"]) }}</p>\n    <p><strong>Empleado:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }}</p>\n    <p><strong>Cargo:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"employee_position\"]) }}</p>\n    <p><strong>Tipo:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</p>\n    <p><strong>Razón:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"reason\"]) }}</p>\n    <p><strong>Total días hábiles:</strong> <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"total_days\"]) }}</strong></p>\n  </div>\n\n  <p><strong>Fechas solicitadas:</strong></p>\n  {{ $($node[\"Webhook\"].json[\"body\"][\"dates_table_html\"]) }}\n\n  <div style=\"margin:30px 0; text-align:center;\">\n    <p style=\"margin-bottom:15px;\"><strong>Por favor toma una decisión:</strong></p>\n    <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"approve_url\"]) }}\" \n       style=\"background:#059669; color:white; padding:12px 30px; border-radius:8px; \n              text-decoration:none; font-weight:bold; margin-right:15px;\">\n      ✅ APROBAR\n    </a>\n    <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"reject_url\"]) }}\"\n       style=\"background:#DC2626; color:white; padding:12px 30px; border-radius:8px; \n              text-decoration:none; font-weight:bold;\">\n      ❌ RECHAZAR\n    </a>\n  </div>\n\n  <p style=\"color:#64748b; font-size:12px;\">\n    También puedes gestionar la solicitud desde el \n    <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"app_url\"]) }}/pending-approvals\">portal web</a>.\n    Este link expira en 7 días.\n  </p>\n</body>\n</html>",
+        "toList": "={{ $json[\"Correo jefe inmediato\"] }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "gmail-jefe",
+      "name": "Gmail - Notificar Jefe",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        640,
+        380
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ID_CREDENCIAL_GMAIL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true\n}",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        860,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Buscar Empleado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Buscar Empleado": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Notificar Empleado",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Notificar Jefe",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
