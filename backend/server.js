@@ -18,7 +18,7 @@ require('./config/passport');
 // Middlewares globales
 app.use(helmet());
 app.use(cors({
-  origin: process.env.APP_URL, // e.g., http://localhost:5173
+  origin: [process.env.FRONTEND_URL, process.env.APP_URL], // Fallback if APP_URL was wrongly used
   credentials: true
 }));
 app.use(express.json());
@@ -73,6 +73,6 @@ app.get('/api', (req, res) => {
 
 // Arrancar servidor
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor corriendo en el puerto ${PORT} en modo ${process.env.NODE_ENV}`);
 });
