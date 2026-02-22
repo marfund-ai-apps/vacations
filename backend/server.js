@@ -9,6 +9,10 @@ const helmet = require('helmet');
 // Inicializar app
 const app = express();
 
+// IMPORTANTE: Confiar en el proxy inverso de Easypanel para que las 
+// cookies cross-site (SameSite=none) puedan ser marcadas como "Secure"
+app.set('trust proxy', 1);
+
 // Configuración de base de datos
 const db = require('./config/db');
 
@@ -53,6 +57,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Permite cookies cross-domain (Front: marfund.org -> Back: easypanel.host)
     maxAge: 1000 * 60 * 60 * 24 * 7 // 7 días
   }
 }));
