@@ -18,6 +18,7 @@ export default function NewRequest() {
         reason: '',
         notes: ''
     });
+    const [halfDay, setHalfDay] = useState(false);
 
     useEffect(() => {
         const fetchManagers = async () => {
@@ -54,19 +55,20 @@ export default function NewRequest() {
         return count;
     };
 
-    const businessDays = (formData.date_from && formData.date_to)
+    const rawBusinessDays = (formData.date_from && formData.date_to)
         ? calculateBusinessDays(formData.date_from, formData.date_to)
         : 0;
+    const businessDays = halfDay ? Math.max(0, rawBusinessDays - 0.5) : rawBusinessDays;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (businessDays <= 0) {
-            return toast.error("El rango de fechas debe contener al menos 1 día hábil.");
+            return toast.error("El rango de fechas debe contener al menos 0.5 días hábiles.");
         }
 
         if (!formData.manager_id) {
-            return toast.error("Por favor, selecciona al jefe inmediato que aprobará la solicitud.");
+            return toast.error("Por favor, selecciona al supervisor inmediato que aprobará la solicitud.");
         }
 
         setLoading(true);
@@ -87,7 +89,7 @@ export default function NewRequest() {
 
         try {
             await api.post('/requests', payload);
-            toast.success("Solicitud enviada correctamente. Tu jefe recibirá un correo.");
+            toast.success("Solicitud enviada correctamente. Tu supervisor recibirá un correo.");
             navigate('/dashboard');
         } catch (error) {
             console.error("Error al enviar solicitud", error);
@@ -138,7 +140,7 @@ export default function NewRequest() {
 
                             <div className="sm:col-span-3">
                                 <label htmlFor="manager_id" className="block text-sm font-medium leading-6 text-gray-900">
-                                    Aprobará (Jefe Inmediato)
+                                    Aprobará (Supervisor Inmediato)
                                 </label>
                                 <div className="mt-2">
                                     <select
@@ -193,12 +195,32 @@ export default function NewRequest() {
                                 </div>
                             </div>
 
+                            {formData.date_from && formData.date_to && (
+                                <div className="sm:col-span-6">
+                                    <div className="flex items-center gap-x-3">
+                                        <input
+                                            id="half_day"
+                                            name="half_day"
+                                            type="checkbox"
+                                            checked={halfDay}
+                                            onChange={(e) => setHalfDay(e.target.checked)}
+                                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                                        />
+                                        <label htmlFor="half_day" className="text-sm font-medium text-gray-700 cursor-pointer">
+                                            Solo medio día — el último día del rango cuenta como <strong>0.5</strong>
+                                        </label>
+                                    </div>
+                                </div>
+                            )}
+
                             {businessDays > 0 && (
                                 <div className="sm:col-span-6 bg-blue-50 border-l-4 border-blue-400 p-4">
                                     <div className="flex">
                                         <div className="ml-3">
                                             <p className="text-sm text-blue-700">
-                                                Días hábiles a descontar: <strong>{businessDays} días</strong> <br />
+                                                Días hábiles a descontar: <strong>{businessDays} {businessDays === 1 ? 'día' : 'días'}</strong>
+                                                {halfDay && <span className="ml-2 text-blue-500">(incluye medio día final)</span>}
+                                                <br />
                                                 <span className="text-xs text-blue-500">(Feriados deben descontarse manualmente en RRHH por el momento)</span>
                                             </p>
                                         </div>

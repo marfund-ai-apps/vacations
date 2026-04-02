@@ -87,4 +87,8 @@ app.get('/api', (req, res) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor corriendo en el puerto ${PORT} en modo ${process.env.NODE_ENV}`);
+
+  // Iniciar jobs programados
+  const { startMonthlyVacationIncrement } = require('./jobs/monthlyVacationIncrement');
+  startMonthlyVacationIncrement();
 });

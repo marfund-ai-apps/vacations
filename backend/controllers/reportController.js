@@ -8,20 +8,40 @@ exports.getMyReport = async (req, res) => {
   try {
     // Obtener días base del usuario
     const [users] = await db.query('SELECT base_vacation_days FROM users WHERE id = ?', [id]);
-    const baseDays = users.length ? users[0].base_vacation_days : 15;
+    const baseDays = parseFloat(users.length ? users[0].base_vacation_days : 15);
 
     // Días consumidos (solicitudes aprobadas del año actual)
     const [consumed] = await db.query(`
             SELECT COALESCE(SUM(rdr.business_days), 0) as total_consumed
             FROM vacation_requests vr
             JOIN request_date_ranges rdr ON vr.id = rdr.request_id
-            WHERE vr.employee_id = ? 
+            WHERE vr.employee_id = ?
             AND vr.status = 'approved'
             AND YEAR(vr.created_at) = ?
         `, [id, year]);
 
     const consumedDays = parseFloat(consumed[0].total_consumed) || 0;
+
+    // Días agregados por ajustes manuales y automáticos del año actual
+    const [adjustments] = await db.query(`
+            SELECT COALESCE(SUM(days_added), 0) as total_adjusted,
+                   id, days_added, adjustment_type, reason, created_at, adjusted_by
+            FROM user_day_adjustments
+            WHERE user_id = ? AND YEAR(created_at) = ?
+        `, [id, year]);
+
+    const totalAdjusted = parseFloat(adjustments[0].total_adjusted) || 0;
     const availableDays = baseDays - consumedDays;
+
+    // Historial de ajustes del año actual (para mostrar en el dashboard como movimientos verdes)
+    const [adjustmentList] = await db.query(`
+            SELECT uda.id, uda.days_added, uda.adjustment_type, uda.reason, uda.created_at,
+                   u.full_name as adjusted_by_name
+            FROM user_day_adjustments uda
+            LEFT JOIN users u ON uda.adjusted_by = u.id
+            WHERE uda.user_id = ? AND YEAR(uda.created_at) = ?
+            ORDER BY uda.created_at DESC
+        `, [id, year]);
 
     // Solicitudes recientes del año actual
     const [requests] = await db.query(`
@@ -43,11 +63,12 @@ exports.getMyReport = async (req, res) => {
     res.json({
       summary: {
         total_base_days: baseDays,
-        total_extra_days: 0,
+        total_extra_days: totalAdjusted,
         total_consumed_days: consumedDays,
         total_available_days: availableDays
       },
-      history: requests
+      history: requests,
+      adjustments: adjustmentList
     });
   } catch (err) {
     console.error("Error en getMyReport:", err);

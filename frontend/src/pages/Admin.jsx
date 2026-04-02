@@ -14,6 +14,8 @@ export default function Admin() {
     const [editForm, setEditForm] = useState({ role: '', manager_id: '', position: '', base_vacation_days: 15 });
     const [isCreating, setIsCreating] = useState(false);
     const [newForm, setNewForm] = useState({ full_name: '', email: '', employee_number: '', position: '', base_vacation_days: 15, role: 'employee', manager_id: '' });
+    const [adjustModal, setAdjustModal] = useState(null); // { userId, userName }
+    const [adjustForm, setAdjustForm] = useState({ days_added: '', reason: '' });
 
     const fetchData = async () => {
         setLoading(true);
@@ -81,6 +83,31 @@ export default function Admin() {
         }
     };
 
+    const openAdjustModal = (u) => {
+        setAdjustModal({ userId: u.id, userName: u.full_name });
+        setAdjustForm({ days_added: '', reason: '' });
+    };
+
+    const handleAdjustDays = async () => {
+        if (!adjustForm.days_added || parseFloat(adjustForm.days_added) <= 0) {
+            return toast.error('La cantidad de días debe ser mayor a 0');
+        }
+        if (!adjustForm.reason.trim()) {
+            return toast.error('El motivo es obligatorio');
+        }
+        try {
+            const res = await api.post(`/users/${adjustModal.userId}/day-adjustments`, {
+                days_added: parseFloat(adjustForm.days_added),
+                reason: adjustForm.reason.trim()
+            });
+            toast.success(res.data.message);
+            setAdjustModal(null);
+            fetchData();
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Error al agregar días');
+        }
+    };
+
     const handleDeactivate = async (id, name) => {
         if (!window.confirm(`¿Estás seguro de que deseas desactivar a ${name}? Su historial se mantendrá pero ya no tendrá acceso al sistema.`)) return;
         try {
@@ -101,12 +128,13 @@ export default function Admin() {
     }
 
     return (
+        <>
         <div className="px-4 sm:px-6 lg:px-8">
             <div className="sm:flex sm:items-center">
                 <div className="sm:flex-auto">
                     <h1 className="text-xl font-semibold leading-6 text-gray-900">Administración de Usuarios</h1>
                     <p className="mt-2 text-sm text-gray-700">
-                        Gestiona roles, puestos y asigna jefes inmediatos a los empleados.
+                        Gestiona roles, puestos y asigna supervisores inmediatos a los empleados.
                     </p>
                 </div>
                 <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex space-x-3">
@@ -138,7 +166,7 @@ export default function Admin() {
                                         <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Empleado</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Cargo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Rol Sistema</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Jefe Inmediato</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor Inmediato</th>
                                         <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Días Vac.</th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
                                             <span className="sr-only">Editar</span>
@@ -296,6 +324,9 @@ export default function Admin() {
                                                         </div>
                                                     ) : (
                                                         <div className="flex justify-end space-x-3">
+                                                            <button onClick={() => openAdjustModal(u)} className="text-green-600 hover:text-green-800 inline-flex items-center font-medium">
+                                                                + Días
+                                                            </button>
                                                             <button onClick={() => startEditing(u)} className="text-indigo-600 hover:text-indigo-900 inline-flex items-center">
                                                                 <Pencil className="w-4 h-4 mr-1" /> Editar
                                                             </button>
@@ -315,5 +346,62 @@ export default function Admin() {
                 </div>
             </div>
         </div>
+
+            {/* Modal: Agregar días manualmente */}
+            {adjustModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">Agregar Días de Vacaciones</h3>
+                        <p className="text-sm text-gray-500 mb-5">
+                            Empleado: <span className="font-medium text-gray-700">{adjustModal.userName}</span>
+                        </p>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Días a agregar
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0.5"
+                                    step="0.5"
+                                    value={adjustForm.days_added}
+                                    onChange={(e) => setAdjustForm({ ...adjustForm, days_added: e.target.value })}
+                                    placeholder="Ej. 1.5"
+                                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Motivo
+                                </label>
+                                <textarea
+                                    rows={3}
+                                    value={adjustForm.reason}
+                                    onChange={(e) => setAdjustForm({ ...adjustForm, reason: e.target.value })}
+                                    placeholder="Ej. Trabajo el sábado 29/03 y domingo 30/03"
+                                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-x-3">
+                            <button
+                                onClick={() => setAdjustModal(null)}
+                                className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleAdjustDays}
+                                className="rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
+                            >
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }

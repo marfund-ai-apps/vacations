@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { Calendar, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, XCircle, TrendingUp } from 'lucide-react';
 
 export default function Dashboard() {
     const { user } = useAuth();
@@ -36,8 +36,37 @@ export default function Dashboard() {
 
     const summary = report?.summary || { total_base_days: 0, total_extra_days: 0, total_consumed_days: 0, total_available_days: 0 };
     const history = report?.history || [];
+    const adjustments = report?.adjustments || [];
+
     const pendingHistory = history.filter(req => req.status === 'pending');
     const processedHistory = history.filter(req => req.status !== 'pending');
+
+    // Combinar solicitudes aprobadas (rojo) y ajustes de días (verde) en un solo timeline
+    const approvedRequests = history
+        .filter(req => req.status === 'approved')
+        .map(req => ({
+            id: `req-${req.id}`,
+            type: 'debit',
+            date: req.manager_decision_date || req.created_at,
+            description: req.request_type === 'vacation' ? 'Vacaciones aprobadas' :
+                req.request_type === 'permission' ? 'Permiso aprobado' : 'Ausencia justificada aprobada',
+            detail: req.request_number,
+            days: parseFloat(req.total_days) || 0,
+        }));
+
+    const adjustmentMovements = adjustments.map(adj => ({
+        id: `adj-${adj.id}`,
+        type: 'credit',
+        date: adj.created_at,
+        description: adj.adjustment_type === 'monthly_auto'
+            ? 'Incremento mensual automático'
+            : `Días agregados por ${adj.adjusted_by_name || 'supervisor'}`,
+        detail: adj.reason,
+        days: parseFloat(adj.days_added) || 0,
+    }));
+
+    const movements = [...approvedRequests, ...adjustmentMovements]
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -75,13 +104,15 @@ export default function Dashboard() {
                     <dt className="truncate text-sm font-medium text-gray-500">Días Base Anual</dt>
                     <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{summary.total_base_days}</dd>
                 </div>
-                <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-                    <dt className="truncate text-sm font-medium text-gray-500">Días Extra Asignados</dt>
-                    <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{summary.total_extra_days}</dd>
+                <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-green-400">
+                    <dt className="truncate text-sm font-medium text-green-600 flex items-center gap-1">
+                        <TrendingUp className="w-4 h-4" /> Días Agregados (año)
+                    </dt>
+                    <dd className="mt-1 text-3xl font-semibold tracking-tight text-green-700">+{summary.total_extra_days}</dd>
                 </div>
-                <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-                    <dt className="truncate text-sm font-medium text-gray-500">Días Consumidos</dt>
-                    <dd className="mt-1 text-3xl font-semibold tracking-tight text-red-600">{summary.total_consumed_days}</dd>
+                <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-red-300">
+                    <dt className="truncate text-sm font-medium text-red-500">Días Consumidos</dt>
+                    <dd className="mt-1 text-3xl font-semibold tracking-tight text-red-600">-{summary.total_consumed_days}</dd>
                 </div>
                 <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-indigo-500">
                     <dt className="truncate text-sm font-medium text-indigo-600">Días Disponibles Hoy</dt>
@@ -89,133 +120,156 @@ export default function Dashboard() {
                 </div>
             </dl>
 
-            {/* Recent History */}
-            <div className="mt-8 flow-root">
+            {/* Solicitudes pendientes de autorización */}
+            <div className="mt-8">
+                <h3 className="text-md font-medium text-gray-900 mb-4">Pendientes de Autorización</h3>
+                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg mb-8">
+                    <table className="min-w-full divide-y divide-gray-300">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor Inmediato</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                            {pendingHistory.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" className="py-8 text-center text-sm text-gray-500">
+                                        No tienes solicitudes recientes pendientes de autorización.
+                                    </td>
+                                </tr>
+                            ) : (
+                                pendingHistory.slice(0, 5).map((req) => (
+                                    <tr key={req.id}>
+                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                            {req.request_number}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {req.request_type === 'vacation' ? 'Vacaciones' :
+                                                req.request_type === 'permission' ? 'Permiso' : 'Ausencia'}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {req.date_ranges && req.date_ranges.length > 0 ? (
+                                                <span>
+                                                    {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a{' '}
+                                                    {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
+                                                </span>
+                                            ) : 'N/A'}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {req.total_days}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {req.manager_name || 'Desconocido'}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Historial de solicitudes cerradas */}
+            <div>
                 <div className="flex justify-between items-center mb-4">
-                    <div>
-                        <h2 className="text-lg font-medium text-gray-900">Solicitudes Recientes</h2>
-                        <p className="mt-1 text-sm text-gray-500">Tu historial de últimos movimientos en el año actual.</p>
-                    </div>
+                    <h3 className="text-md font-medium text-gray-900">Historial de Solicitudes</h3>
                     <Link to="/my-requests" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">Ver todo</Link>
                 </div>
-
-                <h3 className="text-md font-medium text-gray-900 mb-4 mt-8">Pendientes de Autorización</h3>
-                <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                    <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg mb-8">
-                            <table className="min-w-full divide-y divide-gray-300">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Jefe Aprobador</th>
+                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg mb-8">
+                    <table className="min-w-full divide-y divide-gray-300">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
+                                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6"><span className="sr-only">Nota</span></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                            {processedHistory.length === 0 ? (
+                                <tr>
+                                    <td colSpan="7" className="py-8 text-center text-sm text-gray-500">
+                                        No tienes historial reciente de solicitudes cerradas.
+                                    </td>
+                                </tr>
+                            ) : (
+                                processedHistory.slice(0, 5).map((req) => (
+                                    <tr key={req.id} className="opacity-75">
+                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{req.request_number}</td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {req.request_type === 'vacation' ? 'Vacaciones' :
+                                                req.request_type === 'permission' ? 'Permiso' : 'Ausencia'}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {req.date_ranges && req.date_ranges.length > 0 ? (
+                                                <span>
+                                                    {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a{' '}
+                                                    {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
+                                                </span>
+                                            ) : 'N/A'}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{req.total_days}</td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{req.manager_name || 'Desconocido'}</td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{getStatusBadge(req.status)}</td>
+                                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                            {req.manager_comments && (
+                                                <span title={req.manager_comments} className="text-indigo-600 hover:text-indigo-900 cursor-help">
+                                                    Nota del Supervisor
+                                                </span>
+                                            )}
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 bg-white">
-                                    {pendingHistory.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="5" className="py-8 text-center text-sm text-gray-500">
-                                                No tienes solicitudes recientes pendientes de autorización.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        pendingHistory.slice(0, 5).map((req) => (
-                                            <tr key={req.id}>
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                                                    {req.request_number}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {req.request_type === 'vacation' ? 'Vacaciones' :
-                                                        req.request_type === 'permission' ? 'Permiso' : 'Ausencia'}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {req.date_ranges && req.date_ranges.length > 0 ? (
-                                                        <span>
-                                                            {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a <br />
-                                                            {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
-                                                        </span>
-                                                    ) : 'N/A'}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {req.total_days}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {req.manager_name || 'Desconocido'}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <h3 className="text-md font-medium text-gray-900 mb-4 mt-8">Historial de Solicitudes</h3>
-                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-                            <table className="min-w-full divide-y divide-gray-300">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Jefe Aprobador</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
-                                        <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                                            <span className="sr-only">Comentarios</span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 bg-white">
-                                    {processedHistory.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="7" className="py-8 text-center text-sm text-gray-500">
-                                                No tienes historial reciente de solicitudes cerradas.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        processedHistory.slice(0, 5).map((req) => (
-                                            <tr key={req.id} className="opacity-75">
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                                                    {req.request_number}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {req.request_type === 'vacation' ? 'Vacaciones' :
-                                                        req.request_type === 'permission' ? 'Permiso' : 'Ausencia'}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {req.date_ranges && req.date_ranges.length > 0 ? (
-                                                        <span>
-                                                            {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a <br />
-                                                            {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
-                                                        </span>
-                                                    ) : 'N/A'}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {req.total_days}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {req.manager_name || 'Desconocido'}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {getStatusBadge(req.status)}
-                                                </td>
-                                                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                    {req.manager_comments && (
-                                                        <span title={req.manager_comments} className="text-indigo-600 hover:text-indigo-900 cursor-help">
-                                                            Nota del Jefe
-                                                        </span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
+            </div>
+
+            {/* Movimientos de días — timeline con colores */}
+            <div>
+                <h3 className="text-md font-medium text-gray-900 mb-4">Movimientos de Días (año actual)</h3>
+                {movements.length === 0 ? (
+                    <p className="text-sm text-gray-500">No hay movimientos registrados este año.</p>
+                ) : (
+                    <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+                        <table className="min-w-full divide-y divide-gray-300">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha</th>
+                                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Descripción</th>
+                                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Detalle</th>
+                                    <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 pr-6">Días</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white">
+                                {movements.map((mov) => (
+                                    <tr key={mov.id} className={mov.type === 'credit' ? 'bg-green-50' : 'bg-red-50'}>
+                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-600 sm:pl-6">
+                                            {new Date(mov.date).toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        </td>
+                                        <td className={`whitespace-nowrap px-3 py-4 text-sm font-medium ${mov.type === 'credit' ? 'text-green-700' : 'text-red-700'}`}>
+                                            {mov.description}
+                                        </td>
+                                        <td className="px-3 py-4 text-sm text-gray-500 max-w-xs truncate" title={mov.detail}>
+                                            {mov.detail}
+                                        </td>
+                                        <td className={`whitespace-nowrap px-3 py-4 text-sm font-bold text-right pr-6 ${mov.type === 'credit' ? 'text-green-700' : 'text-red-700'}`}>
+                                            {mov.type === 'credit' ? '+' : '-'}{mov.days}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

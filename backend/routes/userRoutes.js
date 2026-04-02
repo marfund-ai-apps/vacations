@@ -27,4 +27,10 @@ router.put('/:id/deactivate', requireRole('hr_admin', 'super_admin'), userContro
 // Activar usuario
 router.put('/:id/activate', requireRole('super_admin'), userController.activateUser);
 
+// Historial de ajustes de días de un usuario
+router.get('/:id/day-adjustments', userController.getDayAdjustments);
+
+// Agregar días manualmente (solo jefe/admin)
+router.post('/:id/day-adjustments', requireRole('manager', 'hr_admin', 'super_admin'), userController.addDayAdjustment);
+
 module.exports = router;

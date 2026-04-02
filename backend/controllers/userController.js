@@ -88,6 +88,80 @@ exports.activateUser = async (req, res) => {
     }
 };
 
+// GET /api/users/:id/day-adjustments — Historial de ajustes de días de un usuario
+exports.getDayAdjustments = async (req, res) => {
+    const { id } = req.params;
+    const requestingUser = req.user;
+
+    // El propio usuario puede ver sus ajustes; managers y admins pueden ver los de cualquiera
+    if (requestingUser.role === 'employee' && requestingUser.id !== parseInt(id)) {
+        return res.status(403).json({ message: 'No tienes permiso para ver estos registros' });
+    }
+
+    try {
+        const [rows] = await db.query(
+            `SELECT uda.*, u.full_name as adjusted_by_name
+             FROM user_day_adjustments uda
+             LEFT JOIN users u ON uda.adjusted_by = u.id
+             WHERE uda.user_id = ?
+             ORDER BY uda.created_at DESC`,
+            [id]
+        );
+        res.json(rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener historial de ajustes' });
+    }
+};
+
+// POST /api/users/:id/day-adjustments — Agregar días manualmente (solo jefe/admin)
+exports.addDayAdjustment = async (req, res) => {
+    const { id } = req.params;
+    const { days_added, reason } = req.body;
+    const adjustedBy = req.user.id;
+
+    if (!days_added || parseFloat(days_added) <= 0) {
+        return res.status(400).json({ message: 'La cantidad de días debe ser mayor a 0' });
+    }
+    if (!reason || reason.trim() === '') {
+        return res.status(400).json({ message: 'El motivo es obligatorio' });
+    }
+
+    const conn = await db.getConnection();
+    try {
+        await conn.beginTransaction();
+
+        // Actualizar días base del usuario
+        await conn.query(
+            'UPDATE users SET base_vacation_days = base_vacation_days + ? WHERE id = ?',
+            [parseFloat(days_added), id]
+        );
+
+        // Registrar el ajuste
+        await conn.query(
+            `INSERT INTO user_day_adjustments (user_id, adjusted_by, days_added, adjustment_type, reason)
+             VALUES (?, ?, ?, 'manual', ?)`,
+            [id, adjustedBy, parseFloat(days_added), reason.trim()]
+        );
+
+        await conn.commit();
+
+        // Obtener nombre del empleado para la respuesta
+        const [userRows] = await db.query('SELECT full_name, base_vacation_days FROM users WHERE id = ?', [id]);
+        res.json({
+            success: true,
+            message: `Se agregaron ${days_added} días a ${userRows[0].full_name}`,
+            new_balance: userRows[0].base_vacation_days
+        });
+    } catch (error) {
+        await conn.rollback();
+        console.error(error);
+        res.status(500).json({ message: 'Error al agregar días' });
+    } finally {
+        conn.release();
+    }
+};
+
 // Crear usuario manualmente
 exports.createUser = async (req, res) => {
     const { full_name, email, employee_number, position, base_vacation_days, role, manager_id } = req.body;

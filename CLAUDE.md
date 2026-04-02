@@ -59,8 +59,11 @@ Key tables: `users` (self-referencing `manager_id`), `vacation_requests` (status
 - `AuthContext` / `useAuth()` hook — global user and auth state
 - `src/services/api.js` — Axios instance with base URL from `VITE_API_URL` and credentials enabled
 
-### Frontend Route Status
-`/dashboard`, `/my-requests`, `/pending-approvals`, `/reports`, `/admin` are defined but most are placeholders rendering the same dashboard component.
+### Frontend Routes
+All routes are implemented. Role-gated routes:
+- Public (authenticated): `/dashboard`, `/new-request`, `/my-requests`, `/pending-approvals`, `/reports`, `/profile`
+- `hr_admin` + `super_admin` only: `/admin`, `/all-requests`
+- `super_admin` only: `/admin/inactive`
 
 ## Key Design Decisions
 
@@ -77,19 +80,6 @@ Key tables: `users` (self-referencing `manager_id`), `vacation_requests` (status
 - **Tailwind v4 PostCSS**: The project uses Tailwind CSS v4, which requires `@tailwindcss/postcss` as the PostCSS plugin — NOT the standard `tailwindcss` plugin. If CSS breaks after dependency changes, check `postcss.config.js` and `index.css`.
 - **Remote DB firewall (Easypanel/Hostinger)**: When running the backend locally, connections to the remote MySQL at `147.93.46.144:3306` may time out (`ETIMEDOUT`) because Hostinger's firewall typically blocks external port 3306. Solutions: open port 3306 in Hostinger's firewall panel, or use a local MySQL instance for development.
 - **Zombie nodemon processes**: If the port is already in use after a failed restart, a previous nodemon process may still be running. Kill it before restarting.
-
-## Pending Frontend Components (Phase 5)
-
-These routes exist in `App.jsx` but render placeholder content — they are the next development targets:
-
-| Route | Component | API Endpoint |
-|-------|-----------|--------------|
-| `/dashboard` | Day summary widgets (available/requested/balance) | `GET /api/reports/employee/:id` |
-| `/my-requests` | Employee request history table | `GET /api/requests` |
-| `/pending-approvals` | Manager/HR approval queue | `GET /api/requests` (filtered by role) |
-| `/reports` | Aggregate company report | `GET /api/reports/all` |
-
-The new request form (`/dashboard` or a modal) must include: date range picker skipping weekends/holidays, client-side business day calculation before submitting to `POST /api/requests`.
 
 ## Environment Variables
 
