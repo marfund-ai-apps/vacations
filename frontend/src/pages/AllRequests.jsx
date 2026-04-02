@@ -116,7 +116,7 @@ export default function AllRequests() {
                             </table>
                         </div>
 
-                        <h2 className="text-lg font-medium text-gray-900 mb-4 mt-8">Historial de Decisiones</h2>
+                        <h2 className="text-lg font-medium text-gray-900 mb-4 mt-8">Historial de Solicitudes</h2>
                         <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
