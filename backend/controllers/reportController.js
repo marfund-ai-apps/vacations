@@ -22,15 +22,14 @@ exports.getMyReport = async (req, res) => {
 
     const consumedDays = parseFloat(consumed[0].total_consumed) || 0;
 
-    // Días agregados por ajustes manuales y automáticos del año actual
-    const [adjustments] = await db.query(`
-            SELECT COALESCE(SUM(days_added), 0) as total_adjusted,
-                   id, days_added, adjustment_type, reason, created_at, adjusted_by
+    // Total de días agregados por ajustes del año actual
+    const [adjustmentSum] = await db.query(`
+            SELECT COALESCE(SUM(days_added), 0) as total_adjusted
             FROM user_day_adjustments
             WHERE user_id = ? AND YEAR(created_at) = ?
         `, [id, year]);
 
-    const totalAdjusted = parseFloat(adjustments[0].total_adjusted) || 0;
+    const totalAdjusted = parseFloat(adjustmentSum[0].total_adjusted) || 0;
     const availableDays = baseDays - consumedDays;
 
     // Historial de ajustes del año actual (para mostrar en el dashboard como movimientos verdes)

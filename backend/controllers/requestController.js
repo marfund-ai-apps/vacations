@@ -256,10 +256,11 @@ exports.processApprovalToken = async (req, res) => {
         }
 
         const decision = action === 'approve' ? 'approved' : 'rejected';
+        const tokenAction = action === 'approve' ? 'approve' : 'reject'; // enum: 'approve'|'reject'
 
         // Marcar token como usado
         await db.query('UPDATE approval_tokens SET used_at = NOW(), action = ? WHERE token = ?',
-            [decision, token]);
+            [tokenAction, token]);
 
         // Procesar decisión
         await db.query(
