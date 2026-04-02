@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import { formatDate } from '../utils/dateUtils';
 
 export default function PendingApprovals() {
     const [pendingRequests, setPendingRequests] = useState([]);
@@ -100,7 +101,7 @@ export default function PendingApprovals() {
                                                     {req.total_days} días hábiles <br />
                                                     {req.date_ranges && req.date_ranges.length > 0 && (
                                                         <span className="text-xs text-gray-400">
-                                                            {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
+                                                            {formatDate(req.date_ranges[0].date_from)} a {formatDate(req.date_ranges[0].date_to)}
                                                         </span>
                                                     )}
                                                 </td>
@@ -158,7 +159,7 @@ export default function PendingApprovals() {
                                                     {req.total_days} días hábiles <br />
                                                     {req.date_ranges && req.date_ranges.length > 0 && (
                                                         <span className="text-xs text-gray-400">
-                                                            {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
+                                                            {formatDate(req.date_ranges[0].date_from)} a {formatDate(req.date_ranges[0].date_to)}
                                                         </span>
                                                     )}
                                                 </td>

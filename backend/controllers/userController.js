@@ -1,5 +1,14 @@
 const db = require('../config/db');
 
+// Genera número correlativo unificado VAC-YYYY-NNNN (comparte secuencia con vacation_requests)
+async function generateAdjustmentNumber() {
+    const year = new Date().getFullYear();
+    const [vac] = await db.query('SELECT COUNT(*) as c FROM vacation_requests WHERE YEAR(created_at) = ?', [year]);
+    const [adj] = await db.query('SELECT COUNT(*) as c FROM user_day_adjustments WHERE YEAR(created_at) = ?', [year]);
+    const count = vac[0].c + adj[0].c + 1;
+    return `VAC-${year}-${String(count).padStart(4, '0')}`;
+}
+
 // Obtener todos los managers (para el combo box del formulario)
 exports.getManagers = async (req, res) => {
     try {
@@ -131,6 +140,8 @@ exports.addDayAdjustment = async (req, res) => {
     try {
         await conn.beginTransaction();
 
+        const adjustmentNumber = await generateAdjustmentNumber();
+
         // Actualizar días base del usuario
         await conn.query(
             'UPDATE users SET base_vacation_days = base_vacation_days + ? WHERE id = ?',
@@ -139,9 +150,9 @@ exports.addDayAdjustment = async (req, res) => {
 
         // Registrar el ajuste
         await conn.query(
-            `INSERT INTO user_day_adjustments (user_id, adjusted_by, days_added, adjustment_type, reason)
-             VALUES (?, ?, ?, 'manual', ?)`,
-            [id, adjustedBy, parseFloat(days_added), reason.trim()]
+            `INSERT INTO user_day_adjustments (adjustment_number, user_id, adjusted_by, days_added, adjustment_type, reason)
+             VALUES (?, ?, ?, ?, 'manual', ?)`,
+            [adjustmentNumber, id, adjustedBy, parseFloat(days_added), reason.trim()]
         );
 
         await conn.commit();
@@ -150,8 +161,9 @@ exports.addDayAdjustment = async (req, res) => {
         const [userRows] = await db.query('SELECT full_name, base_vacation_days FROM users WHERE id = ?', [id]);
         res.json({
             success: true,
-            message: `Se agregaron ${days_added} días a ${userRows[0].full_name}`,
-            new_balance: userRows[0].base_vacation_days
+            message: `Se agregaron ${days_added} días a ${userRows[0].full_name} (${adjustmentNumber})`,
+            new_balance: userRows[0].base_vacation_days,
+            adjustment_number: adjustmentNumber
         });
     } catch (error) {
         await conn.rollback();

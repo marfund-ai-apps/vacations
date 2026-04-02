@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Calendar, Clock, CheckCircle, XCircle, TrendingUp } from 'lucide-react';
+import { formatDate, formatDateTime } from '../utils/dateUtils';
 
 export default function Dashboard() {
     const { user } = useAuth();
@@ -47,6 +48,7 @@ export default function Dashboard() {
         .map(req => ({
             id: `req-${req.id}`,
             type: 'debit',
+            number: req.request_number,
             date: req.manager_decision_date || req.created_at,
             description: req.request_type === 'vacation' ? 'Vacaciones aprobadas' :
                 req.request_type === 'permission' ? 'Permiso aprobado' : 'Ausencia justificada aprobada',
@@ -57,6 +59,7 @@ export default function Dashboard() {
     const adjustmentMovements = adjustments.map(adj => ({
         id: `adj-${adj.id}`,
         type: 'credit',
+        number: adj.adjustment_number || '—',
         date: adj.created_at,
         description: adj.adjustment_type === 'monthly_auto'
             ? 'Incremento mensual automático'
@@ -154,8 +157,8 @@ export default function Dashboard() {
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             {req.date_ranges && req.date_ranges.length > 0 ? (
                                                 <span>
-                                                    {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a{' '}
-                                                    {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
+                                                    {formatDate(req.date_ranges[0].date_from)} a{' '}
+                                                    {formatDate(req.date_ranges[0].date_to)}
                                                 </span>
                                             ) : 'N/A'}
                                         </td>
@@ -210,8 +213,8 @@ export default function Dashboard() {
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             {req.date_ranges && req.date_ranges.length > 0 ? (
                                                 <span>
-                                                    {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a{' '}
-                                                    {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
+                                                    {formatDate(req.date_ranges[0].date_from)} a{' '}
+                                                    {formatDate(req.date_ranges[0].date_to)}
                                                 </span>
                                             ) : 'N/A'}
                                         </td>
@@ -243,7 +246,8 @@ export default function Dashboard() {
                         <table className="min-w-full divide-y divide-gray-300">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha</th>
+                                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">#</th>
+                                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha</th>
                                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Descripción</th>
                                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Detalle</th>
                                     <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 pr-6">Días</th>
@@ -252,8 +256,13 @@ export default function Dashboard() {
                             <tbody className="divide-y divide-gray-200 bg-white">
                                 {movements.map((mov) => (
                                     <tr key={mov.id} className={mov.type === 'credit' ? 'bg-green-50' : 'bg-red-50'}>
-                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-600 sm:pl-6">
-                                            {new Date(mov.date).toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-semibold sm:pl-6">
+                                            <span className={mov.type === 'credit' ? 'text-green-700' : 'text-red-600'}>
+                                                {mov.number}
+                                            </span>
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
+                                            {formatDateTime(mov.date)}
                                         </td>
                                         <td className={`whitespace-nowrap px-3 py-4 text-sm font-medium ${mov.type === 'credit' ? 'text-green-700' : 'text-red-700'}`}>
                                             {mov.description}

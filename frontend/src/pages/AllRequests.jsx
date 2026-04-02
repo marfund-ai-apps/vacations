@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import { formatDate } from '../utils/dateUtils';
 
 export default function AllRequests() {
     const [pendingRequests, setPendingRequests] = useState([]);
@@ -83,7 +84,7 @@ export default function AllRequests() {
                                     ) : (
                                         pendingRequests.map((req) => (
                                             <tr key={req.id}>
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-500 sm:pl-6">
                                                     {req.request_number}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
@@ -97,8 +98,8 @@ export default function AllRequests() {
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.date_ranges && req.date_ranges.length > 0 ? (
                                                         <span>
-                                                            {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a <br />
-                                                            {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
+                                                            {formatDate(req.date_ranges[0].date_from)} a <br />
+                                                            {formatDate(req.date_ranges[0].date_to)}
                                                         </span>
                                                     ) : 'N/A'}
                                                 </td>
@@ -139,8 +140,10 @@ export default function AllRequests() {
                                     ) : (
                                         processedRequests.map((req) => (
                                             <tr key={req.id} className="opacity-75">
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                                                    {req.request_number}
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                                                    <span className={req.status === 'approved' ? 'text-red-600' : 'text-gray-500'}>
+                                                        {req.request_number}
+                                                    </span>
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
                                                     {req.employee_name}
@@ -153,8 +156,8 @@ export default function AllRequests() {
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.date_ranges && req.date_ranges.length > 0 ? (
                                                         <span>
-                                                            {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a <br />
-                                                            {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
+                                                            {formatDate(req.date_ranges[0].date_from)} a <br />
+                                                            {formatDate(req.date_ranges[0].date_to)}
                                                         </span>
                                                     ) : 'N/A'}
                                                 </td>

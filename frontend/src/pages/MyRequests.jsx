@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import { formatDate } from '../utils/dateUtils';
 
 export default function MyRequests() {
     const [pendingRequests, setPendingRequests] = useState([]);
@@ -69,7 +70,7 @@ export default function MyRequests() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Jefe Aprobador</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor Inmediato</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
@@ -82,7 +83,7 @@ export default function MyRequests() {
                                     ) : (
                                         pendingRequests.map((req) => (
                                             <tr key={req.id}>
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-500 sm:pl-6">
                                                     {req.request_number}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -92,8 +93,8 @@ export default function MyRequests() {
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.date_ranges && req.date_ranges.length > 0 ? (
                                                         <span>
-                                                            {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a <br />
-                                                            {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
+                                                            {formatDate(req.date_ranges[0].date_from)} a <br />
+                                                            {formatDate(req.date_ranges[0].date_to)}
                                                         </span>
                                                     ) : 'N/A'}
                                                 </td>
@@ -119,7 +120,7 @@ export default function MyRequests() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Jefe Aprobador</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor Inmediato</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
                                             <span className="sr-only">Comentarios</span>
@@ -136,8 +137,10 @@ export default function MyRequests() {
                                     ) : (
                                         processedRequests.map((req) => (
                                             <tr key={req.id} className="opacity-75">
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                                                    {req.request_number}
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                                                    <span className={req.status === 'approved' ? 'text-red-600' : 'text-gray-500'}>
+                                                        {req.request_number}
+                                                    </span>
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.request_type === 'vacation' ? 'Vacaciones' :
@@ -146,8 +149,8 @@ export default function MyRequests() {
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.date_ranges && req.date_ranges.length > 0 ? (
                                                         <span>
-                                                            {new Date(req.date_ranges[0].date_from).toLocaleDateString()} a <br />
-                                                            {new Date(req.date_ranges[0].date_to).toLocaleDateString()}
+                                                            {formatDate(req.date_ranges[0].date_from)} a <br />
+                                                            {formatDate(req.date_ranges[0].date_to)}
                                                         </span>
                                                     ) : 'N/A'}
                                                 </td>
@@ -163,7 +166,7 @@ export default function MyRequests() {
                                                 <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     {req.manager_comments && (
                                                         <span title={req.manager_comments} className="text-indigo-600 hover:text-indigo-900 cursor-help">
-                                                            Nota del Jefe
+                                                            Nota del Supervisor
                                                         </span>
                                                     )}
                                                 </td>

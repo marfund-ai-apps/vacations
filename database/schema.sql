@@ -133,6 +133,7 @@ CREATE TABLE `vacation_requests` (
 
 CREATE TABLE `user_day_adjustments` (
   `id` int NOT NULL,
+  `adjustment_number` varchar(20) DEFAULT NULL,
   `user_id` int NOT NULL,
   `adjusted_by` int DEFAULT NULL,
   `days_added` decimal(5,2) NOT NULL,
@@ -178,6 +179,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `v_emplo
 --
 ALTER TABLE `user_day_adjustments`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `adjustment_number` (`adjustment_number`),
   ADD KEY `user_id` (`user_id`),
   ADD KEY `adjusted_by` (`adjusted_by`);
 

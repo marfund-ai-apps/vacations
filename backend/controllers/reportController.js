@@ -34,7 +34,7 @@ exports.getMyReport = async (req, res) => {
 
     // Historial de ajustes del año actual (para mostrar en el dashboard como movimientos verdes)
     const [adjustmentList] = await db.query(`
-            SELECT uda.id, uda.days_added, uda.adjustment_type, uda.reason, uda.created_at,
+            SELECT uda.id, uda.adjustment_number, uda.days_added, uda.adjustment_type, uda.reason, uda.created_at,
                    u.full_name as adjusted_by_name
             FROM user_day_adjustments uda
             LEFT JOIN users u ON uda.adjusted_by = u.id
