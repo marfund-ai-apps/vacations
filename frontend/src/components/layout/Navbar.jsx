@@ -10,7 +10,10 @@ import {
     LogOut,
     Menu,
     X,
-    User
+    User,
+    BarChart3,
+    FileBarChart2,
+    ChevronDown
 } from 'lucide-react';
 
 // Definición de items de navegación con control de roles
@@ -27,6 +30,14 @@ export default function Navbar() {
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+    const [isReportsDropdownOpen, setIsReportsDropdownOpen] = useState(false);
+
+    const showReportsMenu = ['hr_admin', 'super_admin'].includes(user?.role);
+
+    // Submenú de Reportes
+    const REPORT_ITEMS = [
+        { name: 'Reporte General', href: '/reports', icon: FileBarChart2, description: 'Resumen de todos los colaboradores' },
+    ];
 
     const visibleItems = NAV_ITEMS.filter(item => item.roles.includes(user?.role));
     const isActive = (href) => location.pathname === href || location.pathname.startsWith(href + '/');
@@ -57,7 +68,7 @@ export default function Navbar() {
                             </span>
                         </div>
 
-                        {/* Desktop nav — horizontal plano sin dropdowns */}
+                        {/* Desktop nav */}
                         <div className="hidden md:flex md:items-center md:h-full md:gap-1 lg:gap-2">
                             {visibleItems.map(({ name, href, icon: Icon }) => (
                                 <Link key={href} to={href} className={linkClass(href)}>
@@ -65,6 +76,52 @@ export default function Navbar() {
                                     <span className="hidden lg:inline">{name}</span>
                                 </Link>
                             ))}
+
+                            {/* Dropdown Reportes */}
+                            {showReportsMenu && (
+                                <div className="relative flex items-center h-full">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsReportsDropdownOpen(!isReportsDropdownOpen)}
+                                        className={`inline-flex items-center gap-1.5 px-2 pt-1 pb-0.5 border-b-2 text-sm font-medium whitespace-nowrap transition-colors duration-150 focus:outline-none ${
+                                            location.pathname.startsWith('/reports')
+                                                ? 'border-indigo-600 text-indigo-700 font-semibold'
+                                                : 'border-transparent text-gray-500 hover:text-indigo-600 hover:border-indigo-400'
+                                        }`}
+                                    >
+                                        <BarChart3 className="w-4 h-4 flex-shrink-0" />
+                                        <span className="hidden lg:inline">Reportes</span>
+                                        <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${isReportsDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {isReportsDropdownOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setIsReportsDropdownOpen(false)} />
+                                            <div className="absolute left-0 top-14 z-20 w-64 origin-top-left rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 py-1 overflow-hidden">
+                                                <div className="px-3 py-2 border-b border-gray-100">
+                                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Reportes</p>
+                                                </div>
+                                                {REPORT_ITEMS.map(({ name, href, icon: Icon, description }) => (
+                                                    <Link
+                                                        key={href}
+                                                        to={href}
+                                                        onClick={() => setIsReportsDropdownOpen(false)}
+                                                        className={`flex items-start gap-3 px-4 py-3 text-sm transition-colors hover:bg-indigo-50 ${
+                                                            isActive(href) ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'
+                                                        }`}
+                                                    >
+                                                        <Icon className="w-4 h-4 mt-0.5 flex-shrink-0 text-indigo-500" />
+                                                        <div>
+                                                            <p className="font-medium leading-tight">{name}</p>
+                                                            <p className="text-xs text-gray-400 mt-0.5">{description}</p>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -137,6 +194,30 @@ export default function Navbar() {
                                 {name}
                             </Link>
                         ))}
+
+                        {/* Reportes en móvil */}
+                        {showReportsMenu && (
+                            <>
+                                <div className="pl-4 pr-4 pt-3 pb-1">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Reportes</p>
+                                </div>
+                                {REPORT_ITEMS.map(({ name, href, icon: Icon }) => (
+                                    <Link
+                                        key={href}
+                                        to={href}
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className={`flex items-center gap-3 pl-8 pr-4 py-2.5 border-l-4 text-sm font-medium transition-colors ${
+                                            isActive(href)
+                                                ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                                                : 'border-transparent text-gray-600 hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-600'
+                                        }`}
+                                    >
+                                        <Icon className="w-4 h-4 flex-shrink-0" />
+                                        {name}
+                                    </Link>
+                                ))}
+                            </>
+                        )}
                     </div>
 
                     {/* Usuario en mobile */}
