@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Servidor: marfund-ia_gestion_vacaciones_ai:3306
--- Tiempo de generación: 02-04-2026 a las 19:30:25
--- Versión del servidor: 9.6.0
--- Versión de PHP: 8.2.27
+-- Host: marfund-ia_gestion_vacaciones_ai:3306
+-- Generation Time: Apr 25, 2026 at 05:19 PM
+-- Server version: 9.6.0
+-- PHP Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,13 +18,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `marfund-vacations-ai`
+-- Database: `marfund-vacations-ai`
 --
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `approval_tokens`
+-- Table structure for table `approval_tokens`
 --
 
 CREATE TABLE `approval_tokens` (
@@ -40,7 +40,7 @@ CREATE TABLE `approval_tokens` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `request_date_ranges`
+-- Table structure for table `request_date_ranges`
 --
 
 CREATE TABLE `request_date_ranges` (
@@ -54,7 +54,7 @@ CREATE TABLE `request_date_ranges` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `request_history`
+-- Table structure for table `request_history`
 --
 
 CREATE TABLE `request_history` (
@@ -69,7 +69,7 @@ CREATE TABLE `request_history` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `sessions`
+-- Table structure for table `sessions`
 --
 
 CREATE TABLE `sessions` (
@@ -81,7 +81,7 @@ CREATE TABLE `sessions` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `users`
+-- Table structure for table `users`
 --
 
 CREATE TABLE `users` (
@@ -104,7 +104,24 @@ CREATE TABLE `users` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `vacation_requests`
+-- Table structure for table `user_day_adjustments`
+--
+
+CREATE TABLE `user_day_adjustments` (
+  `id` int NOT NULL,
+  `adjustment_number` varchar(20) DEFAULT NULL,
+  `user_id` int NOT NULL,
+  `adjusted_by` int DEFAULT NULL,
+  `days_added` decimal(5,2) NOT NULL,
+  `adjustment_type` enum('manual','monthly_auto') NOT NULL DEFAULT 'manual',
+  `reason` text NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `vacation_requests`
 --
 
 CREATE TABLE `vacation_requests` (
@@ -128,25 +145,8 @@ CREATE TABLE `vacation_requests` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `user_day_adjustments`
---
-
-CREATE TABLE `user_day_adjustments` (
-  `id` int NOT NULL,
-  `adjustment_number` varchar(20) DEFAULT NULL,
-  `user_id` int NOT NULL,
-  `adjusted_by` int DEFAULT NULL,
-  `days_added` decimal(5,2) NOT NULL,
-  `adjustment_type` enum('manual','monthly_auto') NOT NULL DEFAULT 'manual',
-  `reason` text NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura Stand-in para la vista `v_employee_days_summary`
--- (Véase abajo para la vista actual)
+-- Stand-in structure for view `v_employee_days_summary`
+-- (See below for the actual view)
 --
 CREATE TABLE `v_employee_days_summary` (
 `email` varchar(255)
@@ -164,27 +164,18 @@ CREATE TABLE `v_employee_days_summary` (
 -- --------------------------------------------------------
 
 --
--- Estructura para la vista `v_employee_days_summary`
+-- Structure for view `v_employee_days_summary`
 --
 DROP TABLE IF EXISTS `v_employee_days_summary`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `v_employee_days_summary`  AS SELECT `u`.`id` AS `employee_id`, `u`.`full_name` AS `full_name`, `u`.`email` AS `email`, `u`.`employee_number` AS `employee_number`, `u`.`position` AS `position`, `vr`.`request_type` AS `request_type`, `vr`.`status` AS `status`, year(`vr`.`created_at`) AS `fiscal_year`, sum(`rdr`.`business_days`) AS `total_business_days`, count(distinct `vr`.`id`) AS `total_requests` FROM ((`users` `u` left join `vacation_requests` `vr` on(((`u`.`id` = `vr`.`employee_id`) and (`vr`.`status` = 'approved')))) left join `request_date_ranges` `rdr` on((`vr`.`id` = `rdr`.`request_id`))) GROUP BY `u`.`id`, `u`.`full_name`, `u`.`email`, `u`.`employee_number`, `u`.`position`, `vr`.`request_type`, `vr`.`status`, year(`vr`.`created_at`) ;
 
 --
--- Índices para tablas volcadas
+-- Indexes for dumped tables
 --
 
 --
--- Indices de la tabla `user_day_adjustments`
---
-ALTER TABLE `user_day_adjustments`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `adjustment_number` (`adjustment_number`),
-  ADD KEY `user_id` (`user_id`),
-  ADD KEY `adjusted_by` (`adjusted_by`);
-
---
--- Indices de la tabla `approval_tokens`
+-- Indexes for table `approval_tokens`
 --
 ALTER TABLE `approval_tokens`
   ADD PRIMARY KEY (`id`),
@@ -192,14 +183,14 @@ ALTER TABLE `approval_tokens`
   ADD KEY `request_id` (`request_id`);
 
 --
--- Indices de la tabla `request_date_ranges`
+-- Indexes for table `request_date_ranges`
 --
 ALTER TABLE `request_date_ranges`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_request_date_ranges_request` (`request_id`);
 
 --
--- Indices de la tabla `request_history`
+-- Indexes for table `request_history`
 --
 ALTER TABLE `request_history`
   ADD PRIMARY KEY (`id`),
@@ -207,13 +198,13 @@ ALTER TABLE `request_history`
   ADD KEY `performed_by` (`performed_by`);
 
 --
--- Indices de la tabla `sessions`
+-- Indexes for table `sessions`
 --
 ALTER TABLE `sessions`
   ADD PRIMARY KEY (`session_id`);
 
 --
--- Indices de la tabla `users`
+-- Indexes for table `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
@@ -222,7 +213,16 @@ ALTER TABLE `users`
   ADD KEY `manager_id` (`manager_id`);
 
 --
--- Indices de la tabla `vacation_requests`
+-- Indexes for table `user_day_adjustments`
+--
+ALTER TABLE `user_day_adjustments`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `adjustment_number` (`adjustment_number`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `adjusted_by` (`adjusted_by`);
+
+--
+-- Indexes for table `vacation_requests`
 --
 ALTER TABLE `vacation_requests`
   ADD PRIMARY KEY (`id`),
@@ -233,83 +233,83 @@ ALTER TABLE `vacation_requests`
   ADD KEY `idx_vacation_requests_year` (`created_at`);
 
 --
--- AUTO_INCREMENT de las tablas volcadas
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT de la tabla `user_day_adjustments`
---
-ALTER TABLE `user_day_adjustments`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `approval_tokens`
+-- AUTO_INCREMENT for table `approval_tokens`
 --
 ALTER TABLE `approval_tokens`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `request_date_ranges`
+-- AUTO_INCREMENT for table `request_date_ranges`
 --
 ALTER TABLE `request_date_ranges`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `request_history`
+-- AUTO_INCREMENT for table `request_history`
 --
 ALTER TABLE `request_history`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `users`
+-- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `vacation_requests`
+-- AUTO_INCREMENT for table `user_day_adjustments`
+--
+ALTER TABLE `user_day_adjustments`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `vacation_requests`
 --
 ALTER TABLE `vacation_requests`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
--- Restricciones para tablas volcadas
+-- Constraints for dumped tables
 --
 
 --
--- Filtros para la tabla `user_day_adjustments`
---
-ALTER TABLE `user_day_adjustments`
-  ADD CONSTRAINT `user_day_adjustments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
-  ADD CONSTRAINT `user_day_adjustments_ibfk_2` FOREIGN KEY (`adjusted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
-
---
--- Filtros para la tabla `approval_tokens`
+-- Constraints for table `approval_tokens`
 --
 ALTER TABLE `approval_tokens`
   ADD CONSTRAINT `approval_tokens_ibfk_1` FOREIGN KEY (`request_id`) REFERENCES `vacation_requests` (`id`);
 
 --
--- Filtros para la tabla `request_date_ranges`
+-- Constraints for table `request_date_ranges`
 --
 ALTER TABLE `request_date_ranges`
   ADD CONSTRAINT `request_date_ranges_ibfk_1` FOREIGN KEY (`request_id`) REFERENCES `vacation_requests` (`id`) ON DELETE CASCADE;
 
 --
--- Filtros para la tabla `request_history`
+-- Constraints for table `request_history`
 --
 ALTER TABLE `request_history`
   ADD CONSTRAINT `request_history_ibfk_1` FOREIGN KEY (`request_id`) REFERENCES `vacation_requests` (`id`),
   ADD CONSTRAINT `request_history_ibfk_2` FOREIGN KEY (`performed_by`) REFERENCES `users` (`id`);
 
 --
--- Filtros para la tabla `users`
+-- Constraints for table `users`
 --
 ALTER TABLE `users`
   ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`manager_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
--- Filtros para la tabla `vacation_requests`
+-- Constraints for table `user_day_adjustments`
+--
+ALTER TABLE `user_day_adjustments`
+  ADD CONSTRAINT `user_day_adjustments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `user_day_adjustments_ibfk_2` FOREIGN KEY (`adjusted_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `vacation_requests`
 --
 ALTER TABLE `vacation_requests`
   ADD CONSTRAINT `vacation_requests_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `users` (`id`),
