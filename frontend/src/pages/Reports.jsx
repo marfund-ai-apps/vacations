@@ -28,12 +28,11 @@ export default function Reports() {
     const handleExportCSV = () => {
         if (!reportData.length) return;
 
-        const headers = ["ID", "Código", "Nombre", "Email", "Posición", "Días Base", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "Saldo Final", "Total Solicitudes"];
+        const headers = ["Código Colaborador", "Nombre", "Email", "Posición", "Días Base", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "Saldo Final", "Total Solicitudes"];
         const rows = reportData.map(emp => {
             const vacDays = parseFloat(emp.vacation_days) || 0;
             const baseDays = parseFloat(emp.base_vacation_days) || 0;
             return [
-                emp.id,
                 emp.employee_number || '',
                 `"${emp.full_name}"`,
                 emp.email,

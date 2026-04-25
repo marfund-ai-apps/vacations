@@ -171,11 +171,11 @@ export default function Admin() {
             ? `supervisor_${managers.find(m => String(m.id) === String(filterManagerId))?.full_name?.replace(/\s+/g, '_') || filterManagerId}`
             : 'todos';
 
-        const headers = ['Nombre', 'Correo', 'No. Colaborador', 'Cargo', 'Rol', 'Supervisor Inmediato', 'Días Vac.'];
+        const headers = ['Código Colaborador', 'Nombre', 'Correo', 'Cargo', 'Rol', 'Supervisor Inmediato', 'Días Vac.'];
         const rows = filteredUsers.map(u => [
+            u.employee_number || '',
             `"${u.full_name}"`,
             u.email,
-            u.employee_number || '',
             `"${u.position || ''}"`,
             u.role,
             `"${u.manager_name || ''}"`,
