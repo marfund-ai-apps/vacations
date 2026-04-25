@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { Pencil, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pencil, Trash2, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 'Todos'];
 
@@ -138,6 +138,34 @@ export default function Admin() {
         }
     };
 
+    const handleExportCSV = () => {
+        const label = filterManagerId
+            ? `supervisor_${managers.find(m => String(m.id) === String(filterManagerId))?.full_name?.replace(/\s+/g, '_') || filterManagerId}`
+            : 'todos';
+
+        const headers = ['Nombre', 'Correo', 'No. Colaborador', 'Cargo', 'Rol', 'Supervisor Inmediato', 'Días Vac.'];
+        const rows = filteredUsers.map(u => [
+            `"${u.full_name}"`,
+            u.email,
+            u.employee_number || '',
+            `"${u.position || ''}"`,
+            u.role,
+            `"${u.manager_name || ''}"`,
+            u.base_vacation_days || 15
+        ]);
+
+        const csv = 'data:text/csv;charset=utf-8,'
+            + headers.join(',') + '\n'
+            + rows.map(r => r.join(',')).join('\n');
+
+        const link = document.createElement('a');
+        link.setAttribute('href', encodeURI(csv));
+        link.setAttribute('download', `colaboradores_${label}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -164,6 +192,16 @@ export default function Admin() {
                             Ver Inactivos
                         </Link>
                     )}
+                    <button
+                        type="button"
+                        onClick={handleExportCSV}
+                        className="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                        title={`Exportar ${filterManagerId ? 'filtrados' : 'todos'} a CSV`}
+                    >
+                        <Download className="w-4 h-4 mr-2 text-gray-500" />
+                        Exportar CSV
+                        {filterManagerId && <span className="ml-1 text-xs text-indigo-600">(filtrado)</span>}
+                    </button>
                     <button
                         type="button"
                         onClick={() => setIsCreating(true)}
