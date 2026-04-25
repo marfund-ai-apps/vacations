@@ -32,7 +32,10 @@ router.put('/:id/deactivate', requireRole('hr_admin', 'super_admin'), userContro
 // Activar usuario
 router.put('/:id/activate', requireRole('super_admin'), userController.activateUser);
 
-// Carga masiva de saldos iniciales desde Excel
+// Vista previa de saldos antes de importar (no guarda en DB)
+router.post('/preview-balances', requireRole('hr_admin', 'super_admin'), upload.single('file'), importController.previewBalances);
+
+// Carga masiva de saldos iniciales desde CSV o Excel
 router.post('/import-balances', requireRole('hr_admin', 'super_admin'), upload.single('file'), importController.importInitialBalances);
 
 // Historial de ajustes de días de un usuario

@@ -27,28 +27,57 @@ export default function Admin() {
     // Modal resumen detallado del colaborador
     const [detailUserId, setDetailUserId] = useState(null);
 
-    // Carga de saldos desde Excel
-    const [importResult, setImportResult] = useState(null);
+    // Carga de saldos desde CSV — flujo de dos pasos: previsualizar → confirmar
+    const [importFile, setImportFile] = useState(null);
+    const [importPreview, setImportPreview] = useState(null);
     const [importing, setImporting] = useState(false);
+    const [importConfirming, setImportConfirming] = useState(false);
+    const [importResult, setImportResult] = useState(null);
 
-    const handleImportFile = async (e) => {
+    const handleImportFileSelected = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         e.target.value = '';
+        setImportFile(file);
         setImporting(true);
         try {
             const formData = new FormData();
             formData.append('file', file);
+            const res = await api.post('/users/preview-balances', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setImportPreview({ ...res.data, filename: file.name });
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'El archivo no cumple con el formato requerido.');
+            setImportFile(null);
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    const handleImportConfirm = async () => {
+        if (!importFile) return;
+        setImportConfirming(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', importFile);
             const res = await api.post('/users/import-balances', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
+            setImportPreview(null);
+            setImportFile(null);
             setImportResult(res.data);
             fetchData();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Error al procesar el archivo');
         } finally {
-            setImporting(false);
+            setImportConfirming(false);
         }
+    };
+
+    const handleImportCancel = () => {
+        setImportPreview(null);
+        setImportFile(null);
     };
 
     // Filtros y paginación
@@ -232,11 +261,11 @@ export default function Admin() {
                     </button>
                     <label
                         className={`inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 cursor-pointer ${importing ? 'opacity-60 pointer-events-none' : ''}`}
-                        title="Cargar saldos iniciales desde Excel (.xlsx)"
+                        title="Cargar saldos iniciales desde CSV"
                     >
                         <Upload className="w-4 h-4 mr-2 text-gray-500" />
-                        {importing ? 'Cargando...' : 'Cargar Saldos'}
-                        <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportFile} disabled={importing} />
+                        {importing ? 'Leyendo...' : 'Cargar Saldos'}
+                        <input type="file" accept=".csv" className="hidden" onChange={handleImportFileSelected} disabled={importing} />
                     </label>
                     <button
                         type="button"
@@ -497,6 +526,104 @@ export default function Admin() {
                 </div>
             )}
         </div>
+
+        {/* Modal: Previsualización de saldos antes de confirmar */}
+        {importPreview && !importResult && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+                    {/* Header */}
+                    <div className="px-6 py-4 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900">Previsualización de Carga de Saldos</h3>
+                        <p className="text-xs text-gray-400 mt-0.5 font-mono">{importPreview.filename}</p>
+                    </div>
+
+                    {/* Resumen */}
+                    <div className="px-6 pt-4 flex gap-3">
+                        <div className="flex-1 rounded-lg bg-green-50 ring-1 ring-green-200 px-3 py-2 text-center">
+                            <p className="text-xs text-green-600 font-medium">Colaboradores encontrados</p>
+                            <p className="text-xl font-bold text-green-700">{importPreview.total_found}</p>
+                        </div>
+                        <div className="flex-1 rounded-lg bg-yellow-50 ring-1 ring-yellow-200 px-3 py-2 text-center">
+                            <p className="text-xs text-yellow-600 font-medium">No encontrados</p>
+                            <p className="text-xl font-bold text-yellow-600">{importPreview.total_not_found}</p>
+                        </div>
+                        {importPreview.total_errors > 0 && (
+                            <div className="flex-1 rounded-lg bg-red-50 ring-1 ring-red-200 px-3 py-2 text-center">
+                                <p className="text-xs text-red-600 font-medium">Con errores</p>
+                                <p className="text-xl font-bold text-red-600">{importPreview.total_errors}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Tabla de previsualización */}
+                    <div className="flex-1 overflow-y-auto px-6 py-4">
+                        <table className="min-w-full text-sm divide-y divide-gray-200 rounded-lg ring-1 ring-gray-200 overflow-hidden">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="py-2.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</th>
+                                    <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Colaborador</th>
+                                    <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Saldo Actual</th>
+                                    <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Saldo Nuevo</th>
+                                    <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-100">
+                                {importPreview.rows.map((row, i) => (
+                                    <tr key={i} className={
+                                        row.error ? 'bg-red-50' :
+                                        !row.found ? 'bg-yellow-50' :
+                                        'bg-green-50'
+                                    }>
+                                        <td className="py-2.5 pl-4 pr-3 font-mono font-semibold text-xs text-indigo-600">{row.employee_number}</td>
+                                        <td className="px-3 py-2.5 text-gray-700">
+                                            {row.full_name || <span className="text-gray-400 italic">No encontrado</span>}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center text-gray-500">
+                                            {row.current_balance !== null ? row.current_balance : '—'}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center font-semibold text-gray-800">
+                                            {row.new_balance !== null ? row.new_balance : <span className="text-red-500 text-xs">Inválido</span>}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            {row.error ? (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Error</span>
+                                            ) : row.found ? (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">OK</span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">No encontrado</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                        <p className="text-xs text-gray-400">
+                            Solo se actualizarán los <strong>{importPreview.total_found}</strong> colaboradores encontrados y sin error.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleImportCancel}
+                                disabled={importConfirming}
+                                className="rounded-md px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleImportConfirm}
+                                disabled={importConfirming || importPreview.total_found === 0}
+                                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+                            >
+                                {importConfirming ? 'Cargando...' : `Confirmar carga (${importPreview.total_found})`}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Modal: Resultado de importación de saldos */}
         {importResult && (
