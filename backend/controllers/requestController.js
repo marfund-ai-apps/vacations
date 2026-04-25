@@ -114,28 +114,27 @@ exports.listRequests = async (req, res) => {
              WHERE vr.employee_id = ? ORDER BY vr.created_at DESC`;
         params = [user.id];
     } else if (scope === 'team') {
-        query = `SELECT vr.*, u.full_name as employee_name, u.email as employee_email
+        query = `SELECT vr.*, u.full_name as employee_name, u.email as employee_email, u.employee_number
              FROM vacation_requests vr JOIN users u ON vr.employee_id = u.id
              WHERE vr.manager_id = ? ORDER BY vr.created_at DESC`;
         params = [user.id];
     } else if (scope === 'all' && ['hr_admin', 'super_admin'].includes(user.role)) {
         query = `SELECT vr.*, u.full_name as employee_name, u.email as employee_email,
-                    m.full_name as manager_name
-             FROM vacation_requests vr 
+                    u.employee_number, m.full_name as manager_name
+             FROM vacation_requests vr
              JOIN users u ON vr.employee_id = u.id
              LEFT JOIN users m ON vr.manager_id = m.id
              ORDER BY vr.created_at DESC`;
     } else {
-        // Fallback default based on role
         if (user.role === 'manager') {
-            query = `SELECT vr.*, u.full_name as employee_name, u.email as employee_email
+            query = `SELECT vr.*, u.full_name as employee_name, u.email as employee_email, u.employee_number
                   FROM vacation_requests vr JOIN users u ON vr.employee_id = u.id
                   WHERE vr.manager_id = ? ORDER BY vr.created_at DESC`;
             params = [user.id];
         } else {
             query = `SELECT vr.*, u.full_name as employee_name, u.email as employee_email,
-                         m.full_name as manager_name
-                  FROM vacation_requests vr 
+                         u.employee_number, m.full_name as manager_name
+                  FROM vacation_requests vr
                   JOIN users u ON vr.employee_id = u.id
                   LEFT JOIN users m ON vr.manager_id = m.id
                   ORDER BY vr.created_at DESC`;

@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const userController = require('../controllers/userController');
+const importController = require('../controllers/importController');
 const { isAuthenticated } = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
+
+// Multer en memoria (sin guardar en disco)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 router.use(isAuthenticated);
 
@@ -26,6 +31,9 @@ router.put('/:id/deactivate', requireRole('hr_admin', 'super_admin'), userContro
 
 // Activar usuario
 router.put('/:id/activate', requireRole('super_admin'), userController.activateUser);
+
+// Carga masiva de saldos iniciales desde Excel
+router.post('/import-balances', requireRole('hr_admin', 'super_admin'), upload.single('file'), importController.importInitialBalances);
 
 // Historial de ajustes de días de un usuario
 router.get('/:id/day-adjustments', userController.getDayAdjustments);

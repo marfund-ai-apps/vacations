@@ -95,6 +95,7 @@ export default function PendingApprovals() {
                                         pendingRequests.map((req) => (
                                             <tr key={req.id}>
                                                 <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                    {req.employee_number && <div className="text-xs font-mono text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     <div className="font-medium text-gray-900">{req.employee_name}</div>
                                                     <div className="text-gray-500">{req.employee_email}</div>
                                                 </td>
@@ -153,6 +154,7 @@ export default function PendingApprovals() {
                                         processedRequests.map((req) => (
                                             <tr key={req.id} className="opacity-75">
                                                 <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                    {req.employee_number && <div className="text-xs font-mono text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     <div className="font-medium text-gray-900">{req.employee_name}</div>
                                                     <div className="text-gray-500">{req.employee_email}</div>
                                                 </td>

@@ -12,6 +12,9 @@ router.get('/employee-report', reportController.getMyReport);
 // Reporte individual
 router.get('/employee/:id', requireRole('hr_admin', 'super_admin', 'manager'), reportController.getEmployeeReport);
 
+// Historial detallado unificado del colaborador (para modal en Admin)
+router.get('/employee/:id/detail', requireRole('hr_admin', 'super_admin', 'manager'), reportController.getEmployeeDetail);
+
 // Reporte de todos (RRHH)
 router.get('/all', requireRole('hr_admin', 'super_admin'), reportController.getAllEmployeesReport);
 

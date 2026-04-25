@@ -113,7 +113,7 @@ CREATE TABLE `user_day_adjustments` (
   `user_id` int NOT NULL,
   `adjusted_by` int DEFAULT NULL,
   `days_added` decimal(5,2) NOT NULL,
-  `adjustment_type` enum('manual','monthly_auto') NOT NULL DEFAULT 'manual',
+  `adjustment_type` enum('manual','monthly_auto','initial_balance') NOT NULL DEFAULT 'manual',
   `reason` text NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

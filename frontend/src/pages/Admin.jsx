@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { Pencil, Trash2, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Pencil, Trash2, Search, ChevronLeft, ChevronRight, Download, FileBarChart2, Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import CollaboratorDetailModal from '../components/CollaboratorDetailModal';
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 'Todos'];
 
@@ -22,6 +23,33 @@ export default function Admin() {
     // Modal ajuste de días
     const [adjustModal, setAdjustModal] = useState(null);
     const [adjustForm, setAdjustForm] = useState({ days_added: '', reason: '' });
+
+    // Modal resumen detallado del colaborador
+    const [detailUserId, setDetailUserId] = useState(null);
+
+    // Carga de saldos desde Excel
+    const [importResult, setImportResult] = useState(null);
+    const [importing, setImporting] = useState(false);
+
+    const handleImportFile = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = '';
+        setImporting(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await api.post('/users/import-balances', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setImportResult(res.data);
+            fetchData();
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Error al procesar el archivo');
+        } finally {
+            setImporting(false);
+        }
+    };
 
     // Filtros y paginación
     const [searchTerm, setSearchTerm] = useState('');
@@ -202,6 +230,14 @@ export default function Admin() {
                         Exportar CSV
                         {filterManagerId && <span className="ml-1 text-xs text-indigo-600">(filtrado)</span>}
                     </button>
+                    <label
+                        className={`inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 cursor-pointer ${importing ? 'opacity-60 pointer-events-none' : ''}`}
+                        title="Cargar saldos iniciales desde Excel (.xlsx)"
+                    >
+                        <Upload className="w-4 h-4 mr-2 text-gray-500" />
+                        {importing ? 'Cargando...' : 'Cargar Saldos'}
+                        <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportFile} disabled={importing} />
+                    </label>
                     <button
                         type="button"
                         onClick={() => setIsCreating(true)}
@@ -400,6 +436,9 @@ export default function Admin() {
                                                             <button onClick={() => startEditing(u)} className="text-indigo-600 hover:text-indigo-900 inline-flex items-center">
                                                                 <Pencil className="w-4 h-4 mr-1" /> Editar
                                                             </button>
+                                                            <button onClick={() => setDetailUserId(u.id)} className="text-violet-600 hover:text-violet-900 inline-flex items-center" title="Ver resumen detallado">
+                                                                <FileBarChart2 className="w-4 h-4 mr-1" /> Reporte
+                                                            </button>
                                                             <button onClick={() => handleDeactivate(u.id, u.full_name)} className="text-red-600 hover:text-red-900 inline-flex items-center">
                                                                 <Trash2 className="w-4 h-4 mr-1" /> Desactivar
                                                             </button>
@@ -450,6 +489,61 @@ export default function Admin() {
                 </div>
             )}
         </div>
+
+        {/* Modal: Resultado de importación de saldos */}
+        {importResult && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600" /> Resultado de Carga
+                    </h3>
+
+                    <div className="space-y-3 text-sm">
+                        <div className="flex items-center gap-2 text-green-700 bg-green-50 rounded-lg px-3 py-2">
+                            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                            <span><strong>{importResult.procesados}</strong> colaborador(es) actualizados correctamente</span>
+                        </div>
+
+                        {importResult.no_encontrados?.length > 0 && (
+                            <div className="bg-yellow-50 rounded-lg px-3 py-2">
+                                <p className="font-medium text-yellow-700 flex items-center gap-1 mb-1">
+                                    <AlertCircle className="w-4 h-4" /> Códigos no encontrados ({importResult.no_encontrados.length})
+                                </p>
+                                <ul className="text-yellow-600 list-disc list-inside text-xs space-y-0.5">
+                                    {importResult.no_encontrados.map(c => <li key={c}>{c}</li>)}
+                                </ul>
+                            </div>
+                        )}
+
+                        {importResult.errores?.length > 0 && (
+                            <div className="bg-red-50 rounded-lg px-3 py-2">
+                                <p className="font-medium text-red-700 flex items-center gap-1 mb-1">
+                                    <AlertCircle className="w-4 h-4" /> Errores ({importResult.errores.length})
+                                </p>
+                                <ul className="text-red-600 list-disc list-inside text-xs space-y-0.5">
+                                    {importResult.errores.map((e, i) => <li key={i}>{e.codigo}: {e.motivo}</li>)}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-5 flex justify-end">
+                        <button onClick={() => setImportResult(null)}
+                            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Modal: Resumen detallado del colaborador */}
+        {detailUserId && (
+            <CollaboratorDetailModal
+                userId={detailUserId}
+                onClose={() => setDetailUserId(null)}
+            />
+        )}
 
         {/* Modal: Agregar días manualmente */}
         {adjustModal && (

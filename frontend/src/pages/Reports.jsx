@@ -28,12 +28,13 @@ export default function Reports() {
     const handleExportCSV = () => {
         if (!reportData.length) return;
 
-        const headers = ["ID", "Nombre", "Email", "Posición", "Días Base", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "Saldo Final", "Total Solicitudes"];
+        const headers = ["ID", "Código", "Nombre", "Email", "Posición", "Días Base", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "Saldo Final", "Total Solicitudes"];
         const rows = reportData.map(emp => {
             const vacDays = parseFloat(emp.vacation_days) || 0;
             const baseDays = parseFloat(emp.base_vacation_days) || 0;
             return [
                 emp.id,
+                emp.employee_number || '',
                 `"${emp.full_name}"`,
                 emp.email,
                 `"${emp.position || ''}"`,
@@ -103,7 +104,8 @@ export default function Reports() {
                                 <table className="min-w-full divide-y divide-gray-300">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Colaborador</th>
+                                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 w-24">Código</th>
+                                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-blue-50">Días Base</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-red-700">Vacaciones</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Permisos</th>
@@ -114,7 +116,7 @@ export default function Reports() {
                                     <tbody className="divide-y divide-gray-200 bg-white">
                                         {reportData.length === 0 ? (
                                             <tr>
-                                                <td colSpan="6" className="py-8 text-center text-sm text-gray-500">
+                                                <td colSpan="7" className="py-8 text-center text-sm text-gray-500">
                                                     No hay datos para el año seleccionado.
                                                 </td>
                                             </tr>
@@ -126,6 +128,9 @@ export default function Reports() {
                                                 return (
                                                 <tr key={emp.id}>
                                                     <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                        <span className="font-mono text-indigo-600 text-xs">{emp.employee_number || '—'}</span>
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm sm:pl-3">
                                                         <div className="font-medium text-gray-900">{emp.full_name}</div>
                                                         <div className="text-gray-500">{emp.email}</div>
                                                     </td>
