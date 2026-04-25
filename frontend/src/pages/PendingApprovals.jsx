@@ -28,15 +28,16 @@ export default function PendingApprovals() {
     }, []);
 
     const handleDecision = async (id, decision) => {
-        const comments = window.prompt(`¿Desea agregar algún comentario para ${decision === 'approved' ? 'aprobar' : 'rechazar'} esta solicitud? (Opcional)`);
+        const accion = decision === 'approved' ? 'aprobar' : 'rechazar';
+        const confirmed = window.confirm(`¿Está seguro que desea ${accion} esta solicitud?`);
 
-        if (comments === null) return; // Canceló el prompt
+        if (!confirmed) return;
 
         setSubmittingId(id);
         try {
             await api.put(`/requests/${id}/decision`, {
                 decision,
-                comments
+                comments: ''
             });
             toast.success(`Solicitud ${decision === 'approved' ? 'aprobada' : 'rechazada'} exitosamente`);
             fetchTeamRequests(); // Recargar la lista
