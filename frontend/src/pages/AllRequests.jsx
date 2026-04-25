@@ -88,7 +88,7 @@ export default function AllRequests() {
                                                     {req.request_number}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                                    {req.employee_number && <div className="text-xs font-mono text-indigo-600 mb-0.5">{req.employee_number}</div>}
+                                                    {req.employee_number && <div className="text-xs font-mono font-semibold text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     {req.employee_name}
                                                     <div className="text-xs text-gray-500">{req.employee_email}</div>
                                                 </td>
@@ -147,7 +147,7 @@ export default function AllRequests() {
                                                     </span>
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                                    {req.employee_number && <div className="text-xs font-mono text-indigo-600 mb-0.5">{req.employee_number}</div>}
+                                                    {req.employee_number && <div className="text-xs font-mono font-semibold text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     {req.employee_name}
                                                     <div className="text-xs text-gray-500">{req.employee_email}</div>
                                                 </td>

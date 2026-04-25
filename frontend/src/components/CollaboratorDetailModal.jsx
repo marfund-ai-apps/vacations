@@ -54,7 +54,7 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     {data.user.employee_number && (
-                                        <span className="font-mono text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
+                                        <span className="font-mono font-semibold text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
                                             {data.user.employee_number}
                                         </span>
                                     )}

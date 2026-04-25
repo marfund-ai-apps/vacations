@@ -302,7 +302,8 @@ export default function Admin() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 w-48">Colaborador</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 w-24">Código</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-44">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-36">Cargo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-28">Rol Sistema</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-40">Supervisor Inmediato</th>
@@ -315,15 +316,17 @@ export default function Admin() {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {isCreating && (
                                         <tr className="bg-indigo-50">
-                                            <td className="py-4 pl-4 pr-3 text-sm sm:pl-6 space-y-2">
+                                            <td className="py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                <input type="text" placeholder="Código" value={newForm.employee_number}
+                                                    onChange={(e) => setNewForm({ ...newForm, employee_number: e.target.value })}
+                                                    className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
+                                            </td>
+                                            <td className="px-3 py-4 text-sm sm:pl-3 space-y-2">
                                                 <input type="text" placeholder="Nombre Completo" value={newForm.full_name}
                                                     onChange={(e) => setNewForm({ ...newForm, full_name: e.target.value })}
                                                     className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
                                                 <input type="email" placeholder="Correo Electrónico" value={newForm.email}
                                                     onChange={(e) => setNewForm({ ...newForm, email: e.target.value })}
-                                                    className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
-                                                <input type="text" placeholder="No. Colaborador" value={newForm.employee_number}
-                                                    onChange={(e) => setNewForm({ ...newForm, employee_number: e.target.value })}
                                                     className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
                                             </td>
                                             <td className="px-3 py-4 text-sm text-gray-500">
@@ -369,7 +372,12 @@ export default function Admin() {
                                         const isEditing = editingUserId === u.id;
                                         return (
                                             <tr key={u.id} className="align-top">
-                                                <td className="py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                    <span className="font-mono font-semibold text-indigo-600 text-xs">
+                                                        {u.employee_number || '—'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 py-4 text-sm">
                                                     <div className="font-medium text-gray-900">{u.full_name}</div>
                                                     <div className="text-gray-500 text-xs">{u.email}</div>
                                                 </td>

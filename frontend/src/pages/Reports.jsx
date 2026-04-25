@@ -128,7 +128,7 @@ export default function Reports() {
                                                 return (
                                                 <tr key={emp.id}>
                                                     <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                                                        <span className="font-mono text-indigo-600 text-xs">{emp.employee_number || '—'}</span>
+                                                        <span className="font-mono font-semibold text-indigo-600 text-xs">{emp.employee_number || '—'}</span>
                                                     </td>
                                                     <td className="whitespace-nowrap px-3 py-4 text-sm sm:pl-3">
                                                         <div className="font-medium text-gray-900">{emp.full_name}</div>
