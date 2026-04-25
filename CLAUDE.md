@@ -59,7 +59,7 @@ npm run preview  # Preview production build
 |--------|------|-------|
 | `/api/auth` | `routes/authRoutes.js` | Google OAuth flow, logout, `GET /me` |
 | `/api/requests` | `routes/requestRoutes.js` | Crear, listar, aprobar/rechazar; endpoint público de token |
-| `/api/users` | `routes/userRoutes.js` | CRUD usuarios (admin), ajustes de días, importación Excel |
+| `/api/users` | `routes/userRoutes.js` | CRUD usuarios (admin), ajustes de días, importación CSV |
 | `/api/reports` | `routes/reportRoutes.js` | Reportes individuales, general y detalle del colaborador |
 
 ### Endpoints de días y reportes
@@ -67,7 +67,8 @@ npm run preview  # Preview production build
 |--------|-------|------|-------------|
 | `GET` | `/api/users/:id/day-adjustments` | any authenticated | Historial de ajustes del usuario |
 | `POST` | `/api/users/:id/day-adjustments` | `manager`, `hr_admin`, `super_admin` | Agregar días manualmente |
-| `POST` | `/api/users/import-balances` | `hr_admin`, `super_admin` | Carga masiva de saldos desde Excel |
+| `POST` | `/api/users/preview-balances` | `hr_admin`, `super_admin` | Previsualización de saldos desde CSV (sin guardar) |
+| `POST` | `/api/users/import-balances` | `hr_admin`, `super_admin` | Carga masiva de saldos desde CSV |
 | `GET` | `/api/reports/employee-report` | any authenticated | Dashboard personal |
 | `GET` | `/api/reports/employee/:id` | `manager`, `hr_admin`, `super_admin` | Reporte individual |
 | `GET` | `/api/reports/employee/:id/detail` | `manager`, `hr_admin`, `super_admin` | Historial unificado del colaborador |
@@ -100,11 +101,13 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
 - Acción: suma `1.25` a `base_vacation_days` de todos los usuarios activos; inserta registro `monthly_auto` en `user_day_adjustments` por cada usuario con número `VAC-`
 - Se inicia en `server.js` dentro del callback de `app.listen`
 
-### Importación masiva de saldos desde Excel
-- Endpoint: `POST /api/users/import-balances` (multer en memoria, max 5MB)
-- Archivo `.xlsx` con columnas exactas: **`Código Colaborador`** | **`Saldo Inicial`**
-- Busca usuario por `employee_number`, actualiza `base_vacation_days`, inserta registro `initial_balance` en `user_day_adjustments`
-- Retorna: `{ procesados, detalle_procesados, no_encontrados, errores }`
+### Importación masiva de saldos desde CSV — flujo de dos pasos
+- Formato aceptado: **CSV** (`.csv`); también acepta `.xlsx` por retrocompatibilidad
+- Columnas requeridas: **`No. Colaborador`** | **`Saldo Inicial`** (también acepta `Código Colaborador` como alias)
+- El parser CSV maneja BOM UTF-8 (`﻿`) que Excel agrega al exportar en Windows
+- **Paso 1 — Preview**: `POST /api/users/preview-balances` — parsea el archivo, consulta la BD y devuelve `{ rows, total_found, total_not_found, total_errors }` **sin guardar nada**
+- **Paso 2 — Confirmar**: `POST /api/users/import-balances` — ejecuta la carga real; actualiza `base_vacation_days` e inserta registro `initial_balance` en `user_day_adjustments`
+- En el frontend (`Admin.jsx`): seleccionar archivo → modal de previsualización con tabla (verde=OK, amarillo=no encontrado, rojo=error) → botón "Confirmar carga (N)" → modal de resultado
 - Implementado en `backend/controllers/importController.js`
 
 ### Sistema de colores (movimientos de días)
@@ -144,7 +147,7 @@ All routes are implemented. Role-gated routes:
 - Filtro dropdown por Supervisor Inmediato
 - Paginación: 5 / 10 / 20 / Todos con flechas prev/next
 - **Exportar CSV**: exporta colaboradores del filtro activo con Código Colaborador como primera columna
-- **Cargar Saldos**: carga Excel con saldos iniciales (abre `input[file]` oculto)
+- **Cargar Saldos**: carga CSV con saldos iniciales (flujo de dos pasos: previsualización → confirmar)
 - **+ Días**: modal para agregar días manualmente con motivo
 - **Reporte**: abre `CollaboratorDetailModal` con historial unificado del colaborador
 
@@ -175,7 +178,8 @@ All routes are implemented. Role-gated routes:
 - **Zombie nodemon**: Si el puerto está en uso tras un fallo, matar el proceso nodemon anterior.
 - **approval_tokens.action enum**: Valores válidos `'approve'` / `'reject'`. El campo `vacation_requests.status` usa `'approved'`/`'rejected'`. No confundirlos.
 - **MySQL ONLY_FULL_GROUP_BY**: Activo en producción. Nunca mezclar `SUM()` con columnas no agrupadas en el mismo SELECT.
-- **import-balances requiere columnas exactas**: El Excel debe tener `Código Colaborador` y `Saldo Inicial` como encabezados exactos (sensible a mayúsculas y espacios).
+- **import-balances requiere columnas exactas**: El CSV debe tener `No. Colaborador` y `Saldo Inicial` (o `Código Colaborador` como alias). Sensible a mayúsculas y espacios. El parser maneja BOM UTF-8 de Excel automáticamente.
+- **preview-balances no guarda nada**: Es solo lectura — úsalo para validar el archivo antes de ejecutar la carga real.
 
 ## Environment Variables
 
@@ -193,7 +197,7 @@ See `.env.example` (root) for the full template with Spanish comments.
 - `backend/jobs/monthlyVacationIncrement.js` — Cron incremento 1.25 días mensual
 - `backend/controllers/userController.js` — `generateAdjustmentNumber()`, `addDayAdjustment()`, `getDayAdjustments()`
 - `backend/controllers/reportController.js` — `getMyReport()`, `getEmployeeDetail()`, `getAllEmployeesReport()`
-- `backend/controllers/importController.js` — Carga masiva de saldos desde Excel (.xlsx)
+- `backend/controllers/importController.js` — `previewBalances()` (previsualización sin guardar) + `importInitialBalances()` (carga real desde CSV)
 - `frontend/src/App.jsx` — Definición de rutas
 - `frontend/src/context/AuthContext.jsx` — Estado global de autenticación
 - `frontend/src/utils/dateUtils.js` — `formatDate()` y `formatDateTime()` (dd/mm/yyyy, UTC-6)
