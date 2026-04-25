@@ -73,13 +73,13 @@ export default function Admin() {
                 ...newForm,
                 manager_id: newForm.manager_id || null
             });
-            toast.success("Empleado creado correctamente");
+            toast.success("Colaborador creado correctamente");
             setIsCreating(false);
             setNewForm({ full_name: '', email: '', employee_number: '', position: '', base_vacation_days: 15, role: 'employee', manager_id: '' });
             fetchData();
         } catch (error) {
             console.error("Error creating user:", error);
-            toast.error(error.response?.data?.message || "Error al crear empleado");
+            toast.error(error.response?.data?.message || "Error al crear colaborador");
         }
     };
 
@@ -112,11 +112,11 @@ export default function Admin() {
         if (!window.confirm(`¿Estás seguro de que deseas desactivar a ${name}? Su historial se mantendrá pero ya no tendrá acceso al sistema.`)) return;
         try {
             await api.put(`/users/${id}/deactivate`);
-            toast.success("Empleado desactivado correctamente");
+            toast.success("Colaborador desactivado correctamente");
             fetchData();
         } catch (error) {
             console.error("Error deactivating user:", error);
-            toast.error("Error al desactivar el empleado");
+            toast.error("Error al desactivar el colaborador");
         }
     };
     if (loading) {
@@ -134,7 +134,7 @@ export default function Admin() {
                 <div className="sm:flex-auto">
                     <h1 className="text-xl font-semibold leading-6 text-gray-900">Administración de Usuarios</h1>
                     <p className="mt-2 text-sm text-gray-700">
-                        Gestiona roles, puestos y asigna supervisores inmediatos a los empleados.
+                        Gestiona roles, puestos y asigna supervisores inmediatos a los colaboradores.
                     </p>
                 </div>
                 <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex space-x-3">
@@ -151,7 +151,7 @@ export default function Admin() {
                         onClick={() => setIsCreating(true)}
                         className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     >
-                        Agregar Empleado
+                        Agregar Colaborador
                     </button>
                 </div>
             </div>
@@ -193,7 +193,7 @@ export default function Admin() {
                                                 />
                                                 <input
                                                     type="text"
-                                                    placeholder="No. Empleado"
+                                                    placeholder="No. Colaborador"
                                                     value={newForm.employee_number}
                                                     onChange={(e) => setNewForm({ ...newForm, employee_number: e.target.value })}
                                                     className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6"
@@ -214,7 +214,7 @@ export default function Admin() {
                                                     onChange={(e) => setNewForm({ ...newForm, role: e.target.value })}
                                                     className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6"
                                                 >
-                                                    <option value="employee">Empleado</option>
+                                                    <option value="employee">Colaborador</option>
                                                     <option value="manager">Manager</option>
                                                     <option value="hr_admin">RRHH Admin</option>
                                                     <option value="super_admin">Super Admin</option>
@@ -273,7 +273,7 @@ export default function Admin() {
                                                             onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
                                                             className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6"
                                                         >
-                                                            <option value="employee">Empleado</option>
+                                                            <option value="employee">Colaborador</option>
                                                             <option value="manager">Manager</option>
                                                             <option value="hr_admin">RRHH Admin</option>
                                                             <option value="super_admin">Super Admin</option>
@@ -353,7 +353,7 @@ export default function Admin() {
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-1">Agregar Días de Vacaciones</h3>
                         <p className="text-sm text-gray-500 mb-5">
-                            Empleado: <span className="font-medium text-gray-700">{adjustModal.userName}</span>
+                            Colaborador: <span className="font-medium text-gray-700">{adjustModal.userName}</span>
                         </p>
 
                         <div className="space-y-4">

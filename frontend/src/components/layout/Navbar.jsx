@@ -142,7 +142,7 @@ export default function Navbar() {
                                                     onClick={() => setIsAdminDropdownOpen(false)}
                                                     className={`${isActive('/admin') ? 'bg-gray-100' : ''} block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center`}
                                                 >
-                                                    <User className="w-4 h-4 mr-2" /> Empleados
+                                                    <User className="w-4 h-4 mr-2" /> Colaboradores
                                                 </Link>
                                             </div>
                                         </>
@@ -176,7 +176,7 @@ export default function Navbar() {
                                                 onClick={() => setIsUserDropdownOpen(false)}
                                                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                                             >
-                                                <User className="w-4 h-4 mr-2 text-gray-400" /> Ficha de Empleado
+                                                <User className="w-4 h-4 mr-2 text-gray-400" /> Ficha de Colaborador
                                             </Link>
                                             {showAdminMenu && (
                                                 <Link
@@ -184,7 +184,7 @@ export default function Navbar() {
                                                     onClick={() => setIsUserDropdownOpen(false)}
                                                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                                                 >
-                                                    <Settings className="w-4 h-4 mr-2 text-gray-400" /> Editar Empleado
+                                                    <Settings className="w-4 h-4 mr-2 text-gray-400" /> Editar Colaborador
                                                 </Link>
                                             )}
                                             <button
@@ -287,7 +287,7 @@ export default function Navbar() {
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className={`${isActive('/admin') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-600 hover:bg-gray-50'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center`}
                                 >
-                                    <Settings className="w-5 h-5 mr-3" /> Admin Empleados
+                                    <Settings className="w-5 h-5 mr-3" /> Admin Colaboradores
                                 </Link>
                             </>
                         )}
@@ -308,7 +308,7 @@ export default function Navbar() {
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 flex items-center"
                             >
-                                <User className="w-5 h-5 mr-3" /> Ficha de Empleado
+                                <User className="w-5 h-5 mr-3" /> Ficha de Colaborador
                             </Link>
                             {showAdminMenu && (
                                 <Link
@@ -316,7 +316,7 @@ export default function Navbar() {
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 flex items-center"
                                 >
-                                    <Settings className="w-5 h-5 mr-3" /> Editar Empleado
+                                    <Settings className="w-5 h-5 mr-3" /> Editar Colaborador
                                 </Link>
                             )}
                             <button

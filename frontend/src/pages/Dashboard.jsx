@@ -44,7 +44,7 @@ export default function Dashboard() {
 
     // Combinar solicitudes aprobadas (rojo) y ajustes de días (verde) en un solo timeline
     const approvedRequests = history
-        .filter(req => req.status === 'approved')
+        .filter(req => req.status === 'approved' && req.request_type === 'vacation')
         .map(req => ({
             id: `req-${req.id}`,
             type: 'debit',

@@ -10,13 +10,14 @@ exports.getMyReport = async (req, res) => {
     const [users] = await db.query('SELECT base_vacation_days FROM users WHERE id = ?', [id]);
     const baseDays = parseFloat(users.length ? users[0].base_vacation_days : 15);
 
-    // Días consumidos (solicitudes aprobadas del año actual)
+    // Días consumidos — SOLO vacaciones aprobadas (permisos y ausencias no descuentan)
     const [consumed] = await db.query(`
             SELECT COALESCE(SUM(rdr.business_days), 0) as total_consumed
             FROM vacation_requests vr
             JOIN request_date_ranges rdr ON vr.id = rdr.request_id
             WHERE vr.employee_id = ?
             AND vr.status = 'approved'
+            AND vr.request_type = 'vacation'
             AND YEAR(vr.created_at) = ?
         `, [id, year]);
 
@@ -126,20 +127,20 @@ exports.getAllEmployeesReport = async (req, res) => {
 
   try {
     const [rows] = await db.query(`
-      SELECT 
+      SELECT
         u.id, u.full_name, u.email, u.employee_number, u.position,
+        u.base_vacation_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'vacation' THEN rdr.business_days END), 0) as vacation_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'permission' THEN rdr.business_days END), 0) as permission_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'justified_absence' THEN rdr.business_days END), 0) as absence_days,
-        COALESCE(SUM(rdr.business_days), 0) as total_days,
         COUNT(DISTINCT vr.id) as total_requests
       FROM users u
-      LEFT JOIN vacation_requests vr ON u.id = vr.employee_id 
-           AND YEAR(vr.created_at) = ? 
+      LEFT JOIN vacation_requests vr ON u.id = vr.employee_id
+           AND YEAR(vr.created_at) = ?
            AND vr.status = 'approved'
       LEFT JOIN request_date_ranges rdr ON vr.id = rdr.request_id
       WHERE u.is_active = 1
-      GROUP BY u.id, u.full_name, u.email, u.employee_number, u.position
+      GROUP BY u.id, u.full_name, u.email, u.employee_number, u.position, u.base_vacation_days
       ORDER BY u.full_name
     `, [year]);
 

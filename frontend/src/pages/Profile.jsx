@@ -22,7 +22,7 @@ export default function Profile() {
                         )}
                         <div className="ml-4">
                             <h3 className="text-xl font-bold leading-6 text-gray-900">{user.full_name}</h3>
-                            <p className="mt-1 max-w-2xl text-sm text-gray-500">Ficha de Empleado (Solo Lectura)</p>
+                            <p className="mt-1 max-w-2xl text-sm text-gray-500">Ficha de Colaborador (Solo Lectura)</p>
                         </div>
                     </div>
                 </div>
@@ -36,7 +36,7 @@ export default function Profile() {
                         </div>
                         <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt className="text-sm font-medium text-gray-900 flex items-center">
-                                <FileText className="w-4 h-4 mr-2 text-gray-400" /> Número de Empleado
+                                <FileText className="w-4 h-4 mr-2 text-gray-400" /> Número de Colaborador
                             </dt>
                             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                                 {user.employee_number || 'No asignado'}

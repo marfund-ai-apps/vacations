@@ -59,6 +59,7 @@ export default function NewRequest() {
         ? calculateBusinessDays(formData.date_from, formData.date_to)
         : 0;
     const businessDays = halfDay ? Math.max(0, rawBusinessDays - 0.5) : rawBusinessDays;
+    const isVacation = formData.request_type === 'vacation';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -100,7 +101,13 @@ export default function NewRequest() {
     };
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        // Al cambiar a vacaciones, limpiar el motivo (no aplica)
+        if (name === 'request_type' && value === 'vacation') {
+            setFormData({ ...formData, request_type: value, reason: '' });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     return (
@@ -229,21 +236,29 @@ export default function NewRequest() {
                             )}
 
                             <div className="col-span-full">
-                                <label htmlFor="reason" className="block text-sm font-medium leading-6 text-gray-900">
+                                <label htmlFor="reason" className={`block text-sm font-medium leading-6 ${isVacation ? 'text-gray-400' : 'text-gray-900'}`}>
                                     Motivo / Justificación
+                                    {isVacation && <span className="ml-2 text-xs font-normal text-gray-400">(no aplica para vacaciones)</span>}
                                 </label>
                                 <div className="mt-2">
                                     <textarea
                                         id="reason"
                                         name="reason"
                                         rows={3}
-                                        required
+                                        required={!isVacation}
+                                        disabled={isVacation}
                                         value={formData.reason}
                                         onChange={handleChange}
-                                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                        placeholder={isVacation ? 'No aplica para solicitudes de vacaciones' : 'Escribe unas breves palabras sobre el motivo...'}
+                                        className={`block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset sm:text-sm sm:leading-6
+                                            ${isVacation
+                                                ? 'bg-gray-100 text-gray-400 ring-gray-200 cursor-not-allowed'
+                                                : 'text-gray-900 ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600'}`}
                                     />
                                 </div>
-                                <p className="mt-3 text-sm leading-6 text-gray-600">Escribe unas breves palabras sobre el motivo de la solicitud.</p>
+                                {!isVacation && (
+                                    <p className="mt-3 text-sm leading-6 text-gray-600">Escribe unas breves palabras sobre el motivo de la solicitud.</p>
+                                )}
                             </div>
 
                         </div>

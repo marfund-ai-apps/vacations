@@ -29,11 +29,11 @@ export default function InactiveUsers() {
         if (!window.confirm(`¿Estás seguro de que deseas reactivar a ${name}? Volverá a tener acceso al sistema y aparecerá en los listados activos.`)) return;
         try {
             await api.put(`/users/${id}/activate`);
-            toast.success("Empleado reactivado correctamente");
+            toast.success("Colaborador reactivado correctamente");
             fetchData();
         } catch (error) {
             console.error("Error activating user:", error);
-            toast.error("Error al reactivar el empleado");
+            toast.error("Error al reactivar el colaborador");
         }
     };
 
@@ -53,10 +53,10 @@ export default function InactiveUsers() {
                         <Link to="/admin" className="text-gray-500 hover:text-gray-700 mr-2">
                             <ArrowLeft className="w-5 h-5" />
                         </Link>
-                        <h1 className="text-xl font-semibold leading-6 text-gray-900">Empleados Desactivados</h1>
+                        <h1 className="text-xl font-semibold leading-6 text-gray-900">Colaboradores Desactivados</h1>
                     </div>
                     <p className="mt-2 text-sm text-gray-700">
-                        Historial de empleados que ya no laboran en la organización.
+                        Historial de colaboradores que ya no laboran en la organización.
                     </p>
                 </div>
             </div>
@@ -68,7 +68,7 @@ export default function InactiveUsers() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Empleado</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Cargo Anterior</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Rol Sistema</th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -80,7 +80,7 @@ export default function InactiveUsers() {
                                     {users.length === 0 ? (
                                         <tr>
                                             <td colSpan="4" className="py-8 text-center text-sm text-gray-500">
-                                                No hay empleados desactivados.
+                                                No hay colaboradores desactivados.
                                             </td>
                                         </tr>
                                     ) : (

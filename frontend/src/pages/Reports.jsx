@@ -28,18 +28,23 @@ export default function Reports() {
     const handleExportCSV = () => {
         if (!reportData.length) return;
 
-        const headers = ["ID", "Nombre", "Email", "Posición", "Días Vacaciones", "Días Permiso", "Días Ausencia", "Total Días", "Total Solicitudes"];
-        const rows = reportData.map(emp => [
-            emp.id,
-            `"${emp.full_name}"`,
-            emp.email,
-            `"${emp.position || ''}"`,
-            emp.vacation_days,
-            emp.permission_days,
-            emp.absence_days,
-            emp.total_days,
-            emp.total_requests
-        ]);
+        const headers = ["ID", "Nombre", "Email", "Posición", "Días Base", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "Saldo Final", "Total Solicitudes"];
+        const rows = reportData.map(emp => {
+            const vacDays = parseFloat(emp.vacation_days) || 0;
+            const baseDays = parseFloat(emp.base_vacation_days) || 0;
+            return [
+                emp.id,
+                `"${emp.full_name}"`,
+                emp.email,
+                `"${emp.position || ''}"`,
+                baseDays,
+                vacDays,
+                parseFloat(emp.permission_days) || 0,
+                parseFloat(emp.absence_days) || 0,
+                (baseDays - vacDays).toFixed(2),
+                emp.total_requests
+            ];
+        });
 
         const csvContent = "data:text/csv;charset=utf-8,"
             + headers.join(",") + "\n"
@@ -60,7 +65,7 @@ export default function Reports() {
                 <div className="sm:flex-auto">
                     <h1 className="text-xl font-semibold leading-6 text-gray-900">Reportes Generales</h1>
                     <p className="mt-2 text-sm text-gray-700">
-                        Resumen de días consumidos por todos los empleados en el año {year}.
+                        Resumen de días consumidos por todos los colaboradores en el año {year}.
                     </p>
                 </div>
                 <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex space-x-4 items-center">
@@ -98,41 +103,50 @@ export default function Reports() {
                                 <table className="min-w-full divide-y divide-gray-300">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Empleado</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Vacaciones</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Permisos</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Ausencias</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-indigo-50">Total Consumido</th>
+                                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Colaborador</th>
+                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-blue-50">Días Base</th>
+                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-red-700">Vacaciones</th>
+                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Permisos</th>
+                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Ausencias</th>
+                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-indigo-50">Saldo Final</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 bg-white">
                                         {reportData.length === 0 ? (
                                             <tr>
-                                                <td colSpan="5" className="py-8 text-center text-sm text-gray-500">
+                                                <td colSpan="6" className="py-8 text-center text-sm text-gray-500">
                                                     No hay datos para el año seleccionado.
                                                 </td>
                                             </tr>
                                         ) : (
-                                            reportData.map((emp) => (
+                                            reportData.map((emp) => {
+                                                const vacDays = parseFloat(emp.vacation_days) || 0;
+                                                const baseDays = parseFloat(emp.base_vacation_days) || 0;
+                                                const saldoFinal = baseDays - vacDays;
+                                                return (
                                                 <tr key={emp.id}>
                                                     <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                                                         <div className="font-medium text-gray-900">{emp.full_name}</div>
                                                         <div className="text-gray-500">{emp.email}</div>
                                                     </td>
-                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-center">
-                                                        {parseFloat(emp.vacation_days)}
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-blue-700 text-center bg-blue-50">
+                                                        {baseDays}
                                                     </td>
-                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-center">
-                                                        {parseFloat(emp.permission_days)}
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-red-600 text-center font-medium">
+                                                        {vacDays > 0 ? `-${vacDays}` : '0'}
                                                     </td>
-                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-center">
-                                                        {parseFloat(emp.absence_days)}
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-400 text-center">
+                                                        {parseFloat(emp.permission_days) || 0}
                                                     </td>
-                                                    <td className="whitespace-nowrap px-3 py-4 text-sm font-bold text-indigo-600 text-center bg-indigo-50">
-                                                        {parseFloat(emp.total_days)}
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-400 text-center">
+                                                        {parseFloat(emp.absence_days) || 0}
+                                                    </td>
+                                                    <td className={`whitespace-nowrap px-3 py-4 text-sm font-bold text-center bg-indigo-50 ${saldoFinal < 0 ? 'text-red-600' : 'text-indigo-600'}`}>
+                                                        {saldoFinal.toFixed(2)}
                                                     </td>
                                                 </tr>
-                                            ))
+                                                );
+                                            })
                                         )}
                                     </tbody>
                                 </table>
