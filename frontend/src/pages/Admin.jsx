@@ -16,9 +16,9 @@ export default function Admin() {
 
     // Edición / creación
     const [editingUserId, setEditingUserId] = useState(null);
-    const [editForm, setEditForm] = useState({ role: '', manager_id: '', position: '', base_vacation_days: 15 });
+    const [editForm, setEditForm] = useState({ role: '', manager_id: '', position: '', base_vacation_days: 15, benefit_extra_day: false, benefit_extra_day_used: false });
     const [isCreating, setIsCreating] = useState(false);
-    const [newForm, setNewForm] = useState({ full_name: '', email: '', employee_number: '', position: '', base_vacation_days: 15, role: 'employee', manager_id: '' });
+    const [newForm, setNewForm] = useState({ full_name: '', email: '', employee_number: '', position: '', base_vacation_days: 15, role: 'employee', manager_id: '', benefit_extra_day: false, benefit_extra_day_used: false });
 
     // Modal ajuste de días
     const [adjustModal, setAdjustModal] = useState(null);
@@ -131,7 +131,14 @@ export default function Admin() {
     // Handlers edición
     const startEditing = (u) => {
         setEditingUserId(u.id);
-        setEditForm({ role: u.role, manager_id: u.manager_id || '', position: u.position || '', base_vacation_days: u.base_vacation_days || 15 });
+        setEditForm({
+            role: u.role,
+            manager_id: u.manager_id || '',
+            position: u.position || '',
+            base_vacation_days: u.base_vacation_days || 15,
+            benefit_extra_day: !!u.benefit_extra_day,
+            benefit_extra_day_used: !!u.benefit_extra_day_used
+        });
     };
     const cancelEditing = () => setEditingUserId(null);
 
@@ -337,6 +344,7 @@ export default function Admin() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-28">Rol Sistema</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-40">Supervisor Inmediato</th>
                                         <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-20">Días Vac.</th>
+                                        <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-28">Antigüedad</th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 w-44">
                                             <span className="sr-only">Acciones</span>
                                         </th>
@@ -384,6 +392,22 @@ export default function Admin() {
                                                     onChange={(e) => setNewForm({ ...newForm, base_vacation_days: e.target.value })}
                                                     className="block w-16 mx-auto rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
                                             </td>
+                                            <td className="px-3 py-4 text-sm text-center">
+                                                <div className="flex flex-col items-start gap-1.5">
+                                                    <label className="flex items-center gap-1.5 cursor-pointer">
+                                                        <input type="checkbox" checked={newForm.benefit_extra_day}
+                                                            onChange={(e) => setNewForm({ ...newForm, benefit_extra_day: e.target.checked })}
+                                                            className="rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
+                                                        <span className="text-xs text-gray-600">Aplica</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-1.5 cursor-pointer">
+                                                        <input type="checkbox" checked={newForm.benefit_extra_day_used}
+                                                            onChange={(e) => setNewForm({ ...newForm, benefit_extra_day_used: e.target.checked })}
+                                                            className="rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                                                        <span className="text-xs text-gray-600">Gozado</span>
+                                                    </label>
+                                                </div>
+                                            </td>
                                             <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
                                                 <button onClick={handleCreate} className="text-indigo-600 hover:text-indigo-900 block w-full text-right mb-2">Crear</button>
                                                 <button onClick={() => setIsCreating(false)} className="text-gray-600 hover:text-gray-900 block w-full text-right">Cancelar</button>
@@ -393,7 +417,7 @@ export default function Admin() {
 
                                     {paginatedUsers.length === 0 && !isCreating ? (
                                         <tr>
-                                            <td colSpan="6" className="py-10 text-center text-sm text-gray-500">
+                                            <td colSpan="8" className="py-10 text-center text-sm text-gray-500">
                                                 No se encontraron colaboradores con los filtros aplicados.
                                             </td>
                                         </tr>
@@ -458,6 +482,37 @@ export default function Admin() {
                                                             onChange={(e) => setEditForm({ ...editForm, base_vacation_days: e.target.value })}
                                                             className="block w-16 mx-auto rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
                                                     ) : (u.base_vacation_days || 15)}
+                                                </td>
+                                                <td className="px-3 py-4 text-sm text-center">
+                                                    {isEditing ? (
+                                                        <div className="flex flex-col items-start gap-1.5">
+                                                            <label className="flex items-center gap-1.5 cursor-pointer">
+                                                                <input type="checkbox" checked={editForm.benefit_extra_day}
+                                                                    onChange={(e) => setEditForm({ ...editForm, benefit_extra_day: e.target.checked })}
+                                                                    className="rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
+                                                                <span className="text-xs text-gray-600">Aplica</span>
+                                                            </label>
+                                                            <label className="flex items-center gap-1.5 cursor-pointer">
+                                                                <input type="checkbox" checked={editForm.benefit_extra_day_used}
+                                                                    onChange={(e) => setEditForm({ ...editForm, benefit_extra_day_used: e.target.checked })}
+                                                                    className="rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                                                                <span className="text-xs text-gray-600">Gozado</span>
+                                                            </label>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center gap-1">
+                                                            {u.benefit_extra_day ? (
+                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">★ Aplica</span>
+                                                            ) : (
+                                                                <span className="text-gray-300 text-xs">—</span>
+                                                            )}
+                                                            {u.benefit_extra_day && (
+                                                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${u.benefit_extra_day_used ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                                    {u.benefit_extra_day_used ? 'Gozado' : 'Pendiente'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 whitespace-nowrap">
                                                     {isEditing ? (

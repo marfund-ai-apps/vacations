@@ -98,7 +98,9 @@ CREATE TABLE `users` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `base_vacation_days` decimal(5,2) NOT NULL DEFAULT '15.00',
-  `assistant_email` varchar(255) DEFAULT NULL
+  `assistant_email` varchar(255) DEFAULT NULL,
+  `benefit_extra_day` tinyint(1) NOT NULL DEFAULT '0',
+  `benefit_extra_day_used` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------

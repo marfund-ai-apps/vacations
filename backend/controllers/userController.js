@@ -42,12 +42,14 @@ exports.getAllUsers = async (req, res) => {
 // Actualizar usuario (solo Admin)
 exports.updateUser = async (req, res) => {
     const { id } = req.params;
-    const { employee_number, position, role, manager_id, base_vacation_days } = req.body;
+    const { employee_number, position, role, manager_id, base_vacation_days, benefit_extra_day, benefit_extra_day_used } = req.body;
 
     try {
         await db.query(
-            'UPDATE users SET employee_number = ?, position = ?, role = ?, manager_id = ?, base_vacation_days = ? WHERE id = ?',
-            [employee_number, position, role, manager_id || null, base_vacation_days, id]
+            `UPDATE users SET employee_number = ?, position = ?, role = ?, manager_id = ?,
+             base_vacation_days = ?, benefit_extra_day = ?, benefit_extra_day_used = ? WHERE id = ?`,
+            [employee_number, position, role, manager_id || null, base_vacation_days,
+             benefit_extra_day ? 1 : 0, benefit_extra_day_used ? 1 : 0, id]
         );
         res.json({ success: true, message: 'Usuario actualizado correctamente' });
     } catch (error) {
@@ -176,18 +178,22 @@ exports.addDayAdjustment = async (req, res) => {
 
 // Crear usuario manualmente
 exports.createUser = async (req, res) => {
-    const { full_name, email, employee_number, position, base_vacation_days, role, manager_id } = req.body;
+    const { full_name, email, employee_number, position, base_vacation_days, role, manager_id,
+            benefit_extra_day, benefit_extra_day_used } = req.body;
 
     if (!full_name || !email) {
         return res.status(400).json({ message: "Nombre y correo son requeridos" });
     }
 
     try {
-        const fakeGoogleId = 'manual_' + email; // Since we require google_id
+        const fakeGoogleId = 'manual_' + email;
         const [result] = await db.query(
-            `INSERT INTO users (full_name, email, employee_number, position, base_vacation_days, role, manager_id, google_id, is_active) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-            [full_name, email, employee_number || null, position || null, base_vacation_days || 15, role || 'employee', manager_id || null, fakeGoogleId]
+            `INSERT INTO users (full_name, email, employee_number, position, base_vacation_days, role,
+             manager_id, google_id, is_active, benefit_extra_day, benefit_extra_day_used)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+            [full_name, email, employee_number || null, position || null, base_vacation_days || 15,
+             role || 'employee', manager_id || null, fakeGoogleId,
+             benefit_extra_day ? 1 : 0, benefit_extra_day_used ? 1 : 0]
         );
         res.status(201).json({ success: true, id: result.insertId, message: "Usuario creado correctamente" });
     } catch (error) {
