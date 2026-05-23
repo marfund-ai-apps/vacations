@@ -78,7 +78,7 @@ npm run preview  # Preview production build
 ### Database Schema (MySQL 8.0+)
 Key tables:
 - `users` — self-referencing `manager_id`; `base_vacation_days DECIMAL(5,2)`; `employee_number VARCHAR(50)` = Código Colaborador
-- `vacation_requests` — status: pending/approved/rejected/cancelled; `request_type`: vacation/permission/justified_absence
+- `vacation_requests` — status: pending/approved/rejected/cancelled; `request_type`: vacation/permission/justified_absence/seniority_benefit
 - `request_date_ranges` — `business_days DECIMAL(5,2)`, soporta 0.5 (medio día)
 - `request_history` — audit trail ligado a solicitudes
 - `user_day_adjustments` — todos los movimientos de días; `adjustment_number VARCHAR(20)` formato `VAC-YYYY-NNNN`; `adjustment_type ENUM('manual','monthly_auto','initial_balance')`
@@ -174,6 +174,11 @@ All routes are implemented. Role-gated routes:
 - **+ Días**: modal para agregar días manualmente con motivo
 - **Reporte**: abre `CollaboratorDetailModal` con historial unificado del colaborador
 
+### PendingApprovals — columnas
+- **Pendientes de Aprobación**: Colaborador | Tipo | Fechas | Motivo | Acciones
+- **Historial de Solicitudes**: Colaborador | Tipo | Fechas | Estado
+- La columna "Tipo" muestra el label en español (incluyendo "Beneficio Antigüedad" para `seniority_benefit`)
+
 ### CollaboratorDetailModal
 - Componente: `frontend/src/components/CollaboratorDetailModal.jsx`
 - Llama `GET /api/reports/employee/:id/detail`
@@ -185,7 +190,7 @@ All routes are implemented. Role-gated routes:
 1. **Google OAuth only** — Sin contraseñas. Solo cuentas `@marfund.org` se auto-registran.
 2. **Sessions (cookies) over JWT** — Sesiones en MySQL permiten invalidación inmediata.
 3. **Roles default to `employee`** — Roles superiores se asignan manualmente en DB.
-4. **Email via N8N** — Lógica de correos delegada completamente a N8N.
+4. **Email via N8N** — Lógica de correos delegada completamente a N8N. El workflow `MAR Fund - Decisión Final` incluye CC a `recursoshumanos@marfund.org` solo cuando `$json.body.decision === 'approved'`.
 5. **Magic link approvals** — Supervisores reciben links con tokens para aprobar/rechazar sin iniciar sesión.
 6. **Day balance computed in Node.js** — Balance = `base_vacation_days + SUM(adjustments.days_added) - consumed_vacation_days`. Solo vacaciones aprobadas descuentan.
 7. **N8N reads manager email from Google Sheets** — `workflow_nueva_solicitud` consulta Google Sheets antes de enviar correo.
@@ -203,6 +208,8 @@ All routes are implemented. Role-gated routes:
 - **MySQL ONLY_FULL_GROUP_BY**: Activo en producción. Nunca mezclar `SUM()` con columnas no agrupadas en el mismo SELECT.
 - **import-balances requiere columnas exactas**: El CSV debe tener `No. Colaborador` y `Saldo Inicial` (o `Código Colaborador` como alias). Sensible a mayúsculas y espacios. El parser maneja BOM UTF-8 de Excel automáticamente.
 - **preview-balances no guarda nada**: Es solo lectura — úsalo para validar el archivo antes de ejecutar la carga real.
+- **seniority_benefit permite fines de semana**: El tipo no usa días hábiles — el frontend fuerza `business_days: 1` en el payload y omite la validación `businessDays <= 0`. No aplicar esta lógica a otros tipos.
+- **Reporte general muestra 0 si no hay solicitudes aprobadas en el año**: Las columnas Vacaciones/Permisos/Ausencias/B. Antigüedad filtran por `YEAR(vr.created_at)`. Si el año seleccionado no tiene solicitudes aprobadas, todas muestran 0 — es correcto, no es un error.
 
 ## Environment Variables
 
@@ -216,8 +223,9 @@ See `.env.example` (root) for the full template with Spanish comments.
 - `backend/server.js` — Entry point; registra el cron job al arrancar
 - `backend/config/db.js` — MySQL connection pool (max 10 connections)
 - `backend/config/passport.js` — Google OAuth strategy con auto-registro de usuarios
-- `backend/services/n8nService.js` — Integración con webhooks de N8N
+- `backend/services/n8nService.js` — Integración con webhooks de N8N; `formatRequestType()` mapea todos los tipos (incluye `seniority_benefit`)
 - `backend/jobs/monthlyVacationIncrement.js` — Cron incremento 1.25 días mensual
+- `backend/jobs/annualBenefitReset.js` — Cron 1 de enero: resetea `benefit_extra_day_used` para elegibles
 - `backend/controllers/userController.js` — `generateAdjustmentNumber()`, `addDayAdjustment()`, `getDayAdjustments()`
 - `backend/controllers/reportController.js` — `getMyReport()`, `getEmployeeDetail()`, `getAllEmployeesReport()`
 - `backend/controllers/importController.js` — `previewBalances()` (previsualización sin guardar) + `importInitialBalances()` (carga real desde CSV)
