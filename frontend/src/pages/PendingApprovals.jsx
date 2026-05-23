@@ -77,6 +77,7 @@ export default function PendingApprovals() {
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Colaborador</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Motivo</th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right font-semibold text-gray-900">
@@ -87,7 +88,7 @@ export default function PendingApprovals() {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {pendingRequests.length === 0 ? (
                                         <tr>
-                                            <td colSpan="4" className="py-8 text-center text-sm text-gray-500">
+                                            <td colSpan="5" className="py-8 text-center text-sm text-gray-500">
                                                 No tienes solicitudes pendientes de aprobación.
                                             </td>
                                         </tr>
@@ -98,6 +99,11 @@ export default function PendingApprovals() {
                                                     {req.employee_number && <div className="text-xs font-mono font-semibold text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     <div className="font-medium text-gray-900">{req.employee_name}</div>
                                                     <div className="text-gray-500">{req.employee_email}</div>
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-700">
+                                                    {req.request_type === 'vacation' ? 'Vacaciones' :
+                                                        req.request_type === 'permission' ? 'Permiso' :
+                                                        req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.total_days} días hábiles <br />
@@ -139,6 +145,7 @@ export default function PendingApprovals() {
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Colaborador</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
                                     </tr>
@@ -146,7 +153,7 @@ export default function PendingApprovals() {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {processedRequests.length === 0 ? (
                                         <tr>
-                                            <td colSpan="3" className="py-8 text-center text-sm text-gray-500">
+                                            <td colSpan="4" className="py-8 text-center text-sm text-gray-500">
                                                 No hay historial de solicitudes procesadas.
                                             </td>
                                         </tr>
@@ -157,6 +164,11 @@ export default function PendingApprovals() {
                                                     {req.employee_number && <div className="text-xs font-mono font-semibold text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     <div className="font-medium text-gray-900">{req.employee_name}</div>
                                                     <div className="text-gray-500">{req.employee_email}</div>
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-700">
+                                                    {req.request_type === 'vacation' ? 'Vacaciones' :
+                                                        req.request_type === 'permission' ? 'Permiso' :
+                                                        req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.total_days} días hábiles <br />
