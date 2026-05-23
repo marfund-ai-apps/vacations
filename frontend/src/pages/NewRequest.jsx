@@ -67,8 +67,12 @@ export default function NewRequest() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (businessDays <= 0) {
+        if (!isSeniorityBenefit && businessDays <= 0) {
             return toast.error("El rango de fechas debe contener al menos 0.5 días hábiles.");
+        }
+
+        if (isSeniorityBenefit && !formData.date_from) {
+            return toast.error("Por favor, selecciona la fecha del Beneficio Antigüedad.");
         }
 
         if (!formData.manager_id) {
@@ -85,8 +89,8 @@ export default function NewRequest() {
             date_ranges: [
                 {
                     date_from: formData.date_from,
-                    date_to: formData.date_to,
-                    business_days: businessDays
+                    date_to: isSeniorityBenefit ? formData.date_from : formData.date_to,
+                    business_days: isSeniorityBenefit ? 1 : businessDays
                 }
             ]
         };
