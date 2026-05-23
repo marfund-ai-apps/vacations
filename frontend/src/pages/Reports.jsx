@@ -109,13 +109,14 @@ export default function Reports() {
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-red-700">Vacaciones</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Permisos</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Ausencias</th>
+                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-amber-600">B. Antigüedad</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-indigo-50">Saldo Final</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 bg-white">
                                         {reportData.length === 0 ? (
                                             <tr>
-                                                <td colSpan="7" className="py-8 text-center text-sm text-gray-500">
+                                                <td colSpan="8" className="py-8 text-center text-sm text-gray-500">
                                                     No hay datos para el año seleccionado.
                                                 </td>
                                             </tr>
@@ -144,6 +145,9 @@ export default function Reports() {
                                                     </td>
                                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-400 text-center">
                                                         {parseFloat(emp.absence_days) || 0}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-amber-600 text-center font-medium">
+                                                        {parseFloat(emp.seniority_benefit_days) > 0 ? parseFloat(emp.seniority_benefit_days) : '—'}
                                                     </td>
                                                     <td className={`whitespace-nowrap px-3 py-4 text-sm font-bold text-center bg-indigo-50 ${saldoFinal < 0 ? 'text-red-600' : 'text-indigo-600'}`}>
                                                         {saldoFinal.toFixed(2)}

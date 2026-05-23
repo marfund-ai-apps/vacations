@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: marfund-ia_gestion_vacaciones_ai:3306
--- Generation Time: Apr 25, 2026 at 05:19 PM
+-- Generation Time: May 23, 2026 at 10:01 PM
 -- Server version: 9.6.0
 -- PHP Version: 8.2.27
 
@@ -130,7 +130,7 @@ CREATE TABLE `vacation_requests` (
   `id` int NOT NULL,
   `request_number` varchar(20) NOT NULL,
   `employee_id` int NOT NULL,
-  `request_type` enum('vacation','permission','justified_absence') NOT NULL,
+  `request_type` enum('vacation','permission','justified_absence','seniority_benefit') NOT NULL,
   `reason` text,
   `notes` text,
   `status` enum('pending','approved','rejected','cancelled') DEFAULT 'pending',
@@ -151,14 +151,14 @@ CREATE TABLE `vacation_requests` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_employee_days_summary` (
-`email` varchar(255)
-,`employee_id` int
-,`employee_number` varchar(50)
-,`fiscal_year` year
+`employee_id` int
 ,`full_name` varchar(255)
+,`email` varchar(255)
+,`employee_number` varchar(50)
 ,`position` varchar(255)
-,`request_type` enum('vacation','permission','justified_absence')
+,`request_type` enum('vacation','permission','justified_absence','seniority_benefit')
 ,`status` enum('pending','approved','rejected','cancelled')
+,`fiscal_year` year
 ,`total_business_days` decimal(27,2)
 ,`total_requests` bigint
 );

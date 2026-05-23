@@ -21,6 +21,29 @@ exports.createRequest = async (req, res) => {
     try {
         await conn.beginTransaction();
 
+        // Validaciones para Beneficio Antigüedad
+        if (request_type === 'seniority_benefit') {
+            const [userRows] = await conn.query(
+                'SELECT benefit_extra_day, benefit_extra_day_used FROM users WHERE id = ?', [employee_id]
+            );
+            if (!userRows[0]?.benefit_extra_day) {
+                await conn.rollback();
+                conn.release();
+                return res.status(403).json({ message: 'No tienes habilitado el Beneficio Antigüedad.' });
+            }
+            if (userRows[0]?.benefit_extra_day_used) {
+                await conn.rollback();
+                conn.release();
+                return res.status(400).json({ message: 'Ya gozaste el Beneficio Antigüedad en el período actual.' });
+            }
+            const totalDays = (date_ranges || []).reduce((sum, r) => sum + parseFloat(r.business_days || 0), 0);
+            if (totalDays !== 1) {
+                await conn.rollback();
+                conn.release();
+                return res.status(400).json({ message: 'El Beneficio Antigüedad corresponde exactamente a 1 día completo.' });
+            }
+        }
+
         const request_number = await generateRequestNumber();
 
         // Insertar solicitud principal
@@ -180,11 +203,18 @@ exports.makeDecision = async (req, res) => {
         }
 
         await db.query(
-            `UPDATE vacation_requests 
-       SET status = ?, manager_comments = ?, manager_decision_date = NOW() 
+            `UPDATE vacation_requests
+       SET status = ?, manager_comments = ?, manager_decision_date = NOW()
        WHERE id = ?`,
             [decision, comments, id]
         );
+
+        if (decision === 'approved' && requestArr[0].request_type === 'seniority_benefit') {
+            await db.query(
+                'UPDATE users SET benefit_extra_day_used = 1 WHERE id = ?',
+                [requestArr[0].employee_id]
+            );
+        }
 
         await db.query(
             'INSERT INTO request_history (request_id, action, performed_by, details) VALUES (?, ?, ?, ?)',
@@ -276,6 +306,13 @@ exports.processApprovalToken = async (req, res) => {
       JOIN users m ON vr.manager_id = m.id
       WHERE vr.id = ?
     `, [tokenData.request_id]);
+
+        if (decision === 'approved' && fullRequest[0]?.request_type === 'seniority_benefit') {
+            await db.query(
+                'UPDATE users SET benefit_extra_day_used = 1 WHERE id = ?',
+                [fullRequest[0].employee_id]
+            );
+        }
 
         const [dateRanges] = await db.query(
             'SELECT * FROM request_date_ranges WHERE request_id = ?', [tokenData.request_id]

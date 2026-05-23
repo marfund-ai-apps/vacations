@@ -195,8 +195,9 @@ exports.getEmployeeDetail = async (req, res) => {
         date: r.manager_decision_date || r.created_at,
         number: r.request_number,
         type_label: r.request_type === 'vacation' ? 'Vacaciones aprobadas' :
-                    r.request_type === 'permission' ? 'Permiso aprobado' : 'Ausencia justificada',
-        color_type: isVacation ? 'debit' : 'info',
+                    r.request_type === 'permission' ? 'Permiso aprobado' :
+                    r.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia justificada',
+        color_type: isVacation ? 'debit' : r.request_type === 'seniority_benefit' ? 'seniority' : 'info',
         days: r.total_days,
         reason: r.reason || '',
         detail: '',
@@ -237,6 +238,7 @@ exports.getAllEmployeesReport = async (req, res) => {
         COALESCE(SUM(CASE WHEN vr.request_type = 'vacation' THEN rdr.business_days END), 0) as vacation_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'permission' THEN rdr.business_days END), 0) as permission_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'justified_absence' THEN rdr.business_days END), 0) as absence_days,
+        COALESCE(SUM(CASE WHEN vr.request_type = 'seniority_benefit' THEN rdr.business_days END), 0) as seniority_benefit_days,
         COUNT(DISTINCT vr.id) as total_requests
       FROM users u
       LEFT JOIN vacation_requests vr ON u.id = vr.employee_id

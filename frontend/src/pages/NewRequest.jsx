@@ -60,6 +60,9 @@ export default function NewRequest() {
         : 0;
     const businessDays = halfDay ? Math.max(0, rawBusinessDays - 0.5) : rawBusinessDays;
     const isVacation = formData.request_type === 'vacation';
+    const isSeniorityBenefit = formData.request_type === 'seniority_benefit';
+    const showSeniorityOption = user?.benefit_extra_day && !user?.benefit_extra_day_used;
+    const reasonDisabled = isVacation || isSeniorityBenefit;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -102,12 +105,23 @@ export default function NewRequest() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        // Al cambiar a vacaciones, limpiar el motivo (no aplica)
-        if (name === 'request_type' && value === 'vacation') {
-            setFormData({ ...formData, request_type: value, reason: '' });
-        } else {
-            setFormData({ ...formData, [name]: value });
+        if (name === 'request_type') {
+            if (value === 'vacation' || value === 'seniority_benefit') {
+                setFormData({ ...formData, request_type: value, reason: '' });
+                if (value === 'seniority_benefit') {
+                    setHalfDay(false);
+                    if (formData.date_from) setFormData(prev => ({ ...prev, request_type: value, reason: '', date_to: prev.date_from }));
+                }
+            } else {
+                setFormData({ ...formData, [name]: value });
+            }
+            return;
         }
+        if (name === 'date_from' && isSeniorityBenefit) {
+            setFormData({ ...formData, date_from: value, date_to: value });
+            return;
+        }
+        setFormData({ ...formData, [name]: value });
     };
 
     return (
@@ -141,6 +155,9 @@ export default function NewRequest() {
                                         <option value="vacation">Vacaciones</option>
                                         <option value="permission">Permiso Personal</option>
                                         <option value="justified_absence">Ausencia Justificada</option>
+                                        {showSeniorityOption && (
+                                            <option value="seniority_benefit">Beneficio Antigüedad</option>
+                                        )}
                                     </select>
                                 </div>
                             </div>
@@ -187,6 +204,7 @@ export default function NewRequest() {
                             <div className="sm:col-span-3">
                                 <label htmlFor="date_to" className="block text-sm font-medium leading-6 text-gray-900">
                                     Fecha de Fin
+                                    {isSeniorityBenefit && <span className="ml-2 text-xs font-normal text-amber-600">(1 día completo)</span>}
                                 </label>
                                 <div className="mt-2">
                                     <input
@@ -197,7 +215,8 @@ export default function NewRequest() {
                                         value={formData.date_to}
                                         onChange={handleChange}
                                         min={formData.date_from}
-                                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                        disabled={isSeniorityBenefit}
+                                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:bg-gray-100 disabled:text-gray-500"
                                     />
                                 </div>
                             </div>
@@ -210,53 +229,64 @@ export default function NewRequest() {
                                             name="half_day"
                                             type="checkbox"
                                             checked={halfDay}
+                                            disabled={isSeniorityBenefit}
                                             onChange={(e) => setHalfDay(e.target.checked)}
-                                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                                         />
-                                        <label htmlFor="half_day" className="text-sm font-medium text-gray-700 cursor-pointer">
+                                        <label htmlFor="half_day" className={`text-sm font-medium cursor-pointer ${isSeniorityBenefit ? 'text-gray-400' : 'text-gray-700'}`}>
                                             Solo medio día — el último día del rango cuenta como <strong>0.5</strong>
+                                            {isSeniorityBenefit && <span className="ml-2 text-xs font-normal">(no aplica para Beneficio Antigüedad)</span>}
                                         </label>
                                     </div>
                                 </div>
                             )}
 
-                            {businessDays > 0 && (
-                                <div className="sm:col-span-6 bg-blue-50 border-l-4 border-blue-400 p-4">
+                            {(businessDays > 0 || isSeniorityBenefit) && formData.date_from && (
+                                <div className={`sm:col-span-6 border-l-4 p-4 ${isSeniorityBenefit ? 'bg-amber-50 border-amber-400' : 'bg-blue-50 border-blue-400'}`}>
                                     <div className="flex">
                                         <div className="ml-3">
-                                            <p className="text-sm text-blue-700">
-                                                Días hábiles a descontar: <strong>{businessDays} {businessDays === 1 ? 'día' : 'días'}</strong>
-                                                {halfDay && <span className="ml-2 text-blue-500">(incluye medio día final)</span>}
-                                                <br />
-                                                <span className="text-xs text-blue-500">(Feriados deben descontarse manualmente en RRHH por el momento)</span>
-                                            </p>
+                                            {isSeniorityBenefit ? (
+                                                <p className="text-sm text-amber-700">
+                                                    Beneficio Antigüedad: <strong>1 día completo</strong>
+                                                    <br />
+                                                    <span className="text-xs text-amber-600">Este día no descuenta de tu saldo de vacaciones.</span>
+                                                </p>
+                                            ) : (
+                                                <p className="text-sm text-blue-700">
+                                                    Días hábiles a descontar: <strong>{businessDays} {businessDays === 1 ? 'día' : 'días'}</strong>
+                                                    {halfDay && <span className="ml-2 text-blue-500">(incluye medio día final)</span>}
+                                                    <br />
+                                                    <span className="text-xs text-blue-500">(Feriados deben descontarse manualmente en RRHH por el momento)</span>
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             )}
 
                             <div className="col-span-full">
-                                <label htmlFor="reason" className={`block text-sm font-medium leading-6 ${isVacation ? 'text-gray-400' : 'text-gray-900'}`}>
+                                <label htmlFor="reason" className={`block text-sm font-medium leading-6 ${reasonDisabled ? 'text-gray-400' : 'text-gray-900'}`}>
                                     Motivo / Justificación
                                     {isVacation && <span className="ml-2 text-xs font-normal text-gray-400">(no aplica para vacaciones)</span>}
+                                    {isSeniorityBenefit && <span className="ml-2 text-xs font-normal text-gray-400">(no aplica para Beneficio Antigüedad)</span>}
                                 </label>
                                 <div className="mt-2">
                                     <textarea
                                         id="reason"
                                         name="reason"
                                         rows={3}
-                                        required={!isVacation}
-                                        disabled={isVacation}
+                                        required={!reasonDisabled}
+                                        disabled={reasonDisabled}
                                         value={formData.reason}
                                         onChange={handleChange}
-                                        placeholder={isVacation ? 'No aplica para solicitudes de vacaciones' : 'Escribe unas breves palabras sobre el motivo...'}
+                                        placeholder={reasonDisabled ? 'No aplica para este tipo de solicitud' : 'Escribe unas breves palabras sobre el motivo...'}
                                         className={`block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset sm:text-sm sm:leading-6
-                                            ${isVacation
+                                            ${reasonDisabled
                                                 ? 'bg-gray-100 text-gray-400 ring-gray-200 cursor-not-allowed'
                                                 : 'text-gray-900 ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600'}`}
                                     />
                                 </div>
-                                {!isVacation && (
+                                {!reasonDisabled && (
                                     <p className="mt-3 text-sm leading-6 text-gray-600">Escribe unas breves palabras sobre el motivo de la solicitud.</p>
                                 )}
                             </div>

@@ -94,7 +94,8 @@ export default function AllRequests() {
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.request_type === 'vacation' ? 'Vacaciones' :
-                                                        req.request_type === 'permission' ? 'Permiso' : 'Ausencia'}
+                                                        req.request_type === 'permission' ? 'Permiso' :
+                                                        req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.date_ranges && req.date_ranges.length > 0 ? (
@@ -153,7 +154,8 @@ export default function AllRequests() {
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.request_type === 'vacation' ? 'Vacaciones' :
-                                                        req.request_type === 'permission' ? 'Permiso' : 'Ausencia'}
+                                                        req.request_type === 'permission' ? 'Permiso' :
+                                                        req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.date_ranges && req.date_ranges.length > 0 ? (

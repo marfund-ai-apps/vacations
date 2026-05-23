@@ -44,14 +44,14 @@ export default function Dashboard() {
 
     // Combinar solicitudes aprobadas (rojo) y ajustes de días (verde) en un solo timeline
     const approvedRequests = history
-        .filter(req => req.status === 'approved' && req.request_type === 'vacation')
+        .filter(req => req.status === 'approved' && (req.request_type === 'vacation' || req.request_type === 'seniority_benefit'))
         .map(req => ({
             id: `req-${req.id}`,
-            type: 'debit',
+            type: req.request_type === 'vacation' ? 'debit' : 'seniority',
             number: req.request_number,
             date: req.manager_decision_date || req.created_at,
             description: req.request_type === 'vacation' ? 'Vacaciones aprobadas' :
-                req.request_type === 'permission' ? 'Permiso aprobado' : 'Ausencia justificada aprobada',
+                req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia justificada aprobada',
             detail: req.request_number,
             days: parseFloat(req.total_days) || 0,
         }));
@@ -152,7 +152,8 @@ export default function Dashboard() {
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             {req.request_type === 'vacation' ? 'Vacaciones' :
-                                                req.request_type === 'permission' ? 'Permiso' : 'Ausencia'}
+                                                req.request_type === 'permission' ? 'Permiso' :
+                                                req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             {req.date_ranges && req.date_ranges.length > 0 ? (
@@ -208,7 +209,8 @@ export default function Dashboard() {
                                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{req.request_number}</td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             {req.request_type === 'vacation' ? 'Vacaciones' :
-                                                req.request_type === 'permission' ? 'Permiso' : 'Ausencia'}
+                                                req.request_type === 'permission' ? 'Permiso' :
+                                                req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             {req.date_ranges && req.date_ranges.length > 0 ? (
@@ -254,27 +256,30 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 bg-white">
-                                {movements.map((mov) => (
-                                    <tr key={mov.id} className={mov.type === 'credit' ? 'bg-green-50' : 'bg-red-50'}>
+                                {movements.map((mov) => {
+                                    const rowBg = mov.type === 'credit' ? 'bg-green-50' : mov.type === 'seniority' ? 'bg-amber-50' : 'bg-red-50';
+                                    const textColor = mov.type === 'credit' ? 'text-green-700' : mov.type === 'seniority' ? 'text-amber-600' : 'text-red-700';
+                                    const sign = mov.type === 'credit' ? '+' : mov.type === 'seniority' ? '' : '-';
+                                    return (
+                                    <tr key={mov.id} className={rowBg}>
                                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-semibold sm:pl-6">
-                                            <span className={mov.type === 'credit' ? 'text-green-700' : 'text-red-600'}>
-                                                {mov.number}
-                                            </span>
+                                            <span className={textColor}>{mov.number}</span>
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
                                             {formatDateTime(mov.date)}
                                         </td>
-                                        <td className={`whitespace-nowrap px-3 py-4 text-sm font-medium ${mov.type === 'credit' ? 'text-green-700' : 'text-red-700'}`}>
+                                        <td className={`whitespace-nowrap px-3 py-4 text-sm font-medium ${textColor}`}>
                                             {mov.description}
                                         </td>
                                         <td className="px-3 py-4 text-sm text-gray-500 max-w-xs truncate" title={mov.detail}>
                                             {mov.detail}
                                         </td>
-                                        <td className={`whitespace-nowrap px-3 py-4 text-sm font-bold text-right pr-6 ${mov.type === 'credit' ? 'text-green-700' : 'text-red-700'}`}>
-                                            {mov.type === 'credit' ? '+' : '-'}{mov.days}
+                                        <td className={`whitespace-nowrap px-3 py-4 text-sm font-bold text-right pr-6 ${textColor}`}>
+                                            {sign}{mov.days}
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

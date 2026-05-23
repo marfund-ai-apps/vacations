@@ -91,4 +91,6 @@ app.listen(PORT, '0.0.0.0', () => {
   // Iniciar jobs programados
   const { startMonthlyVacationIncrement } = require('./jobs/monthlyVacationIncrement');
   startMonthlyVacationIncrement();
+  const { startAnnualBenefitReset } = require('./jobs/annualBenefitReset');
+  startAnnualBenefitReset();
 });

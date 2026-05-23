@@ -15,14 +15,16 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
     }, [userId]);
 
     const colorClass = (type) => {
-        if (type === 'credit') return { row: 'bg-green-50', number: 'text-green-700', days: 'text-green-700 font-bold', sign: '+' };
-        if (type === 'debit')  return { row: 'bg-red-50',   number: 'text-red-600',   days: 'text-red-600 font-bold',   sign: '-' };
-        return                        { row: 'bg-gray-50',  number: 'text-gray-500',  days: 'text-gray-500',            sign: '' };
+        if (type === 'credit')   return { row: 'bg-green-50',  number: 'text-green-700', days: 'text-green-700 font-bold', sign: '+' };
+        if (type === 'debit')    return { row: 'bg-red-50',    number: 'text-red-600',   days: 'text-red-600 font-bold',   sign: '-' };
+        if (type === 'seniority') return { row: 'bg-amber-50', number: 'text-amber-600', days: 'text-amber-600 font-bold', sign: '' };
+        return                           { row: 'bg-gray-50',  number: 'text-gray-500',  days: 'text-gray-500',            sign: '' };
     };
 
     const Icon = ({ type }) => {
-        if (type === 'credit') return <TrendingUp className="w-3.5 h-3.5 text-green-600 inline mr-1" />;
-        if (type === 'debit')  return <TrendingDown className="w-3.5 h-3.5 text-red-500 inline mr-1" />;
+        if (type === 'credit')   return <TrendingUp className="w-3.5 h-3.5 text-green-600 inline mr-1" />;
+        if (type === 'debit')    return <TrendingDown className="w-3.5 h-3.5 text-red-500 inline mr-1" />;
+        if (type === 'seniority') return <TrendingUp className="w-3.5 h-3.5 text-amber-500 inline mr-1" />;
         return <Minus className="w-3.5 h-3.5 text-gray-400 inline mr-1" />;
     };
 

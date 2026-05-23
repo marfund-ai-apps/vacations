@@ -45,7 +45,8 @@ npm run preview  # Preview production build
 
 ### Regla de descuento de días
 - **Solo `request_type = 'vacation'` aprobada descuenta días** del saldo del colaborador
-- `permission` y `justified_absence` aprobadas **no descuentan** — se registran como informativos (gris en UI)
+- `permission`, `justified_absence` y `seniority_benefit` aprobadas **no descuentan** — se registran como informativas
+- `seniority_benefit` aparece en ámbar en la UI; `permission`/`justified_absence` en gris
 - Esta regla aplica en `reportController.js` (queries de `getMyReport` y `getAllEmployeesReport`) y en `Dashboard.jsx` (timeline de movimientos)
 
 ### Authentication & Authorization
@@ -101,6 +102,12 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
 - Acción: suma `1.25` a `base_vacation_days` de todos los usuarios activos; inserta registro `monthly_auto` en `user_day_adjustments` por cada usuario con número `VAC-`
 - Se inicia en `server.js` dentro del callback de `app.listen`
 
+### Cron Job — Reset anual de Beneficio Antigüedad
+- Archivo: `backend/jobs/annualBenefitReset.js`
+- Schedule producción: `5 6 1 1 *` (1 de enero a las 00:05am, `America/Guatemala`)
+- Acción: pone `benefit_extra_day_used = 0` a todos los usuarios con `benefit_extra_day = 1`
+- Se inicia en `server.js` junto al cron mensual
+
 ### Importación masiva de saldos desde CSV — flujo de dos pasos
 - Formato aceptado: **CSV** (`.csv`); también acepta `.xlsx` por retrocompatibilidad
 - Columnas requeridas: **`No. Colaborador`** | **`Saldo Inicial`** (también acepta `Código Colaborador` como alias)
@@ -110,11 +117,27 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
 - En el frontend (`Admin.jsx`): seleccionar archivo → modal de previsualización con tabla (verde=OK, amarillo=no encontrado, rojo=error) → botón "Confirmar carga (N)" → modal de resultado
 - Implementado en `backend/controllers/importController.js`
 
+### Beneficio Antigüedad (`seniority_benefit`)
+- `request_type` = `seniority_benefit` en `vacation_requests` — 1 día extra anual para colaboradores con 3+ años
+- Solo visible en Nueva Solicitud si `user.benefit_extra_day = true` Y `user.benefit_extra_day_used = false`
+- **No descuenta** `base_vacation_days`; al ser aprobada, marca `benefit_extra_day_used = true` en el colaborador
+- La elegibilidad (`benefit_extra_day`) la activa RRHH manualmente desde la Ficha del Colaborador en Admin
+- Checkbox "Solo medio día" deshabilitado para este tipo; `date_to` se iguala a `date_from` automáticamente
+- Al aprobar desde portal (`makeDecision`) y desde link de email (`processApprovalToken`) se actualiza `benefit_extra_day_used`
+- Reset anual: el 1 de enero, el cron `annualBenefitReset.js` pone `benefit_extra_day_used = 0` para todos los elegibles
+- **Migración requerida (una sola vez):**
+  ```sql
+  ALTER TABLE vacation_requests
+  MODIFY COLUMN request_type
+    ENUM('vacation','permission','justified_absence','seniority_benefit') NOT NULL;
+  ```
+
 ### Sistema de colores (movimientos de días)
 | Color | Evento |
 |-------|--------|
 | **Verde** `bg-green-50 / text-green-700` | Saldo inicial, incremento mensual automático, ajuste manual |
 | **Rojo** `bg-red-50 / text-red-600` | Vacaciones aprobadas (días descontados) |
+| **Ámbar** `bg-amber-50 / text-amber-600` | Beneficio Antigüedad aprobado (informativo, no descuenta) |
 | **Gris** `bg-gray-50 / text-gray-500` | Permisos y ausencias aprobadas (informativo, no descuenta) |
 
 Aplica en: `Dashboard.jsx` (timeline "Movimientos de Días"), `MyRequests.jsx`, `AllRequests.jsx`, `CollaboratorDetailModal.jsx`.
