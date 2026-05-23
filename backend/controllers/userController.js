@@ -42,14 +42,15 @@ exports.getAllUsers = async (req, res) => {
 // Actualizar usuario (solo Admin)
 exports.updateUser = async (req, res) => {
     const { id } = req.params;
-    const { employee_number, position, role, manager_id, base_vacation_days, benefit_extra_day, benefit_extra_day_used } = req.body;
+    const { full_name, employee_number, position, role, manager_id, base_vacation_days,
+            is_active, benefit_extra_day, benefit_extra_day_used } = req.body;
 
     try {
         await db.query(
-            `UPDATE users SET employee_number = ?, position = ?, role = ?, manager_id = ?,
-             base_vacation_days = ?, benefit_extra_day = ?, benefit_extra_day_used = ? WHERE id = ?`,
-            [employee_number, position, role, manager_id || null, base_vacation_days,
-             benefit_extra_day ? 1 : 0, benefit_extra_day_used ? 1 : 0, id]
+            `UPDATE users SET full_name = ?, employee_number = ?, position = ?, role = ?, manager_id = ?,
+             base_vacation_days = ?, is_active = ?, benefit_extra_day = ?, benefit_extra_day_used = ? WHERE id = ?`,
+            [full_name, employee_number, position, role, manager_id || null, base_vacation_days,
+             is_active ? 1 : 0, benefit_extra_day ? 1 : 0, benefit_extra_day_used ? 1 : 0, id]
         );
         res.json({ success: true, message: 'Usuario actualizado correctamente' });
     } catch (error) {

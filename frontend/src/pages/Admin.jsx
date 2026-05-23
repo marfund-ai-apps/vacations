@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { Pencil, Trash2, Search, ChevronLeft, ChevronRight, Download, FileBarChart2, Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import { Pencil, Trash2, Search, ChevronLeft, ChevronRight, Download, FileBarChart2, Upload, CheckCircle, AlertCircle, X, PlusCircle } from 'lucide-react';
 import CollaboratorDetailModal from '../components/CollaboratorDetailModal';
+import { formatDateTime } from '../utils/dateUtils';
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 'Todos'];
 
@@ -14,9 +15,12 @@ export default function Admin() {
     const [managers, setManagers] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Edición / creación
-    const [editingUserId, setEditingUserId] = useState(null);
-    const [editForm, setEditForm] = useState({ role: '', manager_id: '', position: '', base_vacation_days: 15, benefit_extra_day: false, benefit_extra_day_used: false });
+    // Edición en modal
+    const [editModal, setEditModal] = useState(null);
+    const [editForm, setEditForm] = useState({});
+    const [editSaving, setEditSaving] = useState(false);
+
+    // Creación inline
     const [isCreating, setIsCreating] = useState(false);
     const [newForm, setNewForm] = useState({ full_name: '', email: '', employee_number: '', position: '', base_vacation_days: 15, role: 'employee', manager_id: '', benefit_extra_day: false, benefit_extra_day_used: false });
 
@@ -128,29 +132,37 @@ export default function Admin() {
         return filteredUsers.slice(start, start + pageSize);
     }, [filteredUsers, pageSize, currentPage]);
 
-    // Handlers edición
-    const startEditing = (u) => {
-        setEditingUserId(u.id);
+    // Handlers edición en modal
+    const handleOpenEdit = (u) => {
+        setEditModal(u);
         setEditForm({
+            full_name: u.full_name || '',
+            position: u.position || '',
             role: u.role,
             manager_id: u.manager_id || '',
-            position: u.position || '',
             base_vacation_days: u.base_vacation_days || 15,
+            is_active: !!u.is_active,
             benefit_extra_day: !!u.benefit_extra_day,
-            benefit_extra_day_used: !!u.benefit_extra_day_used
+            benefit_extra_day_used: !!u.benefit_extra_day_used,
         });
     };
-    const cancelEditing = () => setEditingUserId(null);
 
-    const handleSave = async (id) => {
+    const handleSaveEdit = async () => {
+        setEditSaving(true);
         try {
-            await api.put(`/users/${id}`, { ...editForm, manager_id: editForm.manager_id || null });
-            toast.success("Usuario actualizado correctamente");
-            setEditingUserId(null);
+            await api.put(`/users/${editModal.id}`, {
+                ...editForm,
+                employee_number: editModal.employee_number,
+                manager_id: editForm.manager_id || null
+            });
+            toast.success("Colaborador actualizado correctamente");
+            setEditModal(null);
             fetchData();
         } catch (error) {
             console.error("Error updating user:", error);
-            toast.error("Error al actualizar usuario");
+            toast.error("Error al actualizar colaborador");
+        } finally {
+            setEditSaving(false);
         }
     };
 
@@ -159,7 +171,7 @@ export default function Admin() {
             await api.post('/users', { ...newForm, manager_id: newForm.manager_id || null });
             toast.success("Colaborador creado correctamente");
             setIsCreating(false);
-            setNewForm({ full_name: '', email: '', employee_number: '', position: '', base_vacation_days: 15, role: 'employee', manager_id: '' });
+            setNewForm({ full_name: '', email: '', employee_number: '', position: '', base_vacation_days: 15, role: 'employee', manager_id: '', benefit_extra_day: false, benefit_extra_day_used: false });
             fetchData();
         } catch (error) {
             console.error("Error creating user:", error);
@@ -421,125 +433,65 @@ export default function Admin() {
                                                 No se encontraron colaboradores con los filtros aplicados.
                                             </td>
                                         </tr>
-                                    ) : paginatedUsers.map((u) => {
-                                        const isEditing = editingUserId === u.id;
-                                        return (
-                                            <tr key={u.id} className="align-top">
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                                                    <span className="font-mono font-semibold text-indigo-600 text-xs">
-                                                        {u.employee_number || '—'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-3 py-4 text-sm">
-                                                    <div className="font-medium text-gray-900">{u.full_name}</div>
-                                                    <div className="text-gray-500 text-xs">{u.email}</div>
-                                                </td>
-                                                <td className="px-3 py-4 text-sm text-gray-500 max-w-[144px]">
-                                                    {isEditing ? (
-                                                        <input type="text" value={editForm.position}
-                                                            onChange={(e) => setEditForm({ ...editForm, position: e.target.value })}
-                                                            className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6"
-                                                            placeholder="Ej. Oficial Legal" />
+                                    ) : paginatedUsers.map((u) => (
+                                        <tr key={u.id} className="hover:bg-gray-50">
+                                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                <span className="font-mono font-semibold text-indigo-600 text-xs">{u.employee_number || '—'}</span>
+                                            </td>
+                                            <td className="px-3 py-4 text-sm">
+                                                <div className="font-medium text-gray-900">{u.full_name}</div>
+                                                <div className="text-gray-500 text-xs">{u.email}</div>
+                                            </td>
+                                            <td className="px-3 py-4 text-sm text-gray-500 max-w-[144px]">
+                                                <span className="block break-words leading-snug">{u.position || '-'}</span>
+                                            </td>
+                                            <td className="px-3 py-4 text-sm text-gray-500">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap
+                                                    ${u.role === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                                                      u.role === 'hr_admin'    ? 'bg-blue-100 text-blue-800' :
+                                                      u.role === 'manager'     ? 'bg-yellow-100 text-yellow-800' :
+                                                                                 'bg-gray-100 text-gray-800'}`}>
+                                                    {u.role}
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-4 text-sm text-gray-500 max-w-[160px]">
+                                                <span className="block break-words leading-snug">{u.manager_name || '-'}</span>
+                                            </td>
+                                            <td className="px-3 py-4 text-sm text-gray-500 text-center whitespace-nowrap">
+                                                {u.base_vacation_days || 15}
+                                            </td>
+                                            <td className="px-3 py-4 text-sm text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    {u.benefit_extra_day ? (
+                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">★ Aplica</span>
                                                     ) : (
-                                                        <span className="block break-words leading-snug">{u.position || '-'}</span>
+                                                        <span className="text-gray-300 text-xs">—</span>
                                                     )}
-                                                </td>
-                                                <td className="px-3 py-4 text-sm text-gray-500">
-                                                    {isEditing ? (
-                                                        <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                                                            className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6">
-                                                            <option value="employee">Colaborador</option>
-                                                            <option value="manager">Manager</option>
-                                                            <option value="hr_admin">RRHH Admin</option>
-                                                            <option value="super_admin">Super Admin</option>
-                                                        </select>
-                                                    ) : (
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap
-                                                            ${u.role === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                                                              u.role === 'hr_admin' ? 'bg-blue-100 text-blue-800' :
-                                                              u.role === 'manager' ? 'bg-yellow-100 text-yellow-800' :
-                                                              'bg-gray-100 text-gray-800'}`}>
-                                                            {u.role}
+                                                    {u.benefit_extra_day && (
+                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${u.benefit_extra_day_used ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                            {u.benefit_extra_day_used ? 'Gozado' : 'Pendiente'}
                                                         </span>
                                                     )}
-                                                </td>
-                                                <td className="px-3 py-4 text-sm text-gray-500 max-w-[160px]">
-                                                    {isEditing ? (
-                                                        <select value={editForm.manager_id} onChange={(e) => setEditForm({ ...editForm, manager_id: e.target.value })}
-                                                            className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6">
-                                                            <option value="">Ninguno</option>
-                                                            {managers.map(m => m.id !== u.id && (
-                                                                <option key={m.id} value={m.id}>{m.full_name}</option>
-                                                            ))}
-                                                        </select>
-                                                    ) : (
-                                                        <span className="block break-words leading-snug">{u.manager_name || '-'}</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-3 py-4 text-sm text-gray-500 text-center whitespace-nowrap">
-                                                    {isEditing ? (
-                                                        <input type="number" value={editForm.base_vacation_days}
-                                                            onChange={(e) => setEditForm({ ...editForm, base_vacation_days: e.target.value })}
-                                                            className="block w-16 mx-auto rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
-                                                    ) : (u.base_vacation_days || 15)}
-                                                </td>
-                                                <td className="px-3 py-4 text-sm text-center">
-                                                    {isEditing ? (
-                                                        <div className="flex flex-col items-start gap-1.5">
-                                                            <label className="flex items-center gap-1.5 cursor-pointer">
-                                                                <input type="checkbox" checked={editForm.benefit_extra_day}
-                                                                    onChange={(e) => setEditForm({ ...editForm, benefit_extra_day: e.target.checked })}
-                                                                    className="rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
-                                                                <span className="text-xs text-gray-600">Aplica</span>
-                                                            </label>
-                                                            <label className="flex items-center gap-1.5 cursor-pointer">
-                                                                <input type="checkbox" checked={editForm.benefit_extra_day_used}
-                                                                    onChange={(e) => setEditForm({ ...editForm, benefit_extra_day_used: e.target.checked })}
-                                                                    className="rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                                                                <span className="text-xs text-gray-600">Gozado</span>
-                                                            </label>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex flex-col items-center gap-1">
-                                                            {u.benefit_extra_day ? (
-                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">★ Aplica</span>
-                                                            ) : (
-                                                                <span className="text-gray-300 text-xs">—</span>
-                                                            )}
-                                                            {u.benefit_extra_day && (
-                                                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${u.benefit_extra_day_used ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                                                                    {u.benefit_extra_day_used ? 'Gozado' : 'Pendiente'}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 whitespace-nowrap">
-                                                    {isEditing ? (
-                                                        <div className="space-x-2">
-                                                            <button onClick={() => handleSave(u.id)} className="text-indigo-600 hover:text-indigo-900">Guardar</button>
-                                                            <button onClick={cancelEditing} className="text-gray-600 hover:text-gray-900">Cancelar</button>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex justify-end space-x-3">
-                                                            <button onClick={() => openAdjustModal(u)} className="text-green-600 hover:text-green-800 inline-flex items-center font-medium">
-                                                                + Días
-                                                            </button>
-                                                            <button onClick={() => startEditing(u)} className="text-indigo-600 hover:text-indigo-900 inline-flex items-center">
-                                                                <Pencil className="w-4 h-4 mr-1" /> Editar
-                                                            </button>
-                                                            <button onClick={() => setDetailUserId(u.id)} className="text-violet-600 hover:text-violet-900 inline-flex items-center" title="Ver resumen detallado">
-                                                                <FileBarChart2 className="w-4 h-4 mr-1" /> Reporte
-                                                            </button>
-                                                            <button onClick={() => handleDeactivate(u.id, u.full_name)} className="text-red-600 hover:text-red-900 inline-flex items-center">
-                                                                <Trash2 className="w-4 h-4 mr-1" /> Desactivar
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                                </div>
+                                            </td>
+                                            <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 whitespace-nowrap">
+                                                <div className="flex justify-end gap-3">
+                                                    <button onClick={() => openAdjustModal(u)} className="cursor-pointer text-green-600 hover:text-green-800 inline-flex items-center font-medium gap-1">
+                                                        <PlusCircle className="w-3.5 h-3.5" /> Días
+                                                    </button>
+                                                    <button onClick={() => handleOpenEdit(u)} className="cursor-pointer text-indigo-600 hover:text-indigo-900 inline-flex items-center gap-1">
+                                                        <Pencil className="w-3.5 h-3.5" /> Editar
+                                                    </button>
+                                                    <button onClick={() => setDetailUserId(u.id)} className="cursor-pointer text-violet-600 hover:text-violet-900 inline-flex items-center gap-1">
+                                                        <FileBarChart2 className="w-3.5 h-3.5" /> Reporte
+                                                    </button>
+                                                    <button onClick={() => handleDeactivate(u.id, u.full_name)} className="cursor-pointer text-red-600 hover:text-red-900 inline-flex items-center gap-1">
+                                                        <Trash2 className="w-3.5 h-3.5" /> Desactivar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
@@ -581,6 +533,152 @@ export default function Admin() {
                 </div>
             )}
         </div>
+
+        {/* Modal: Ficha de edición del colaborador */}
+        {editModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900">Ficha del Colaborador</h3>
+                            <p className="text-xs text-gray-400 mt-0.5">{editModal.email}</p>
+                        </div>
+                        <button onClick={() => setEditModal(null)} className="cursor-pointer p-1 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {/* Body */}
+                    <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+                        {/* Cabecera read-only */}
+                        <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
+                            {editModal.avatar_url ? (
+                                <img src={editModal.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-200" />
+                            ) : (
+                                <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xl font-bold">
+                                    {editModal.full_name?.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    {editModal.employee_number && (
+                                        <span className="font-mono font-semibold text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">{editModal.employee_number}</span>
+                                    )}
+                                    <span className="text-sm text-gray-500 truncate">{editModal.email}</span>
+                                </div>
+                                <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
+                                    <span>Creado: {formatDateTime(editModal.created_at)}</span>
+                                    <span>Actualizado: {formatDateTime(editModal.updated_at)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Información Personal */}
+                        <div>
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Información Personal</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                                    <input type="text" value={editForm.full_name || ''}
+                                        onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Puesto</label>
+                                    <input type="text" value={editForm.position || ''}
+                                        onChange={(e) => setEditForm({ ...editForm, position: e.target.value })}
+                                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Días Base de Vacaciones</label>
+                                    <input type="number" step="0.5" min="0" value={editForm.base_vacation_days || 0}
+                                        onChange={(e) => setEditForm({ ...editForm, base_vacation_days: e.target.value })}
+                                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sistema */}
+                        <div>
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Sistema</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+                                    <select value={editForm.role || 'employee'}
+                                        onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                                        <option value="employee">Colaborador</option>
+                                        <option value="manager">Manager</option>
+                                        <option value="hr_admin">RRHH Admin</option>
+                                        <option value="super_admin">Super Admin</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor Inmediato</label>
+                                    <select value={editForm.manager_id || ''}
+                                        onChange={(e) => setEditForm({ ...editForm, manager_id: e.target.value })}
+                                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm">
+                                        <option value="">Ninguno</option>
+                                        {managers.map(m => m.id !== editModal.id && (
+                                            <option key={m.id} value={m.id}>{m.full_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="col-span-2">
+                                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                        <input type="checkbox" checked={!!editForm.is_active}
+                                            onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
+                                            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                        <span className="text-sm font-medium text-gray-700">Colaborador activo en el sistema</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Beneficio Antigüedad */}
+                        <div>
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Beneficio Antigüedad</p>
+                            <div className="space-y-3">
+                                <label className="flex items-start gap-3 cursor-pointer select-none">
+                                    <input type="checkbox" checked={!!editForm.benefit_extra_day}
+                                        onChange={(e) => setEditForm({ ...editForm, benefit_extra_day: e.target.checked })}
+                                        className="mt-0.5 w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-700">Aplica beneficio día adicional</p>
+                                        <p className="text-xs text-gray-400">El colaborador es elegible para un día extra anual por antigüedad</p>
+                                    </div>
+                                </label>
+                                <label className="flex items-start gap-3 cursor-pointer select-none">
+                                    <input type="checkbox" checked={!!editForm.benefit_extra_day_used}
+                                        onChange={(e) => setEditForm({ ...editForm, benefit_extra_day_used: e.target.checked })}
+                                        className="mt-0.5 w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-700">Ya gozó el beneficio</p>
+                                        <p className="text-xs text-gray-400">El día adicional ya fue otorgado en el período actual</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+                        <button onClick={() => setEditModal(null)} disabled={editSaving}
+                            className="cursor-pointer rounded-md px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50">
+                            Cancelar
+                        </button>
+                        <button onClick={handleSaveEdit} disabled={editSaving}
+                            className="cursor-pointer rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+                            {editSaving ? 'Guardando...' : 'Guardar cambios'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Modal: Previsualización de saldos antes de confirmar */}
         {importPreview && !importResult && (
