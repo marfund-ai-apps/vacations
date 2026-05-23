@@ -11,7 +11,8 @@ const WEBHOOKS = {
 const formatRequestType = (type) => ({
     vacation: 'Vacaciones',
     permission: 'Permiso',
-    justified_absence: 'Ausencia Justificada'
+    justified_absence: 'Ausencia Justificada',
+    seniority_benefit: 'Beneficio Antigüedad'
 }[type] || type);
 
 // Formatea fechas legibles
