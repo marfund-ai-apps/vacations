@@ -237,31 +237,41 @@ exports.getEmployeeDetail = async (req, res) => {
   }
 };
 
-// GET /api/reports/all?year=2024 — Para RRHH: reporte de todos
+// GET /api/reports/all?year=2024&month=0 — Para RRHH: reporte de todos
 exports.getAllEmployeesReport = async (req, res) => {
   const year = req.query.year || new Date().getFullYear();
+  const month = parseInt(req.query.month) || 0;
+
+  const monthCondition = month > 0 ? 'AND MONTH(vr.created_at) = ?' : '';
+  const params = month > 0 ? [year, month] : [year];
 
   try {
     const [rows] = await db.query(`
       SELECT
         u.id, u.full_name, u.email, u.employee_number, u.position,
-        u.base_vacation_days,
+        u.base_vacation_days, u.manager_id, u.benefit_extra_day,
+        m.full_name as manager_name,
+        m.role as manager_role,
         COALESCE(SUM(CASE WHEN vr.request_type = 'vacation' THEN rdr.business_days END), 0) as vacation_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'permission' THEN rdr.business_days END), 0) as permission_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'justified_absence' THEN rdr.business_days END), 0) as absence_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'seniority_benefit' THEN rdr.business_days END), 0) as seniority_benefit_days,
         COUNT(DISTINCT vr.id) as total_requests
       FROM users u
+      LEFT JOIN users m ON u.manager_id = m.id
       LEFT JOIN vacation_requests vr ON u.id = vr.employee_id
            AND YEAR(vr.created_at) = ?
            AND vr.status = 'approved'
+           ${monthCondition}
       LEFT JOIN request_date_ranges rdr ON vr.id = rdr.request_id
       WHERE u.is_active = 1
-      GROUP BY u.id, u.full_name, u.email, u.employee_number, u.position, u.base_vacation_days
+      GROUP BY u.id, u.full_name, u.email, u.employee_number, u.position,
+               u.base_vacation_days, u.manager_id, u.benefit_extra_day,
+               m.full_name, m.role
       ORDER BY u.full_name
-    `, [year]);
+    `, params);
 
-    res.json({ year, employees: rows });
+    res.json({ year, month, employees: rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error al obtener reporte general' });
