@@ -35,7 +35,7 @@ export default function Dashboard() {
         );
     }
 
-    const summary = report?.summary || { total_base_days: 0, total_extra_days: 0, total_consumed_days: 0, total_available_days: 0 };
+    const summary = report?.summary || { total_base_days: 0, total_extra_days: 0, total_consumed_days: 0, total_available_days: 0, total_permission_days: 0, total_absence_days: 0 };
     const history = report?.history || [];
     const adjustments = report?.adjustments || [];
 
@@ -101,10 +101,10 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Stats */}
-            <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-4">
+            {/* Stats — fila principal */}
+            <dl className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-4">
                 <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-                    <dt className="truncate text-sm font-medium text-gray-500">Días Base Anual</dt>
+                    <dt className="truncate text-sm font-medium text-gray-500">Saldo Inicial</dt>
                     <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{summary.total_base_days}</dd>
                 </div>
                 <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-green-400">
@@ -120,6 +120,20 @@ export default function Dashboard() {
                 <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-indigo-500">
                     <dt className="truncate text-sm font-medium text-indigo-600">Días Disponibles Hoy</dt>
                     <dd className="mt-1 text-3xl font-semibold tracking-tight text-indigo-700">{summary.total_available_days}</dd>
+                </div>
+            </dl>
+
+            {/* Stats — fila informativa (no afectan saldo) */}
+            <dl className="grid grid-cols-2 gap-5 sm:grid-cols-2 sm:max-w-lg">
+                <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-gray-200">
+                    <dt className="truncate text-sm font-medium text-gray-400">Permisos Personales</dt>
+                    <dd className="mt-1 text-2xl font-semibold tracking-tight text-gray-500">{summary.total_permission_days} <span className="text-sm font-normal">días</span></dd>
+                    <p className="text-xs text-gray-400 mt-1">Solo informativo</p>
+                </div>
+                <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-gray-200">
+                    <dt className="truncate text-sm font-medium text-gray-400">Ausencia Justificada</dt>
+                    <dd className="mt-1 text-2xl font-semibold tracking-tight text-gray-500">{summary.total_absence_days} <span className="text-sm font-normal">días</span></dd>
+                    <p className="text-xs text-gray-400 mt-1">Solo informativo</p>
                 </div>
             </dl>
 

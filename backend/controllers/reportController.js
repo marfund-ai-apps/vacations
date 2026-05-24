@@ -10,28 +10,37 @@ exports.getMyReport = async (req, res) => {
     const [users] = await db.query('SELECT base_vacation_days FROM users WHERE id = ?', [id]);
     const baseDays = parseFloat(users.length ? users[0].base_vacation_days : 15);
 
-    // Días consumidos — SOLO vacaciones aprobadas (permisos y ausencias no descuentan)
-    const [consumed] = await db.query(`
-            SELECT COALESCE(SUM(rdr.business_days), 0) as total_consumed
-            FROM vacation_requests vr
-            JOIN request_date_ranges rdr ON vr.id = rdr.request_id
-            WHERE vr.employee_id = ?
-            AND vr.status = 'approved'
-            AND vr.request_type = 'vacation'
-            AND YEAR(vr.created_at) = ?
-        `, [id, year]);
+    // Desglose de días por tipo de solicitud aprobada en el año
+    const [consumedBreakdown] = await db.query(`
+        SELECT
+            COALESCE(SUM(CASE WHEN vr.request_type = 'vacation' THEN rdr.business_days END), 0) as vacation_consumed,
+            COALESCE(SUM(CASE WHEN vr.request_type = 'seniority_benefit' THEN rdr.business_days END), 0) as seniority_consumed,
+            COALESCE(SUM(CASE WHEN vr.request_type = 'permission' THEN rdr.business_days END), 0) as permission_consumed,
+            COALESCE(SUM(CASE WHEN vr.request_type = 'justified_absence' THEN rdr.business_days END), 0) as absence_consumed
+        FROM vacation_requests vr
+        JOIN request_date_ranges rdr ON vr.id = rdr.request_id
+        WHERE vr.employee_id = ? AND vr.status = 'approved' AND YEAR(vr.created_at) = ?
+    `, [id, year]);
 
-    const consumedDays = parseFloat(consumed[0].total_consumed) || 0;
+    const vacationConsumed = parseFloat(consumedBreakdown[0].vacation_consumed) || 0;
+    const seniorityConsumed = parseFloat(consumedBreakdown[0].seniority_consumed) || 0;
+    const permissionConsumed = parseFloat(consumedBreakdown[0].permission_consumed) || 0;
+    const absenceConsumed = parseFloat(consumedBreakdown[0].absence_consumed) || 0;
 
-    // Total de días agregados por ajustes del año actual
-    const [adjustmentSum] = await db.query(`
-            SELECT COALESCE(SUM(days_added), 0) as total_adjusted
-            FROM user_day_adjustments
-            WHERE user_id = ? AND YEAR(created_at) = ?
-        `, [id, year]);
+    // Incrementos mensuales automáticos del año (para KPI "Días Agregados")
+    const [monthlyAutoSum] = await db.query(`
+        SELECT COALESCE(SUM(days_added), 0) as total
+        FROM user_day_adjustments
+        WHERE user_id = ? AND adjustment_type = 'monthly_auto' AND YEAR(created_at) = ?
+    `, [id, year]);
+    const monthlyAutoDays = parseFloat(monthlyAutoSum[0].total) || 0;
 
-    const totalAdjusted = parseFloat(adjustmentSum[0].total_adjusted) || 0;
-    const availableDays = baseDays - consumedDays;
+    // Días Agregados = incrementos automáticos + beneficio antigüedad autorizado
+    const totalAdjusted = monthlyAutoDays + seniorityConsumed;
+    // Días Consumidos (display) = vacaciones + beneficio antigüedad autorizados
+    const consumedDays = vacationConsumed + seniorityConsumed;
+    // Días Disponibles = base − vacaciones (seniority_benefit no descuenta del saldo)
+    const availableDays = baseDays - vacationConsumed;
 
     // Historial de ajustes del año actual (para mostrar en el dashboard como movimientos verdes)
     const [adjustmentList] = await db.query(`
@@ -65,7 +74,9 @@ exports.getMyReport = async (req, res) => {
         total_base_days: baseDays,
         total_extra_days: totalAdjusted,
         total_consumed_days: consumedDays,
-        total_available_days: availableDays
+        total_available_days: availableDays,
+        total_permission_days: permissionConsumed,
+        total_absence_days: absenceConsumed,
       },
       history: requests,
       adjustments: adjustmentList
