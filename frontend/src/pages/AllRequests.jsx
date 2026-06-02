@@ -21,6 +21,13 @@ export default function AllRequests() {
     const [annulModal, setAnnulModal] = useState(null); // { id, request_number, request_type, status, employee_name }
     const [annulReason, setAnnulReason] = useState('');
     const [submittingAnnul, setSubmittingAnnul] = useState(false);
+    const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, text: '' });
+
+    const showTooltip = (e, text) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setTooltip({ visible: true, x: rect.left, y: rect.bottom + 6, text });
+    };
+    const hideTooltip = () => setTooltip({ visible: false, x: 0, y: 0, text: '' });
 
     const fetchRequests = async () => {
         try {
@@ -222,8 +229,12 @@ export default function AllRequests() {
                                                     <div className="flex items-center gap-2">
                                                         {getStatusBadge(req.status)}
                                                         {req.status === 'annulled' && req.annulment_reason && (
-                                                            <span title={req.annulment_reason} className="cursor-help text-gray-400 hover:text-gray-600">
-                                                                <Info className="w-4 h-4" />
+                                                            <span
+                                                                onMouseEnter={e => showTooltip(e, req.annulment_reason)}
+                                                                onMouseLeave={hideTooltip}
+                                                                className="cursor-help inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-600 text-white flex-shrink-0"
+                                                            >
+                                                                <Info className="w-3 h-3" />
                                                             </span>
                                                         )}
                                                     </div>
@@ -249,6 +260,16 @@ export default function AllRequests() {
                     </div>
                 </div>
             </div>
+
+            {/* Tooltip global de motivo de anulación */}
+            {tooltip.visible && (
+                <div
+                    className="fixed z-[9999] max-w-xs rounded-lg bg-gray-900 text-white text-xs px-3 py-2 shadow-xl pointer-events-none"
+                    style={{ left: tooltip.x, top: tooltip.y }}
+                >
+                    {tooltip.text}
+                </div>
+            )}
 
             {/* Modal de anulación */}
             {annulModal && (
