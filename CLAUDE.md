@@ -59,7 +59,7 @@ npm run preview  # Preview production build
 | Prefix | File | Notes |
 |--------|------|-------|
 | `/api/auth` | `routes/authRoutes.js` | Google OAuth flow, logout, `GET /me` |
-| `/api/requests` | `routes/requestRoutes.js` | Crear, listar, aprobar/rechazar; endpoint público de token |
+| `/api/requests` | `routes/requestRoutes.js` | Crear, listar, aprobar/rechazar, anular; endpoint público de token |
 | `/api/users` | `routes/userRoutes.js` | CRUD usuarios (admin), ajustes de días, importación CSV |
 | `/api/reports` | `routes/reportRoutes.js` | Reportes individuales, general y detalle del colaborador |
 
@@ -74,13 +74,14 @@ npm run preview  # Preview production build
 | `GET` | `/api/reports/employee/:id` | `manager`, `hr_admin`, `super_admin` | Reporte individual |
 | `GET` | `/api/reports/employee/:id/detail` | `manager`, `hr_admin`, `super_admin` | Historial unificado del colaborador |
 | `GET` | `/api/reports/all` | `hr_admin`, `super_admin` | Reporte general de todos los colaboradores |
+| `PUT` | `/api/requests/:id/annul` | `super_admin` | Anular solicitud (cambia status a `annulled`, devuelve días si aplica) |
 
 ### Database Schema (MySQL 8.0+)
 Key tables:
 - `users` — self-referencing `manager_id`; `base_vacation_days DECIMAL(5,2)`; `employee_number VARCHAR(50)` = Código Colaborador
-- `vacation_requests` — status: pending/approved/rejected/cancelled; `request_type`: vacation/permission/justified_absence/seniority_benefit
+- `vacation_requests` — status: pending/approved/rejected/cancelled/**annulled**; `request_type`: vacation/permission/justified_absence/seniority_benefit; columnas de anulación: `annulment_reason VARCHAR(500)`, `annulled_by INT`, `annulled_at DATETIME`
 - `request_date_ranges` — `business_days DECIMAL(5,2)`, soporta 0.5 (medio día)
-- `request_history` — audit trail ligado a solicitudes
+- `request_history` — audit trail ligado a solicitudes; `action VARCHAR(100)` (sin enum — acepta cualquier valor incluyendo `'annulled'`)
 - `user_day_adjustments` — todos los movimientos de días; `adjustment_number VARCHAR(20)` formato `VAC-YYYY-NNNN`; `adjustment_type ENUM('manual','monthly_auto','initial_balance')`
 - `approval_tokens` — links de 7 días; enum `action`: `'approve'`/`'reject'` (NO `'approved'`/`'rejected'`)
 
@@ -139,6 +140,7 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
 | **Rojo** `bg-red-50 / text-red-600` | Vacaciones aprobadas (días descontados) |
 | **Ámbar** `bg-amber-50 / text-amber-600` | Beneficio Antigüedad aprobado (informativo, no descuenta) |
 | **Gris** `bg-gray-50 / text-gray-500` | Permisos y ausencias aprobadas (informativo, no descuenta) |
+| **Gris opaco + tachado** `bg-gray-50 opacity-60 / line-through` | Solicitudes anuladas (`color_type: 'annulled'`) |
 
 Aplica en: `Dashboard.jsx` (timeline "Movimientos de Días"), `MyRequests.jsx`, `AllRequests.jsx`, `CollaboratorDetailModal.jsx`.
 
@@ -174,6 +176,42 @@ All routes are implemented. Role-gated routes:
 - **+ Días**: modal para agregar días manualmente con motivo
 - **Reporte**: abre `CollaboratorDetailModal` con historial unificado del colaborador
 
+### Dashboard — KPIs
+- **Fila 1** (4 tarjetas con color): Saldo Inicial | Días Agregados (año) | Días Consumidos | Días Disponibles Hoy
+- **Fila 2** (2 tarjetas grises, "Solo informativo"): Permisos Personales | Ausencia Justificada
+- Fórmulas backend (`getMyReport`):
+  - `total_extra_days` = incrementos `monthly_auto` + `seniority_benefit` aprobado del año
+  - `total_consumed_days` = `vacation` aprobada + `seniority_benefit` aprobado del año (display)
+  - `total_available_days` = `base_vacation_days` − `vacation` aprobada (seniority no descuenta del saldo real)
+  - `total_permission_days` / `total_absence_days` = días informativos del año
+
+### Reportes Generales — filtros avanzados
+- **Año + Mes** → van al backend (`?year=2026&month=5`); mes filtra los JOINs de solicitudes
+- **Supervisor/Coordinador** → select client-side; lista solo usuarios con `role IN ('manager','hr_admin','super_admin')`
+- **Tipo de movimiento** → 4 checkboxes (Vacaciones/Permisos/Ausencias/B. Antigüedad); filtra filas con > 0 días en el tipo marcado
+- **Solo con Beneficio Antigüedad** → filtra `benefit_extra_day = 1` (sin importar si ya fue usado)
+- Contador "Mostrando X de Y" cuando hay filtros activos; botón "Limpiar filtros (N)"
+- Columna **Supervisor** visible en la tabla
+- Badge **"Beneficio usado"** (ámbar) / **"Beneficio disponible"** (gris) junto al nombre
+- El CSV exporta solo las filas filtradas
+
+### Anulación de solicitudes (`annulled`)
+- Solo `super_admin` puede anular vía `PUT /api/requests/:id/annul`
+- La solicitud **no se elimina** — cambia `status` a `'annulled'` y guarda `annulment_reason`, `annulled_by`, `annulled_at`
+- **Devolución de días:** `vacation` aprobada → días se recuperan automáticamente (el query de consumo filtra `status = 'approved'`); `seniority_benefit` aprobada → resetea `benefit_extra_day_used = 0`; `permission`/`justified_absence` → sin acción
+- Badge "Anulada" (gris + ícono `Ban`) en: `AllRequests.jsx`, `MyRequests.jsx`, `Dashboard.jsx`, `PendingApprovals.jsx`
+- En `AllRequests.jsx` (solo `super_admin`): botón "Anular" por fila + modal con aviso de devolución de días + textarea obligatorio; motivo visible como tooltip instantáneo sobre ícono circular `bg-indigo-600` (posición `fixed` para evitar clipping por `overflow-hidden` de la tabla)
+- En `CollaboratorDetailModal`: `getEmployeeDetail` incluye `status IN ('approved','annulled')`; anuladas con `color_type: 'annulled'` → texto tachado, fila opaca
+- **Migración SQL requerida:**
+  ```sql
+  ALTER TABLE vacation_requests
+  MODIFY COLUMN status ENUM('pending','approved','rejected','cancelled','annulled') NOT NULL DEFAULT 'pending';
+  ALTER TABLE vacation_requests
+    ADD COLUMN annulment_reason VARCHAR(500) NULL AFTER notes,
+    ADD COLUMN annulled_by INT NULL AFTER annulment_reason,
+    ADD COLUMN annulled_at DATETIME NULL AFTER annulled_by;
+  ```
+
 ### PendingApprovals — columnas
 - **Pendientes de Aprobación**: Colaborador | Tipo | Fechas | Motivo | Acciones
 - **Historial de Solicitudes**: Colaborador | Tipo | Fechas | Estado
@@ -184,6 +222,7 @@ All routes are implemented. Role-gated routes:
 - Llama `GET /api/reports/employee/:id/detail`
 - Muestra: info del colaborador + 3 widgets (Días Base, Consumidos, Disponibles) + tabla de movimientos con colores
 - Los movimientos están ordenados: saldo inicial primero, luego el resto por fecha descendente
+- Incluye solicitudes anuladas (`color_type: 'annulled'`) con texto tachado y motivo de anulación
 
 ## Key Design Decisions
 
@@ -210,6 +249,9 @@ All routes are implemented. Role-gated routes:
 - **preview-balances no guarda nada**: Es solo lectura — úsalo para validar el archivo antes de ejecutar la carga real.
 - **seniority_benefit permite fines de semana**: El tipo no usa días hábiles — el frontend fuerza `business_days: 1` en el payload y omite la validación `businessDays <= 0`. No aplicar esta lógica a otros tipos.
 - **Reporte general muestra 0 si no hay solicitudes aprobadas en el año**: Las columnas Vacaciones/Permisos/Ausencias/B. Antigüedad filtran por `YEAR(vr.created_at)`. Si el año seleccionado no tiene solicitudes aprobadas, todas muestran 0 — es correcto, no es un error.
+- **Anulación no afecta reportes generales**: `getAllEmployeesReport` solo suma `status = 'approved'`. Solicitudes anuladas no aparecen en los totales — correcto por diseño.
+- **Tooltip de motivo anulación usa `position: fixed`**: No uses `title` nativo (delay del browser no controlable). El tooltip custom con `onMouseEnter` + `getBoundingClientRect()` evita clipping por `overflow-hidden` de la tabla.
+- **Motivo/Justificación requerido para vacaciones**: `reasonDisabled = isSeniorityBenefit` — solo Beneficio Antigüedad deshabilita el campo. Vacaciones, Permisos y Ausencias lo requieren.
 
 ## Environment Variables
 
@@ -227,7 +269,7 @@ See `.env.example` (root) for the full template with Spanish comments.
 - `backend/jobs/monthlyVacationIncrement.js` — Cron incremento 1.25 días mensual
 - `backend/jobs/annualBenefitReset.js` — Cron 1 de enero: resetea `benefit_extra_day_used` para elegibles
 - `backend/controllers/userController.js` — `generateAdjustmentNumber()`, `addDayAdjustment()`, `getDayAdjustments()`
-- `backend/controllers/reportController.js` — `getMyReport()`, `getEmployeeDetail()`, `getAllEmployeesReport()`
+- `backend/controllers/reportController.js` — `getMyReport()` (KPIs desglosados por tipo), `getEmployeeDetail()` (incluye anuladas), `getAllEmployeesReport()` (filtros año+mes, manager, benefit_extra_day)`
 - `backend/controllers/importController.js` — `previewBalances()` (previsualización sin guardar) + `importInitialBalances()` (carga real desde CSV)
 - `frontend/src/App.jsx` — Definición de rutas
 - `frontend/src/context/AuthContext.jsx` — Estado global de autenticación
@@ -239,3 +281,5 @@ See `.env.example` (root) for the full template with Spanish comments.
 - `database/schema.sql` — DDL completo incluyendo `user_day_adjustments` con enum `initial_balance`
 - `database/reset_solicitudes.sql` — Script para limpiar solicitudes sin tocar usuarios ni saldos
 - `plans/` — Planes de desarrollo, guías y documentación de apoyo
+- `plans/Plan_Cambios_Finales_APP_Vacaciones.md` — Historial sesiones 23/05/2026: Beneficio Antigüedad, N8N CC RRHH, columna Tipo, rediseño KPIs
+- `plans/Plan_actualizacion_010626_eliminacion_solicitud.md` — Sesión 01/06/2026: anulación de solicitudes, filtros reportes, motivo vacaciones
