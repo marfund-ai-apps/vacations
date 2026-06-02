@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { Clock, CheckCircle, XCircle, Ban } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Ban, Info } from 'lucide-react';
 import { formatDate } from '../utils/dateUtils';
 import { useAuth } from '../context/AuthContext';
 
@@ -219,12 +219,14 @@ export default function AllRequests() {
                                                     {req.manager_name || 'Desconocido'}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                                    {getStatusBadge(req.status)}
-                                                    {req.status === 'annulled' && req.annulment_reason && (
-                                                        <p className="text-xs text-gray-400 mt-1 max-w-xs truncate" title={req.annulment_reason}>
-                                                            {req.annulment_reason}
-                                                        </p>
-                                                    )}
+                                                    <div className="flex items-center gap-2">
+                                                        {getStatusBadge(req.status)}
+                                                        {req.status === 'annulled' && req.annulment_reason && (
+                                                            <span title={req.annulment_reason} className="cursor-help text-gray-400 hover:text-gray-600">
+                                                                <Info className="w-4 h-4" />
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 {isSuperAdmin && (
                                                     <td className="whitespace-nowrap px-3 py-4 text-right">
