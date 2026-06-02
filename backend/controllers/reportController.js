@@ -166,12 +166,12 @@ exports.getEmployeeDetail = async (req, res) => {
        ORDER BY uda.created_at ASC`, [id]
     );
 
-    // Solicitudes (todas las aprobadas)
+    // Solicitudes aprobadas y anuladas
     const [requests] = await db.query(
       `SELECT vr.id, vr.request_number, vr.request_type, vr.status, vr.reason,
-              vr.manager_decision_date, vr.created_at
+              vr.annulment_reason, vr.manager_decision_date, vr.annulled_at, vr.created_at
        FROM vacation_requests vr
-       WHERE vr.employee_id = ? AND vr.status = 'approved'
+       WHERE vr.employee_id = ? AND vr.status IN ('approved', 'annulled')
        ORDER BY vr.created_at ASC`, [id]
     );
     for (const r of requests) {
@@ -179,7 +179,7 @@ exports.getEmployeeDetail = async (req, res) => {
       r.total_days = parseFloat(ranges[0].total) || 0;
     }
 
-    // Unificar movimientos: ajustes (verde) + solicitudes vacaciones (rojo) + permisos/ausencias (gris)
+    // Unificar movimientos: ajustes (verde) + solicitudes vacaciones (rojo) + permisos/ausencias (gris) + anuladas (gris opaco)
     const movements = [];
 
     for (const adj of adjustments) {
@@ -200,18 +200,34 @@ exports.getEmployeeDetail = async (req, res) => {
     }
 
     for (const r of requests) {
+      const isAnnulled = r.status === 'annulled';
       const isVacation = r.request_type === 'vacation';
+      let colorType = 'info';
+      if (isAnnulled) colorType = 'annulled';
+      else if (isVacation) colorType = 'debit';
+      else if (r.request_type === 'seniority_benefit') colorType = 'seniority';
+
+      let typeLabel = '';
+      if (isAnnulled) {
+        const base = r.request_type === 'vacation' ? 'Vacaciones' :
+                     r.request_type === 'permission' ? 'Permiso' :
+                     r.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia';
+        typeLabel = `${base} — Anulada`;
+      } else {
+        typeLabel = isVacation ? 'Vacaciones aprobadas' :
+                    r.request_type === 'permission' ? 'Permiso aprobado' :
+                    r.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia justificada';
+      }
+
       movements.push({
         id: `req-${r.id}`,
-        date: r.manager_decision_date || r.created_at,
+        date: isAnnulled ? (r.annulled_at || r.created_at) : (r.manager_decision_date || r.created_at),
         number: r.request_number,
-        type_label: r.request_type === 'vacation' ? 'Vacaciones aprobadas' :
-                    r.request_type === 'permission' ? 'Permiso aprobado' :
-                    r.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia justificada',
-        color_type: isVacation ? 'debit' : r.request_type === 'seniority_benefit' ? 'seniority' : 'info',
+        type_label: typeLabel,
+        color_type: colorType,
         days: r.total_days,
-        reason: r.reason || '',
-        detail: '',
+        reason: isAnnulled ? (r.annulment_reason || '') : (r.reason || ''),
+        detail: isAnnulled ? 'Solicitud anulada' : '',
         sort_priority: 1
       });
     }

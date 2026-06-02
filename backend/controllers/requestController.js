@@ -261,6 +261,49 @@ exports.makeDecision = async (req, res) => {
     }
 };
 
+// PUT /api/requests/:id/annul — Anular solicitud (solo super_admin)
+exports.annulRequest = async (req, res) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const adminId = req.user.id;
+
+    if (!reason || !reason.trim()) {
+        return res.status(400).json({ message: 'Se requiere un motivo para anular la solicitud.' });
+    }
+
+    try {
+        const [rows] = await db.query('SELECT * FROM vacation_requests WHERE id = ?', [id]);
+        if (!rows.length) return res.status(404).json({ message: 'Solicitud no encontrada.' });
+
+        const request = rows[0];
+        if (['annulled', 'cancelled'].includes(request.status)) {
+            return res.status(400).json({ message: 'La solicitud ya fue anulada o cancelada.' });
+        }
+
+        // seniority_benefit aprobada → devolver el beneficio al colaborador
+        if (request.request_type === 'seniority_benefit' && request.status === 'approved') {
+            await db.query('UPDATE users SET benefit_extra_day_used = 0 WHERE id = ?', [request.employee_id]);
+        }
+
+        await db.query(
+            `UPDATE vacation_requests
+             SET status = 'annulled', annulment_reason = ?, annulled_by = ?, annulled_at = NOW()
+             WHERE id = ?`,
+            [reason.trim(), adminId, id]
+        );
+
+        await db.query(
+            'INSERT INTO request_history (request_id, action, performed_by, details) VALUES (?, ?, ?, ?)',
+            [id, 'annulled', adminId, `Solicitud anulada. Motivo: ${reason.trim()}`]
+        );
+
+        res.json({ message: 'Solicitud anulada correctamente.' });
+    } catch (err) {
+        console.error('Error en annulRequest:', err);
+        res.status(500).json({ message: 'Error al anular la solicitud.' });
+    }
+};
+
 // GET /api/requests/token/:token — Aprobación por link de email
 exports.processApprovalToken = async (req, res) => {
     const { token } = req.params;

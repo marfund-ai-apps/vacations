@@ -19,4 +19,7 @@ router.get('/', requestController.listRequests);
 // El jefe o rrhh procesan una decisión desde el portal web
 router.put('/:id/decision', requireRole('manager', 'hr_admin', 'super_admin'), requestController.makeDecision);
 
+// Anular solicitud — solo super_admin
+router.put('/:id/annul', requireRole('super_admin'), requestController.annulRequest);
+
 module.exports = router;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Ban } from 'lucide-react';
 import { formatDate } from '../utils/dateUtils';
 
 export default function MyRequests() {
@@ -34,6 +34,8 @@ export default function MyRequests() {
                 return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />Rechazado</span>;
             case 'cancelled':
                 return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><XCircle className="w-3 h-3 mr-1" />Cancelado</span>;
+            case 'annulled':
+                return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600"><Ban className="w-3 h-3 mr-1" />Anulada</span>;
             default:
                 return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pendiente</span>;
         }
@@ -165,8 +167,13 @@ export default function MyRequests() {
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {getStatusBadge(req.status)}
                                                 </td>
-                                                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                    {req.manager_comments && (
+                                                <td className="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                                    {req.status === 'annulled' && req.annulment_reason && (
+                                                        <span title={req.annulment_reason} className="text-gray-500 hover:text-gray-700 cursor-help text-xs">
+                                                            Motivo anulación
+                                                        </span>
+                                                    )}
+                                                    {req.status !== 'annulled' && req.manager_comments && (
                                                         <span title={req.manager_comments} className="text-indigo-600 hover:text-indigo-900 cursor-help">
                                                             Nota del Supervisor
                                                         </span>

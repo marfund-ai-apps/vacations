@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Ban } from 'lucide-react';
 import { formatDate } from '../utils/dateUtils';
 
 export default function PendingApprovals() {
@@ -181,17 +181,22 @@ export default function PendingApprovals() {
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm">
                                                     {req.status === 'approved' && (
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                            Aprobado
+                                                            <CheckCircle className="w-3 h-3 mr-1" />Aprobado
                                                         </span>
                                                     )}
                                                     {req.status === 'rejected' && (
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                            Rechazado
+                                                            <XCircle className="w-3 h-3 mr-1" />Rechazado
                                                         </span>
                                                     )}
                                                     {req.status === 'cancelled' && (
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                            Cancelado
+                                                            <XCircle className="w-3 h-3 mr-1" />Cancelado
+                                                        </span>
+                                                    )}
+                                                    {req.status === 'annulled' && (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600">
+                                                            <Ban className="w-3 h-3 mr-1" />Anulada
                                                         </span>
                                                     )}
                                                 </td>

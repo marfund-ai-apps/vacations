@@ -62,7 +62,7 @@ export default function NewRequest() {
     const isVacation = formData.request_type === 'vacation';
     const isSeniorityBenefit = formData.request_type === 'seniority_benefit';
     const showSeniorityOption = user?.benefit_extra_day && !user?.benefit_extra_day_used;
-    const reasonDisabled = isVacation || isSeniorityBenefit;
+    const reasonDisabled = isSeniorityBenefit;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -110,11 +110,12 @@ export default function NewRequest() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         if (name === 'request_type') {
-            if (value === 'vacation' || value === 'seniority_benefit') {
-                setFormData({ ...formData, request_type: value, reason: '' });
-                if (value === 'seniority_benefit') {
-                    setHalfDay(false);
-                    if (formData.date_from) setFormData(prev => ({ ...prev, request_type: value, reason: '', date_to: prev.date_from }));
+            if (value === 'seniority_benefit') {
+                setHalfDay(false);
+                if (formData.date_from) {
+                    setFormData(prev => ({ ...prev, request_type: value, reason: '', date_to: prev.date_from }));
+                } else {
+                    setFormData({ ...formData, request_type: value, reason: '' });
                 }
             } else {
                 setFormData({ ...formData, [name]: value });
@@ -271,7 +272,6 @@ export default function NewRequest() {
                             <div className="col-span-full">
                                 <label htmlFor="reason" className={`block text-sm font-medium leading-6 ${reasonDisabled ? 'text-gray-400' : 'text-gray-900'}`}>
                                     Motivo / Justificación
-                                    {isVacation && <span className="ml-2 text-xs font-normal text-gray-400">(no aplica para vacaciones)</span>}
                                     {isSeniorityBenefit && <span className="ml-2 text-xs font-normal text-gray-400">(no aplica para Beneficio Antigüedad)</span>}
                                 </label>
                                 <div className="mt-2">
