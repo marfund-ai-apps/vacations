@@ -32,12 +32,8 @@ function startMonthlyVacationIncrement() {
                 return;
             }
 
-            // Sumar 1.25 días a todos los usuarios activos
-            await conn.query(
-                'UPDATE users SET base_vacation_days = base_vacation_days + 1.25 WHERE is_active = 1'
-            );
-
             // Registrar un ajuste en user_day_adjustments por cada usuario (con número VAC- único)
+            // base_vacation_days NO se modifica aquí; el saldo disponible se calcula como base + SUM(adjustments)
             const reason = 'Aumento automático mensual de 1.25 días de vacaciones';
             for (const u of activeUsers) {
                 const adjNumber = await generateAdjustmentNumber(conn);

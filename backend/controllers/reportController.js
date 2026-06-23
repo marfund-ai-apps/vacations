@@ -35,12 +35,19 @@ exports.getMyReport = async (req, res) => {
     `, [id, year]);
     const monthlyAutoDays = parseFloat(monthlyAutoSum[0].total) || 0;
 
+    // Total de ajustes incrementales (monthly_auto + manual) — excluye initial_balance que ya vive en base_vacation_days
+    const [allAdjSum] = await db.query(
+        "SELECT COALESCE(SUM(days_added), 0) as total FROM user_day_adjustments WHERE user_id = ? AND adjustment_type != 'initial_balance'",
+        [id]
+    );
+    const totalAdjustmentDays = parseFloat(allAdjSum[0].total) || 0;
+
     // Días Agregados = incrementos automáticos + beneficio antigüedad autorizado
     const totalAdjusted = monthlyAutoDays + seniorityConsumed;
     // Días Consumidos (display) = vacaciones + beneficio antigüedad autorizados
     const consumedDays = vacationConsumed + seniorityConsumed;
-    // Días Disponibles = base − vacaciones (seniority_benefit no descuenta del saldo)
-    const availableDays = baseDays - vacationConsumed;
+    // Días Disponibles = base + SUM(todos los ajustes) − vacaciones aprobadas
+    const availableDays = baseDays + totalAdjustmentDays - vacationConsumed;
 
     // Historial de ajustes del año actual (para mostrar en el dashboard como movimientos verdes)
     const [adjustmentList] = await db.query(`
@@ -238,12 +245,18 @@ exports.getEmployeeDetail = async (req, res) => {
       return new Date(b.date) - new Date(a.date);
     });
 
+    // Excluir initial_balance del cálculo: ese valor ya está capturado en base_vacation_days
+    const totalAdjDays = adjustments
+        .filter(a => a.adjustment_type !== 'initial_balance')
+        .reduce((sum, a) => sum + (parseFloat(a.days_added) || 0), 0);
+    const baseDays = parseFloat(userData.base_vacation_days);
+
     res.json({
       user: userData,
       summary: {
-        base_days: parseFloat(userData.base_vacation_days),
+        base_days: baseDays,
         consumed_days: consumedDays,
-        available_days: parseFloat(userData.base_vacation_days) - consumedDays
+        available_days: baseDays + totalAdjDays - consumedDays
       },
       movements
     });

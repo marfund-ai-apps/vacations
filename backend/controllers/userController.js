@@ -145,13 +145,7 @@ exports.addDayAdjustment = async (req, res) => {
 
         const adjustmentNumber = await generateAdjustmentNumber();
 
-        // Actualizar días base del usuario
-        await conn.query(
-            'UPDATE users SET base_vacation_days = base_vacation_days + ? WHERE id = ?',
-            [parseFloat(days_added), id]
-        );
-
-        // Registrar el ajuste
+        // Registrar el ajuste (base_vacation_days NO se modifica; saldo = base + SUM(adjustments))
         await conn.query(
             `INSERT INTO user_day_adjustments (adjustment_number, user_id, adjusted_by, days_added, adjustment_type, reason)
              VALUES (?, ?, ?, ?, 'manual', ?)`,

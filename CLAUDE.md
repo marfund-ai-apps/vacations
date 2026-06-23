@@ -100,7 +100,8 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
 ### Cron Job — Incremento mensual automático
 - Archivo: `backend/jobs/monthlyVacationIncrement.js`
 - Schedule producción: `0 1 1 * *` (día 1 de cada mes a la 1:00am, `America/Guatemala`)
-- Acción: suma `1.25` a `base_vacation_days` de todos los usuarios activos; inserta registro `monthly_auto` en `user_day_adjustments` por cada usuario con número `VAC-`
+- Acción: **solo** inserta registro `monthly_auto` en `user_day_adjustments` por cada usuario activo — **NO modifica `base_vacation_days`**
+- El saldo disponible se calcula como `base_vacation_days + SUM(monthly_auto + manual) - vacation_approved`
 - Se inicia en `server.js` dentro del callback de `app.listen`
 
 ### Cron Job — Reset anual de Beneficio Antigüedad
@@ -175,15 +176,18 @@ All routes are implemented. Role-gated routes:
 - **Cargar Saldos**: carga CSV con saldos iniciales (flujo de dos pasos: previsualización → confirmar)
 - **+ Días**: modal para agregar días manualmente con motivo
 - **Reporte**: abre `CollaboratorDetailModal` con historial unificado del colaborador
+- **Ficha del Colaborador** (modal Editar): el campo **Código Colaborador** (`employee_number`) es editable; aparece junto a Puesto en la sección Información Personal
 
 ### Dashboard — KPIs
 - **Fila 1** (4 tarjetas con color): Saldo Inicial | Días Agregados (año) | Días Consumidos | Días Disponibles Hoy
 - **Fila 2** (2 tarjetas grises, "Solo informativo"): Permisos Personales | Ausencia Justificada
 - Fórmulas backend (`getMyReport`):
-  - `total_extra_days` = incrementos `monthly_auto` + `seniority_benefit` aprobado del año
+  - `total_base_days` = `base_vacation_days` (saldo base importado — nunca lo modifica el cron ni ajustes manuales)
+  - `total_extra_days` = incrementos `monthly_auto` del año + `seniority_benefit` aprobado del año
   - `total_consumed_days` = `vacation` aprobada + `seniority_benefit` aprobado del año (display)
-  - `total_available_days` = `base_vacation_days` − `vacation` aprobada (seniority no descuenta del saldo real)
+  - `total_available_days` = `base_vacation_days` + SUM(`monthly_auto` + `manual`, todos los tiempos) − `vacation` aprobada
   - `total_permission_days` / `total_absence_days` = días informativos del año
+- **Nota:** `initial_balance` en `user_day_adjustments` es solo histórico — **no** se suma a `total_available_days` (ya está en `base_vacation_days`)
 
 ### Reportes Generales — filtros avanzados
 - **Año + Mes** → van al backend (`?year=2026&month=5`); mes filtra los JOINs de solicitudes
@@ -240,6 +244,8 @@ All routes are implemented. Role-gated routes:
 
 ## Known Issues & Gotchas
 
+- **Arquitectura de días (crítico):** `base_vacation_days` = saldo base importado, nunca lo toca el cron ni `addDayAdjustment`. Los incrementos van SOLO a `user_day_adjustments`. Disponible = `base + SUM(adjustments excl. initial_balance) - vacation`. Si se rompe este invariante, los KPIs se descuadran. La migración SQL en `plans/Plan_actualizacion_ajustesfinales_220626.md` debe correrse una sola vez en producción.
+- **`addDayAdjustment` solo registra, no actualiza base:** El endpoint `POST /api/users/:id/day-adjustments` ya NO hace `UPDATE users SET base_vacation_days`. Solo inserta en `user_day_adjustments`. El saldo disponible se recalcula en cada llamada a `getMyReport`.
 - **Tailwind v4 PostCSS**: Requiere `@tailwindcss/postcss` — NO el plugin estándar `tailwindcss`. Verificar `postcss.config.js` e `index.css` si el CSS se rompe.
 - **Remote DB firewall**: Conexiones locales a `147.93.46.144:3306` pueden dar `ETIMEDOUT`. Solución: abrir puerto en Hostinger o usar MySQL local.
 - **Zombie nodemon**: Si el puerto está en uso tras un fallo, matar el proceso nodemon anterior.

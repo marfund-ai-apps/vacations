@@ -137,6 +137,7 @@ export default function Admin() {
         setEditModal(u);
         setEditForm({
             full_name: u.full_name || '',
+            employee_number: u.employee_number || '',
             position: u.position || '',
             role: u.role,
             manager_id: u.manager_id || '',
@@ -152,7 +153,6 @@ export default function Admin() {
         try {
             await api.put(`/users/${editModal.id}`, {
                 ...editForm,
-                employee_number: editModal.employee_number,
                 manager_id: editForm.manager_id || null
             });
             toast.success("Colaborador actualizado correctamente");
@@ -585,6 +585,12 @@ export default function Admin() {
                                     <input type="text" value={editForm.full_name || ''}
                                         onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
                                         className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Código Colaborador</label>
+                                    <input type="text" value={editForm.employee_number || ''}
+                                        onChange={(e) => setEditForm({ ...editForm, employee_number: e.target.value })}
+                                        className="block w-full rounded-md border-0 py-1.5 font-mono text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Puesto</label>
