@@ -7,6 +7,17 @@
 | R1 | Editar employee_number desde la Ficha del Colaborador | ✅ Implementado |
 | R2 | ~~Auto-incremento de código de usuario al crear colaboradores~~ | ❌ Cancelado (R1 es suficiente) |
 | R3 | Bug: Días Disponibles no suma los días agregados | ✅ Implementado |
+| R4 | Renombrar columna "Apoderado" → "Supervisor" en historial | ✅ Implementado |
+| R5 | Modal de instrucciones para "Cargar Saldos" | ✅ Implementado |
+
+---
+
+## Commits realizados
+
+| Hash | Descripción |
+|------|-------------|
+| `acc1ee5` | feat: employee_number editable, fix días disponibles, columna Supervisor |
+| `62e39ee` | feat: modal de instrucciones para Cargar Saldos con formato y ejemplo |
 
 ---
 
@@ -14,94 +25,27 @@
 
 ### Problema
 
-En el modal de edición (Ficha del Colaborador), el campo `employee_number` aparece como **badge de solo lectura** en el encabezado. No hay campo editable para modificarlo.
-
-En `handleOpenEdit` (Admin.jsx línea 136), `editForm` NO incluye `employee_number`:
-```js
-setEditForm({
-    full_name: u.full_name || '',
-    position: u.position || '',
-    role: u.role,
-    // ← employee_number ausente aquí
-    ...
-});
-```
-
-En `handleSaveEdit` (línea 155) se usa `editModal.employee_number` (read-only del objeto original), no del formulario.
+En el modal de edición (Ficha del Colaborador), el campo `employee_number` aparecía como **badge de solo lectura** en el encabezado. No existía campo editable para modificarlo, y `handleSaveEdit` usaba `editModal.employee_number` (valor fijo del objeto original).
 
 ### Solución
 
 **`frontend/src/pages/Admin.jsx`** — 3 cambios:
 
 1. `handleOpenEdit`: agregar `employee_number: u.employee_number || ''` al estado `editForm`
-2. Modal "Información Personal": agregar campo `<input>` para `employee_number` entre Nombre y Puesto
-3. `handleSaveEdit`: cambiar `employee_number: editModal.employee_number` → `employee_number: editForm.employee_number`
+2. Modal "Información Personal": nuevo campo `<input>` editable para `employee_number` (con `font-mono`) entre Nombre Completo y Puesto
+3. `handleSaveEdit`: cambiar `employee_number: editModal.employee_number` → se elimina la sobreescritura; `editForm` ya lo incluye en el spread `...editForm`
 
-El backend (`updateUser` en userController.js) ya recibe y guarda `employee_number` en el UPDATE ✓
+El backend (`updateUser` en `userController.js`) ya recibía y guardaba `employee_number` en el UPDATE ✓
 
-### Archivos modificados
+### Resultado
 
-| Archivo | Cambio |
-|---------|--------|
-| `frontend/src/pages/Admin.jsx` | Agregar `employee_number` a `editForm` + campo editable en modal |
+El supervisor o admin puede editar el Código Colaborador directamente desde la ficha sin necesidad de acceso a la base de datos.
 
 ---
 
-## R2 — Auto-incremento de código de usuario (`employee_number`)
+## R2 — Auto-incremento de `employee_number` al crear colaboradores
 
-### Problema
-
-Al crear un colaborador desde Admin, el campo "Código" queda vacío por defecto. El administrador debe ingresar el código manualmente sin saber cuál sigue. El próximo código es **1143** (último asignado: 1142).
-
-### Solución
-
-**Backend — nueva función y endpoint:**
-
-`backend/controllers/userController.js` — nueva función `getNextEmployeeNumber`:
-```js
-async function getNextEmployeeNumber() {
-    const [rows] = await db.query(
-        "SELECT MAX(CAST(employee_number AS UNSIGNED)) as max_num FROM users WHERE employee_number REGEXP '^[0-9]+$'"
-    );
-    const max = parseInt(rows[0].max_num) || 1142;
-    return String(max + 1);
-}
-
-exports.getNextEmployeeNumber = async (req, res) => {
-    try {
-        const next = await getNextEmployeeNumber();
-        res.json({ next_employee_number: next });
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener el siguiente código' });
-    }
-};
-```
-
-`backend/controllers/userController.js` — en `createUser`: si no se envía `employee_number`, auto-generar:
-```js
-const empNumber = employee_number || await getNextEmployeeNumber();
-// usar empNumber en el INSERT
-```
-
-`backend/routes/userRoutes.js` — nuevo endpoint (ANTES de `/:id` para no colisionar):
-```js
-router.get('/next-employee-number', requireRole('hr_admin', 'super_admin'), userController.getNextEmployeeNumber);
-```
-
-**Frontend — pre-llenar el campo al abrir creación:**
-
-`frontend/src/pages/Admin.jsx`:
-- Nuevo estado: `const [nextEmpNumber, setNextEmpNumber] = useState('');`
-- Modificar el botón "Agregar Colaborador": al hacer click, llama `GET /api/users/next-employee-number` y pre-llena `newForm.employee_number`
-- El campo sigue siendo editable (el admin puede cambiar el código si necesita)
-
-### Archivos modificados
-
-| Archivo | Cambio |
-|---------|--------|
-| `backend/controllers/userController.js` | `getNextEmployeeNumber()` + export + auto-asignar en `createUser` |
-| `backend/routes/userRoutes.js` | `GET /next-employee-number` |
-| `frontend/src/pages/Admin.jsx` | Llamar endpoint al abrir creación, pre-llenar campo |
+**Decisión:** Cancelado. Con R1 implementado (el campo es editable), el administrador puede asignar el código manualmente. No se implementó auto-incremento.
 
 ---
 
@@ -118,46 +62,41 @@ router.get('/next-employee-number', requireRole('hr_admin', 'super_admin'), user
 
 ### Análisis de causa raíz
 
-El sistema tiene una doble escritura inconsistente:
+El sistema tenía una doble escritura inconsistente:
 
-- El **cron mensual** hace DOS acciones: (1) `UPDATE users SET base_vacation_days = base_vacation_days + 1.25` y (2) inserta registro `monthly_auto` en `user_day_adjustments`
-- Los **ajustes manuales** también hacen DOS acciones: (1) `UPDATE users SET base_vacation_days = base_vacation_days + ?` y (2) insertan en `user_day_adjustments`
+- El **cron mensual** hacía DOS cosas: (1) `UPDATE users SET base_vacation_days = base_vacation_days + 1.25` y (2) insertar registro `monthly_auto` en `user_day_adjustments`
+- Los **ajustes manuales** también hacían DOS cosas: (1) `UPDATE users SET base_vacation_days + ?` y (2) insertar en `user_day_adjustments`
 - La **importación de saldos** SETEA `base_vacation_days` al valor del CSV (sobrescribe lo acumulado)
 
 Resultado cuando el import corre **después** de que el cron ya acumuló días:
-- `base_vacation_days` queda en 7.5 (el valor del CSV, sin los incrementos anteriores)
+- `base_vacation_days` queda en 7.5 (valor del CSV, sin los incrementos previos del cron)
 - Los registros `monthly_auto` de 2.5 siguen en `user_day_adjustments`
-- La fórmula actual `available = base_vacation_days - vacation_consumed = 7.5 - 0 = 7.5` no suma los 2.5
-
-### Diseño original (CLAUDE.md)
-
-> Balance = `base_vacation_days + SUM(adjustments.days_added) - consumed_vacation_days`
-
-La implementación del cron NO sigue este diseño: agrega a `base_vacation_days` en lugar de solo registrar en adjustments. Esto hace que `base_vacation_days` mezcle "saldo base" con "incrementos acumulados".
+- La fórmula `available = base - vacation = 7.5 - 0 = 7.5` no incluía los 2.5
 
 ### Solución arquitectónica
 
-**Separar `base_vacation_days` de los incrementos:**
+**`base_vacation_days` = solo el saldo importado/inicial. Los incrementos viven únicamente en `user_day_adjustments`.**
 
-| Componente | Comportamiento actual | Comportamiento nuevo |
-|------------|----------------------|---------------------|
-| `base_vacation_days` | Se actualiza con cada cron y ajuste manual | Solo se setea al crear usuario o importar saldos |
+| Componente | Antes | Después |
+|------------|-------|---------|
+| `base_vacation_days` | Se actualizaba con cron y ajustes manuales | Solo se setea al crear usuario o importar saldos |
 | Cron mensual | UPDATE base + INSERT adjustment | Solo INSERT adjustment |
 | Ajuste manual | UPDATE base + INSERT adjustment | Solo INSERT adjustment |
 | Importación | SET base = valor CSV | SET base = valor CSV (sin cambio) |
-| Fórmula disponibles | `base - vacation` | `base + SUM(adjustments) - vacation` |
+| Fórmula disponibles | `base - vacation` | `base + SUM(monthly_auto + manual) - vacation` |
 
-**Cambios en código:**
+> **Nota clave:** `initial_balance` en `user_day_adjustments` es solo histórico y **no** se suma al cálculo de disponibles, porque ese valor ya está capturado en `base_vacation_days`.
 
-`backend/jobs/monthlyVacationIncrement.js` — ELIMINAR:
+### Cambios en código
+
+**`backend/jobs/monthlyVacationIncrement.js`** — eliminado:
 ```js
 await conn.query(
     'UPDATE users SET base_vacation_days = base_vacation_days + 1.25 WHERE is_active = 1'
 );
 ```
-(Solo queda el INSERT en user_day_adjustments)
 
-`backend/controllers/userController.js` (`addDayAdjustment`) — ELIMINAR:
+**`backend/controllers/userController.js`** (`addDayAdjustment`) — eliminado:
 ```js
 await conn.query(
     'UPDATE users SET base_vacation_days = base_vacation_days + ? WHERE id = ?',
@@ -165,87 +104,150 @@ await conn.query(
 );
 ```
 
-`backend/controllers/reportController.js` (`getMyReport`) — cambiar fórmula:
+**`backend/controllers/reportController.js`** (`getMyReport`) — nueva query y fórmula:
 ```js
-// Agregar query para todos los ajustes del usuario (no solo monthly_auto)
-const [allAdjustments] = await db.query(
-    'SELECT COALESCE(SUM(days_added), 0) as total FROM user_day_adjustments WHERE user_id = ?',
+// Solo monthly_auto y manual (excluye initial_balance)
+const [allAdjSum] = await db.query(
+    "SELECT COALESCE(SUM(days_added), 0) as total FROM user_day_adjustments WHERE user_id = ? AND adjustment_type != 'initial_balance'",
     [id]
 );
-const totalAdjustmentDays = parseFloat(allAdjustments[0].total) || 0;
-
-// Días Disponibles = base + SUM(todos los ajustes) - vacaciones aprobadas
+const totalAdjustmentDays = parseFloat(allAdjSum[0].total) || 0;
 const availableDays = baseDays + totalAdjustmentDays - vacationConsumed;
 ```
 
-`backend/controllers/reportController.js` (`getEmployeeDetail`) — actualizar el resumen:
-- `consumed_days` y `available_days` deben usar la misma lógica
+**`backend/controllers/reportController.js`** (`getEmployeeDetail`) — mismo criterio en el resumen:
+```js
+const totalAdjDays = adjustments
+    .filter(a => a.adjustment_type !== 'initial_balance')
+    .reduce((sum, a) => sum + (parseFloat(a.days_added) || 0), 0);
 
-### Migración de datos (CRÍTICO — ejecutar UNA SOLA VEZ antes del deploy)
+available_days: baseDays + totalAdjDays - consumedDays
+```
 
-Para usuarios donde el cron YA actualizó `base_vacation_days`, restar lo que ya está acumulado en adjustments para evitar doble conteo:
+### Migración SQL (ejecutada en producción el 22/06/2026)
+
+Solo resta los ajustes `monthly_auto` y `manual` de `base_vacation_days`; no toca los `initial_balance`.
 
 ```sql
--- Verificar antes de ejecutar (solo debe correrse UNA VEZ)
--- Muestra cómo quedaría cada usuario:
+-- PASO 1: Verificar resultado esperado por usuario
 SELECT 
     u.id,
     u.full_name,
-    u.base_vacation_days as base_actual,
-    COALESCE(SUM(uda.days_added), 0) as total_adjustments,
-    u.base_vacation_days - COALESCE(SUM(uda.days_added), 0) as base_nuevo
+    u.base_vacation_days AS base_actual,
+    COALESCE(SUM(CASE WHEN uda.adjustment_type != 'initial_balance' 
+                      THEN uda.days_added END), 0) AS monthly_manual_total,
+    u.base_vacation_days 
+        - COALESCE(SUM(CASE WHEN uda.adjustment_type != 'initial_balance' 
+                            THEN uda.days_added END), 0) AS base_nuevo
 FROM users u
 LEFT JOIN user_day_adjustments uda ON uda.user_id = u.id
 GROUP BY u.id, u.full_name, u.base_vacation_days
 ORDER BY u.full_name;
 
--- Ejecutar migración:
+-- PASO 2: Confirmar que ningún usuario queda en negativo
+SELECT u.id, u.full_name,
+    u.base_vacation_days 
+        - COALESCE(SUM(CASE WHEN uda.adjustment_type != 'initial_balance' 
+                            THEN uda.days_added END), 0) AS base_nuevo
+FROM users u
+LEFT JOIN user_day_adjustments uda ON uda.user_id = u.id
+GROUP BY u.id, u.full_name, u.base_vacation_days
+HAVING base_nuevo < 0;
+
+-- PASO 3: Ejecutar migración
 UPDATE users u
 SET base_vacation_days = base_vacation_days - COALESCE((
-    SELECT SUM(days_added) FROM user_day_adjustments WHERE user_id = u.id
+    SELECT SUM(days_added) 
+    FROM user_day_adjustments 
+    WHERE user_id = u.id AND adjustment_type != 'initial_balance'
 ), 0);
 ```
 
-> ⚠️ **Importante:** Verificar con el SELECT primero que ningún usuario quede en negativo. Si alguno queda negativo, significa que su `base_vacation_days` ya fue reseteado por un import previo (como el caso del bug) y necesita corrección manual.
+### Resultado para Amy Louise Jones (usuario de prueba)
 
-### Impacto en Admin UI
-
-El campo "Días Base de Vacaciones" en la Ficha del Colaborador sigue siendo editable y representa el **saldo base inicial** del colaborador. El cron ya no lo modifica; el admin puede ajustarlo manualmente si necesita correcciones.
-
-### Archivos modificados
-
-| Archivo | Cambio |
-|---------|--------|
-| `backend/jobs/monthlyVacationIncrement.js` | Eliminar `UPDATE users SET base_vacation_days` |
-| `backend/controllers/userController.js` | Eliminar `UPDATE users SET base_vacation_days` en `addDayAdjustment` |
-| `backend/controllers/reportController.js` | Fórmula `availableDays = base + SUM(adjustments) - vacation` en `getMyReport` y `getEmployeeDetail` |
+| Campo | Antes | Después |
+|-------|-------|---------|
+| `base_vacation_days` en DB | 17.50 | **15.00** |
+| `user_day_adjustments` (initial_balance) | 15.00 | 15.00 (sin cambio) |
+| `user_day_adjustments` (monthly_auto ×2) | 2.50 | 2.50 (sin cambio) |
+| **Días Disponibles en Dashboard** | 17.50 | **17.50** ✓ (15 + 2.5) |
 
 ---
 
-## Resumen de archivos a modificar
+## R4 — Renombrar columna "Apoderado" → "Supervisor"
+
+### Problema
+
+En la página **Historial de Solicitudes** (`AllRequests.jsx`), la columna que muestra el supervisor aparecía con el texto "Apoderado", terminología incorrecta para el sistema.
+
+### Solución
+
+**`frontend/src/pages/AllRequests.jsx`** — cambiadas 2 ocurrencias (líneas 129 y 184):
+
+```jsx
+// Antes
+<th ...>Apoderado</th>
+
+// Después
+<th ...>Supervisor</th>
+```
+
+---
+
+## R5 — Modal de instrucciones para "Cargar Saldos"
+
+### Problema
+
+El botón "Cargar Saldos" abría directamente el selector de archivos sin ninguna indicación sobre qué formato o columnas debía tener el archivo. Un usuario nuevo no sabía qué preparar.
+
+### Solución
+
+**`frontend/src/pages/Admin.jsx`** — nuevo flujo:
+
+**Antes:** botón `<label>` con `<input type="file">` oculto → abría file picker directo
+
+**Después:** botón normal → abre modal de instrucciones → modal contiene el file picker
+
+El modal incluye:
+- Formatos aceptados: `.csv` o `.xlsx`
+- Tabla de columnas requeridas con descripción de cada una
+- Ejemplo visual de archivo (fondo oscuro, estilo terminal):
+  ```
+  No. Colaborador,Saldo Inicial
+  1110,15.00
+  1111,12.50
+  1142,7.50
+  ```
+- Tres notas de ayuda (previsualización antes de guardar, color amarillo = no encontrado, sensible a mayúsculas)
+- Botón "Seleccionar archivo" en el footer del modal que lanza el file picker
+
+Al seleccionar el archivo, el modal se cierra automáticamente y abre la previsualización existente (flujo de dos pasos sin cambios).
+
+### Cambios técnicos
+
+- Nuevo estado `importInfoModal` (boolean)
+- `handleImportFileSelected`: agrega `setImportInfoModal(false)` al inicio
+- Botón toolbar: de `<label>` con input oculto a `<button onClick={() => setImportInfoModal(true)}>`
+- Input `type="file"` ahora vive dentro del modal, acepta `.csv,.xlsx`
+
+---
+
+## Resumen de archivos modificados
 
 ### Backend
-| Archivo | Requerimiento | Cambio |
-|---------|---------------|--------|
-| `backend/controllers/userController.js` | R1, R2, R3 | `getNextEmployeeNumber()`, `createUser` auto-genera, `addDayAdjustment` sin UPDATE base |
-| `backend/routes/userRoutes.js` | R2 | `GET /next-employee-number` |
-| `backend/jobs/monthlyVacationIncrement.js` | R3 | Eliminar UPDATE base_vacation_days |
-| `backend/controllers/reportController.js` | R3 | Nueva fórmula disponibles en `getMyReport` y `getEmployeeDetail` |
+| Archivo | Cambio |
+|---------|--------|
+| `backend/controllers/userController.js` | R3: eliminar `UPDATE base_vacation_days` en `addDayAdjustment` |
+| `backend/jobs/monthlyVacationIncrement.js` | R3: eliminar `UPDATE base_vacation_days` del cron mensual |
+| `backend/controllers/reportController.js` | R3: fórmula `base + SUM(monthly_auto+manual) - vacation` en `getMyReport` y `getEmployeeDetail` |
 
 ### Frontend
-| Archivo | Requerimiento | Cambio |
-|---------|---------------|--------|
-| `frontend/src/pages/Admin.jsx` | R1, R2 | Campo editable employee_number en modal + pre-fill al crear |
+| Archivo | Cambio |
+|---------|--------|
+| `frontend/src/pages/Admin.jsx` | R1: `employee_number` editable en Ficha; R5: modal instrucciones Cargar Saldos |
+| `frontend/src/pages/AllRequests.jsx` | R4: columna "Apoderado" → "Supervisor" |
 
-### Migración SQL
-| Script | Cuándo |
-|--------|--------|
-| `UPDATE users SET base_vacation_days = base - SUM(adjustments)` | **Antes** de reiniciar el backend en producción |
-
----
-
-## Notas adicionales
-
-- **R2**: Si el admin ingresa un código manualmente diferente al sugerido, se respeta. El auto-incremento es solo el valor por defecto.
-- **R3**: Después del fix, "Saldo Inicial" mostrará el valor neto del CSV de importación. "Días Agregados" mostrará solo los incrementos mensuales + beneficio antigüedad del año (como ahora). "Días Disponibles" = Saldo Inicial + TODOS los ajustes de días - vacaciones aprobadas.
-- La fórmula de `getAllEmployeesReport` (Reportes Generales) usa una lógica diferente (SUM desde SQL directo), no requiere cambios para R3.
+### Migración SQL en producción
+| Script | Ejecutado |
+|--------|-----------|
+| Restar `monthly_auto + manual` de `base_vacation_days` | ✅ 22/06/2026 |
