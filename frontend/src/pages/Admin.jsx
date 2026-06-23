@@ -32,6 +32,7 @@ export default function Admin() {
     const [detailUserId, setDetailUserId] = useState(null);
 
     // Carga de saldos desde CSV — flujo de dos pasos: previsualizar → confirmar
+    const [importInfoModal, setImportInfoModal] = useState(false);
     const [importFile, setImportFile] = useState(null);
     const [importPreview, setImportPreview] = useState(null);
     const [importing, setImporting] = useState(false);
@@ -42,6 +43,7 @@ export default function Admin() {
         const file = e.target.files?.[0];
         if (!file) return;
         e.target.value = '';
+        setImportInfoModal(false);
         setImportFile(file);
         setImporting(true);
         try {
@@ -278,14 +280,16 @@ export default function Admin() {
                         Exportar CSV
                         {filterManagerId && <span className="ml-1 text-xs text-indigo-600">(filtrado)</span>}
                     </button>
-                    <label
-                        className={`inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 cursor-pointer ${importing ? 'opacity-60 pointer-events-none' : ''}`}
+                    <button
+                        type="button"
+                        onClick={() => setImportInfoModal(true)}
+                        disabled={importing}
+                        className={`inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 ${importing ? 'opacity-60 pointer-events-none' : ''}`}
                         title="Cargar saldos iniciales desde CSV"
                     >
                         <Upload className="w-4 h-4 mr-2 text-gray-500" />
                         {importing ? 'Leyendo...' : 'Cargar Saldos'}
-                        <input type="file" accept=".csv" className="hidden" onChange={handleImportFileSelected} disabled={importing} />
-                    </label>
+                    </button>
                     <button
                         type="button"
                         onClick={() => setIsCreating(true)}
@@ -533,6 +537,91 @@ export default function Admin() {
                 </div>
             )}
         </div>
+
+        {/* Modal: Instrucciones para Cargar Saldos */}
+        {importInfoModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-lg flex flex-col">
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900">Cargar Saldos Iniciales</h3>
+                            <p className="text-xs text-gray-400 mt-0.5">Carga masiva desde archivo CSV o Excel</p>
+                        </div>
+                        <button onClick={() => setImportInfoModal(false)} className="cursor-pointer p-1 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {/* Body */}
+                    <div className="px-6 py-5 space-y-4">
+
+                        {/* Formato aceptado */}
+                        <div className="flex items-start gap-3 rounded-lg bg-indigo-50 ring-1 ring-indigo-200 px-4 py-3">
+                            <Upload className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-indigo-800">
+                                <p className="font-semibold mb-0.5">Formato aceptado</p>
+                                <p>Archivo <strong>.csv</strong> o <strong>.xlsx</strong> (Excel). Se recomienda exportar desde Excel como CSV.</p>
+                            </div>
+                        </div>
+
+                        {/* Columnas requeridas */}
+                        <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-2">Columnas requeridas</p>
+                            <table className="w-full text-sm rounded-lg ring-1 ring-gray-200 overflow-hidden">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="py-2 pl-4 pr-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Columna</th>
+                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Descripción</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 bg-white">
+                                    <tr>
+                                        <td className="py-2 pl-4 pr-3 font-mono text-xs text-indigo-700 font-semibold">No. Colaborador</td>
+                                        <td className="px-3 py-2 text-gray-600 text-xs">Código del colaborador (también acepta <span className="font-mono">Código Colaborador</span>)</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="py-2 pl-4 pr-3 font-mono text-xs text-indigo-700 font-semibold">Saldo Inicial</td>
+                                        <td className="px-3 py-2 text-gray-600 text-xs">Días de vacaciones a asignar (admite decimales: 7.5, 15.00)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Ejemplo */}
+                        <div>
+                            <p className="text-sm font-semibold text-gray-700 mb-2">Ejemplo de archivo</p>
+                            <div className="rounded-lg bg-gray-900 text-green-400 font-mono text-xs px-4 py-3 space-y-1">
+                                <p className="text-gray-400">No. Colaborador,Saldo Inicial</p>
+                                <p>1110,15.00</p>
+                                <p>1111,12.50</p>
+                                <p>1142,7.50</p>
+                            </div>
+                        </div>
+
+                        {/* Notas */}
+                        <div className="text-xs text-gray-500 space-y-1">
+                            <p>• El sistema mostrará una <strong>previsualización</strong> antes de guardar cualquier cambio.</p>
+                            <p>• Los códigos que no coincidan con ningún colaborador se marcarán en <strong>amarillo</strong>.</p>
+                            <p>• Los nombres de columna son sensibles a mayúsculas y espacios.</p>
+                        </div>
+                    </div>
+
+                    {/* Footer con upload */}
+                    <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                        <button onClick={() => setImportInfoModal(false)} className="cursor-pointer rounded-md px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
+                            <Upload className="w-4 h-4" />
+                            Seleccionar archivo
+                            <input type="file" accept=".csv,.xlsx" className="hidden" onChange={handleImportFileSelected} />
+                        </label>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Modal: Ficha de edición del colaborador */}
         {editModal && (
