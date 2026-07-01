@@ -111,7 +111,7 @@ export default function Dashboard() {
                 </div>
                 <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-green-400">
                     <dt className="truncate text-sm font-medium text-green-600 flex items-center gap-1">
-                        <TrendingUp className="w-4 h-4" /> Días Agregados (año)
+                        <TrendingUp className="w-4 h-4" /> Días Agregados
                     </dt>
                     <dd className="mt-1 text-3xl font-semibold tracking-tight text-green-700">+{summary.total_extra_days}</dd>
                 </div>
