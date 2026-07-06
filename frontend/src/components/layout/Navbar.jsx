@@ -25,7 +25,8 @@ const NAV_ITEMS = [
 ];
 
 const REPORT_ITEMS = [
-    { name: 'Reporte General', href: '/reports', icon: FileBarChart2, description: 'Resumen de todos los colaboradores' },
+    { name: 'Reporte General', href: '/reports', icon: FileBarChart2, description: 'Resumen de todos los colaboradores', roles: ['hr_admin', 'super_admin'] },
+    { name: 'Reporte de Equipo', href: '/reports/team', icon: FileBarChart2, description: 'Resumen de tu equipo', roles: ['manager'] },
 ];
 
 export default function Navbar() {
@@ -36,7 +37,7 @@ export default function Navbar() {
     const [isReportsDropdownOpen, setIsReportsDropdownOpen] = useState(false);
 
     const visibleItems = NAV_ITEMS.filter(item => item.roles.includes(user?.role));
-    const showReportsMenu = ['hr_admin', 'super_admin'].includes(user?.role);
+    const showReportsMenu = ['manager', 'hr_admin', 'super_admin'].includes(user?.role);
     const isActive = (href) => location.pathname === href || location.pathname.startsWith(href + '/');
 
     const navLinkClass = (href) =>
@@ -144,7 +145,7 @@ export default function Navbar() {
                                             <div className="px-3 py-2 border-b border-gray-100">
                                                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Reportes</p>
                                             </div>
-                                            {REPORT_ITEMS.map(({ name, href, icon: Icon, description }) => (
+                                            {REPORT_ITEMS.filter(item => item.roles.includes(user?.role)).map(({ name, href, icon: Icon, description }) => (
                                                 <Link key={href} to={href} onClick={() => setIsReportsDropdownOpen(false)}
                                                     className={`flex items-start gap-3 px-4 py-3 text-sm transition-colors hover:bg-indigo-50 ${isActive(href) ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}>
                                                     <Icon className="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0" />
@@ -182,7 +183,7 @@ export default function Navbar() {
                                 <div className="px-3 pt-3 pb-1">
                                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Reportes</p>
                                 </div>
-                                {REPORT_ITEMS.map(({ name, href, icon: Icon }) => (
+                                {REPORT_ITEMS.filter(item => item.roles.includes(user?.role)).map(({ name, href, icon: Icon }) => (
                                     <Link key={href} to={href} onClick={() => setIsMobileMenuOpen(false)}
                                         className={`flex items-center gap-3 pl-6 pr-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                                             isActive(href) ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-600'
