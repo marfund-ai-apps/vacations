@@ -378,3 +378,220 @@ exports.processApprovalToken = async (req, res) => {
         res.redirect(`${process.env.FRONTEND_URL}/error`);
     }
 };
+
+// GET /api/requests/token/:token/validate — Validar token sin consumirlo
+// Retorna datos de la solicitud para que TokenApprovalPage pueda mostrar el modal
+exports.validateToken = async (req, res) => {
+    const { token } = req.params;
+
+    try {
+        const [tokens] = await db.query(`
+            SELECT at.id, at.action, at.expires_at, at.used_at,
+                   vr.id as request_id, vr.request_number,
+                   u.full_name as employee_name, vr.request_type,
+                   SUM(rdr.business_days) as total_days
+            FROM approval_tokens at
+            JOIN vacation_requests vr ON at.request_id = vr.id
+            JOIN users u ON vr.employee_id = u.id
+            LEFT JOIN request_date_ranges rdr ON vr.id = rdr.request_id
+            WHERE at.token = ?
+              AND at.used_at IS NULL
+              AND at.expires_at > NOW()
+            GROUP BY at.id, vr.id, vr.request_number, vr.request_type, u.full_name
+        `, [token]);
+
+        if (!tokens.length) {
+            return res.status(401).json({ message: 'Token inválido o expirado' });
+        }
+
+        const tokenData = tokens[0];
+        const { formatRequestType } = require('../services/n8nService');
+
+        res.json({
+            action: tokenData.action, // 'approve' o 'reject'
+            request_number: tokenData.request_number,
+            employee_name: tokenData.employee_name,
+            request_type: tokenData.request_type, // Valor enum
+            total_days: tokenData.total_days
+        });
+    } catch (error) {
+        console.error('Error validando token:', error);
+        res.status(500).json({ message: 'Error validando token' });
+    }
+};
+
+// POST /api/requests/token/:token/approve — Aprobar solicitud vía magic link
+exports.approveViaToken = async (req, res) => {
+    const { token } = req.params;
+
+    try {
+        // Validar que el token exista y no esté vencido/consumido
+        const [tokens] = await db.query(`
+            SELECT at.id, at.request_id, at.expires_at, at.used_at
+            FROM approval_tokens at
+            WHERE at.token = ?
+              AND at.used_at IS NULL
+              AND at.expires_at > NOW()
+        `, [token]);
+
+        if (!tokens.length) {
+            return res.status(401).json({ message: 'Token inválido o expirado' });
+        }
+
+        const { id: tokenId, request_id: requestId } = tokens[0];
+
+        // Actualizar solicitud a 'approved'
+        await db.query(`
+            UPDATE vacation_requests
+            SET status = 'approved', manager_decision_date = NOW()
+            WHERE id = ?
+        `, [requestId]);
+
+        // Marcar token como consumido con acción 'approve'
+        await db.query(`
+            UPDATE approval_tokens
+            SET used_at = NOW(), action = 'approve'
+            WHERE id = ?
+        `, [tokenId]);
+
+        // Registrar en historial
+        await db.query(
+            'INSERT INTO request_history (request_id, action, performed_by, details) VALUES (?, ?, ?, ?)',
+            [requestId, 'approved', NULL, 'Aprobada vía magic link']
+        );
+
+        // Obtener datos completos para notificación de decisión
+        const [fullRequest] = await db.query(`
+            SELECT vr.*,
+                   u.full_name as employee_name, u.email as employee_email,
+                   m.full_name as manager_name, m.email as manager_email
+            FROM vacation_requests vr
+            JOIN users u ON vr.employee_id = u.id
+            JOIN users m ON vr.manager_id = m.id
+            WHERE vr.id = ?
+        `, [requestId]);
+
+        // Actualizar benefit_extra_day_used si es seniority_benefit aprobado
+        if (fullRequest[0]?.request_type === 'seniority_benefit') {
+            await db.query(
+                'UPDATE users SET benefit_extra_day_used = 1 WHERE id = ?',
+                [fullRequest[0].employee_id]
+            );
+        }
+
+        // Obtener rangos de fechas y total de días
+        const [dateRanges] = await db.query(
+            'SELECT * FROM request_date_ranges WHERE request_id = ?', [requestId]
+        );
+        const totalDays = dateRanges.reduce((sum, r) => sum + parseFloat(r.business_days), 0);
+
+        // Obtener usuarios de RRHH para notificar
+        const [hrUsers] = await db.query(
+            'SELECT email, full_name FROM users WHERE role IN ("hr_admin", "super_admin") AND is_active = 1'
+        );
+
+        // Disparar webhook n8n para notificación de decisión
+        await n8nService.triggerDecisionNotification({
+            request: fullRequest[0],
+            decision: 'approved',
+            comments: '',
+            dateRanges,
+            totalDays,
+            hrUsers,
+            appUrl: process.env.APP_URL
+        });
+
+        res.json({ message: 'Solicitud aprobada exitosamente' });
+    } catch (error) {
+        console.error('Error aprobando solicitud:', error);
+        res.status(500).json({ message: 'Error aprobando solicitud' });
+    }
+};
+
+// POST /api/requests/token/:token/reject — Rechazar solicitud con comentario vía magic link
+exports.rejectWithComment = async (req, res) => {
+    const { token } = req.params;
+    const { comment } = req.body;
+
+    // Validar que el comentario no esté vacío
+    if (!comment || !comment.trim()) {
+        return res.status(400).json({ message: 'El comentario es obligatorio para rechazar' });
+    }
+
+    try {
+        // Validar que el token exista y no esté vencido/consumido
+        const [tokens] = await db.query(`
+            SELECT at.id, at.request_id, at.expires_at, at.used_at
+            FROM approval_tokens at
+            WHERE at.token = ?
+              AND at.used_at IS NULL
+              AND at.expires_at > NOW()
+        `, [token]);
+
+        if (!tokens.length) {
+            return res.status(401).json({ message: 'Token inválido o expirado' });
+        }
+
+        const { id: tokenId, request_id: requestId } = tokens[0];
+
+        // Actualizar solicitud a 'rejected' con comentarios
+        await db.query(`
+            UPDATE vacation_requests
+            SET status = 'rejected',
+                manager_comments = ?,
+                manager_decision_date = NOW()
+            WHERE id = ?
+        `, [comment, requestId]);
+
+        // Marcar token como consumido con acción 'reject'
+        await db.query(`
+            UPDATE approval_tokens
+            SET used_at = NOW(), action = 'reject'
+            WHERE id = ?
+        `, [tokenId]);
+
+        // Registrar en historial
+        await db.query(
+            'INSERT INTO request_history (request_id, action, performed_by, details) VALUES (?, ?, ?, ?)',
+            [requestId, 'rejected', NULL, `Rechazada vía magic link. Motivo: ${comment}`]
+        );
+
+        // Obtener datos completos para notificación de decisión
+        const [fullRequest] = await db.query(`
+            SELECT vr.*,
+                   u.full_name as employee_name, u.email as employee_email,
+                   m.full_name as manager_name, m.email as manager_email
+            FROM vacation_requests vr
+            JOIN users u ON vr.employee_id = u.id
+            JOIN users m ON vr.manager_id = m.id
+            WHERE vr.id = ?
+        `, [requestId]);
+
+        // Obtener rangos de fechas y total de días
+        const [dateRanges] = await db.query(
+            'SELECT * FROM request_date_ranges WHERE request_id = ?', [requestId]
+        );
+        const totalDays = dateRanges.reduce((sum, r) => sum + parseFloat(r.business_days), 0);
+
+        // Obtener usuarios de RRHH para notificar
+        const [hrUsers] = await db.query(
+            'SELECT email, full_name FROM users WHERE role IN ("hr_admin", "super_admin") AND is_active = 1'
+        );
+
+        // Disparar webhook n8n para notificación de decisión
+        await n8nService.triggerDecisionNotification({
+            request: fullRequest[0],
+            decision: 'rejected',
+            comments: comment,
+            dateRanges,
+            totalDays,
+            hrUsers,
+            appUrl: process.env.APP_URL
+        });
+
+        res.json({ message: 'Solicitud rechazada con comentario' });
+    } catch (error) {
+        console.error('Error rechazando solicitud:', error);
+        res.status(500).json({ message: 'Error rechazando solicitud' });
+    }
+};

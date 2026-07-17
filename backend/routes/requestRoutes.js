@@ -4,8 +4,10 @@ const requestController = require('../controllers/requestController');
 const { isAuthenticated } = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
 
-// Endpoint público para que el Jefe reaccione vía link en el correo
-router.get('/token/:token', requestController.processApprovalToken);
+// Endpoints públicos para aprobación/rechazo vía magic links (sin autenticación)
+router.get('/token/:token/validate', requestController.validateToken);
+router.post('/token/:token/approve', requestController.approveViaToken);
+router.post('/token/:token/reject', requestController.rejectWithComment);
 
 // Todas las demás rutas requieren autenticación
 router.use(isAuthenticated);

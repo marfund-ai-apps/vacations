@@ -12,11 +12,13 @@ import Admin from './pages/Admin';
 import AllRequests from './pages/AllRequests';
 import Profile from './pages/Profile';
 import InactiveUsers from './pages/InactiveUsers';
+import TokenApprovalPage from './pages/TokenApprovalPage';
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/requests/token/:token" element={<TokenApprovalPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>

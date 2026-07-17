@@ -54,7 +54,7 @@
       "parameters": {
         "resource": "message",
         "subject": "=✅ Solicitud {{ $($node[\"Webhook\"].json[\"body\"][\"request_number\"]) }} recibida - {{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}",
-        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:#1e40af;\">Hemos recibido tu Solicitud</h2>\n  </div>\n  <p>Hola {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }},</p>\n  <p>Tu solicitud de <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</strong> ha sido recibida y se ha enviado a tu jefe inmediato ({{ $json[\"Nombre del jefe inmediato\"] }}) para su aprobación al correo {{ $json[\"Correo jefe inmediato\"] }}.</p>\n  <p>Te notificaremos en cuanto haya una actualización.</p>\n</body>\n</html>",
+        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:#1e40af;\">Hemos recibido tu Solicitud</h2>\n  </div>\n  <p>Hola {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }},</p>\n  <p>Tu solicitud de <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</strong> ha sido recibida y se ha enviado a tu supervisor inmediato ({{ $json[\"Nombre del supervisor inmediato\"] }}) para su aprobación al correo {{ $json[\"Correo supervisor inmediato\"] }}.</p>\n  <p>Te notificaremos en cuanto haya una actualización.</p>\n</body>\n</html>",
         "toList": "={{ $json[\"Correo empleado\"] }}",
         "options": {
           "appendAttribution": false
@@ -78,15 +78,15 @@
     {
       "parameters": {
         "resource": "message",
-        "subject": "=📋 Solicitud pendiente de aprobación - {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }}",
-        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  \n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:#1e40af;\">Nueva Solicitud de {{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</h2>\n  </div>\n\n  <div style=\"background:#f8fafc; border-left:4px solid #3b82f6; padding:16px; margin-bottom:20px;\">\n    <p><strong>N° Solicitud:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"request_number\"]) }}</p>\n    <p><strong>Empleado:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }}</p>\n    <p><strong>Cargo:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"employee_position\"]) }}</p>\n    <p><strong>Tipo:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</p>\n    <p><strong>Razón:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"reason\"]) }}</p>\n    <p><strong>Total días hábiles:</strong> <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"total_days\"]) }}</strong></p>\n  </div>\n\n  <p><strong>Fechas solicitadas:</strong></p>\n  {{ $($node[\"Webhook\"].json[\"body\"][\"dates_table_html\"]) }}\n\n  <div style=\"margin:30px 0; text-align:center;\">\n    <p style=\"margin-bottom:15px;\"><strong>Por favor toma una decisión:</strong></p>\n    <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"approve_url\"]) }}\" \n       style=\"background:#059669; color:white; padding:12px 30px; border-radius:8px; \n              text-decoration:none; font-weight:bold; margin-right:15px;\">\n      ✅ APROBAR\n    </a>\n    <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"reject_url\"]) }}\"\n       style=\"background:#DC2626; color:white; padding:12px 30px; border-radius:8px; \n              text-decoration:none; font-weight:bold;\">\n      ❌ RECHAZAR\n    </a>\n  </div>\n\n  <p style=\"color:#64748b; font-size:12px;\">\n    También puedes gestionar la solicitud desde el \n    <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"app_url\"]) }}/pending-approvals\">portal web</a>.\n    Este link expira en 7 días.\n  </p>\n</body>\n</html>",
-        "toList": "={{ $json[\"Correo jefe inmediato\"] }}",
+        "subject": "={{ $($node[\"Webhook\"].json[\"body\"][\"subject_line\"]) }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <p>El colaborador <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }}</strong> ha solicitado: <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</strong></p>\n  <p>Justificación: <em>{{ $($node[\"Webhook\"].json[\"body\"][\"request_reason\"]) }}</em>.</p>\n  <hr style=\"border:none; border-top:1px solid #e2e8f0; margin:20px 0;\">\n  <p>Por favor toma una decisión:</p>\n  <div style=\"margin:20px 0; text-align:center;\">\n    <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"approve_url\"]) }}\" \n       style=\"background:#059669; color:white; padding:12px 30px; border-radius:8px; \n              text-decoration:none; font-weight:bold; margin-right:15px;\">\n      ✅ APROBAR\n    </a>\n    <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"reject_url\"]) }}\"\n       style=\"background:#DC2626; color:white; padding:12px 30px; border-radius:8px; \n              text-decoration:none; font-weight:bold;\">\n      ❌ RECHAZAR\n    </a>\n  </div>\n  <p style=\"color:#64748b; font-size:12px;\">\n    Este link expira en 7 días. Si haces clic en RECHAZAR, podrás agregar un comentario en la aplicación.\n  </p>\n</body>\n</html>",
+        "toList": "={{ $json[\"Correo supervisor inmediato\"] }}",
         "options": {
           "appendAttribution": false
         }
       },
       "id": "gmail-jefe",
-      "name": "Gmail - Notificar Jefe",
+      "name": "Gmail - Notificar supervisor",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
@@ -137,7 +137,7 @@
             "index": 0
           },
           {
-            "node": "Gmail - Notificar Jefe",
+            "node": "Gmail - Notificar supervisor",
             "type": "main",
             "index": 0
           },

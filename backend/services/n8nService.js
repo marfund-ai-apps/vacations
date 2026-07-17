@@ -10,7 +10,7 @@ const WEBHOOKS = {
 // Formatea el tipo de solicitud para mostrar en emails
 const formatRequestType = (type) => ({
     vacation: 'Vacaciones',
-    permission: 'Permiso',
+    permission: 'Permiso Personal',
     justified_absence: 'Ausencia Justificada',
     seniority_benefit: 'Beneficio Antigüedad'
 }[type] || type);
@@ -57,10 +57,14 @@ exports.triggerNewRequest = async ({ request, dateRanges, totalDays, approveToke
     const rejectUrl = `${appUrl}/api/requests/token/${rejectToken}?action=reject`;
 
     const payload = {
+        // Asunto del correo (AJUSTE 1)
+        subject_line: `Nueva Solicitud de ${requestTypeLabel} para: ${request.employee_name}`,
+
         // Metadatos de la solicitud
         request_number: request.request_number,
         request_type: requestTypeLabel,
         reason: request.reason,
+        request_reason: request.reason, // Alias para AJUSTE 2
         notes: request.notes,
         total_days: totalDays,
         created_at: formatDate(request.created_at),
@@ -76,7 +80,7 @@ exports.triggerNewRequest = async ({ request, dateRanges, totalDays, approveToke
         manager_name: request.manager_name,
         manager_email: request.manager_email,
 
-        // Links de aprobación por email
+        // Links de aprobación por email (redirigen a TokenApprovalPage - AJUSTE 3)
         approve_url: approveUrl,
         reject_url: rejectUrl,
         app_url: appUrl,
