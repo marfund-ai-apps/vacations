@@ -56,8 +56,9 @@ exports.triggerNewRequest = async ({ request, dateRanges, totalDays, approveToke
     const requestTypeLabel = formatRequestType(request.request_type);
 
     // Links de acción directa para el jefe (desde email)
-    const approveUrl = `${appUrl}/api/requests/token/${approveToken}?action=approve`;
-    const rejectUrl = `${appUrl}/api/requests/token/${rejectToken}?action=reject`;
+    // Nota: /requests/token/:token es una ruta del frontend React, no un endpoint API
+    const approveUrl = `${appUrl}/requests/token/${approveToken}`;
+    const rejectUrl = `${appUrl}/requests/token/${rejectToken}`;
 
     const payload = {
         // Asunto del correo (AJUSTE 1)
