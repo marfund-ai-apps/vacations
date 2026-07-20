@@ -169,6 +169,17 @@ export default function Admin() {
     };
 
     const handleCreate = async () => {
+        // Validar campos requeridos
+        if (!newForm.full_name.trim()) {
+            return toast.error('El nombre completo es obligatorio');
+        }
+        if (!newForm.email.trim()) {
+            return toast.error('El correo electrónico es obligatorio');
+        }
+        if (!newForm.email.includes('@') || !newForm.email.includes('.')) {
+            return toast.error('El correo debe ser válido (ej: usuario@dominio.com)');
+        }
+
         try {
             await api.post('/users', { ...newForm, manager_id: newForm.manager_id || null });
             toast.success("Colaborador creado correctamente");
@@ -179,6 +190,14 @@ export default function Admin() {
             console.error("Error creating user:", error);
             toast.error(error.response?.data?.message || "Error al crear colaborador");
         }
+    };
+
+    // Validar si formulario de creación es válido
+    const isCreateFormValid = () => {
+        return newForm.full_name.trim() &&
+               newForm.email.trim() &&
+               newForm.email.includes('@') &&
+               newForm.email.includes('.');
     };
 
     const openAdjustModal = (u) => {
@@ -375,12 +394,16 @@ export default function Admin() {
                                                     className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
                                             </td>
                                             <td className="px-3 py-4 text-sm sm:pl-3 space-y-2">
-                                                <input type="text" placeholder="Nombre Completo" value={newForm.full_name}
+                                                <input type="text" placeholder="Nombre Completo *" value={newForm.full_name}
                                                     onChange={(e) => setNewForm({ ...newForm, full_name: e.target.value })}
-                                                    className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
-                                                <input type="email" placeholder="Correo Electrónico" value={newForm.email}
+                                                    className={`block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ${
+                                                        newForm.full_name.trim() ? 'ring-green-300 focus:ring-green-600' : 'ring-gray-300 focus:ring-indigo-600'
+                                                    } focus:ring-2 focus:ring-inset sm:text-xs sm:leading-6`} />
+                                                <input type="email" placeholder="Correo Electrónico *" value={newForm.email}
                                                     onChange={(e) => setNewForm({ ...newForm, email: e.target.value })}
-                                                    className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
+                                                    className={`block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ${
+                                                        newForm.email.includes('@') && newForm.email.includes('.') ? 'ring-green-300 focus:ring-green-600' : 'ring-gray-300 focus:ring-indigo-600'
+                                                    } focus:ring-2 focus:ring-inset sm:text-xs sm:leading-6`} />
                                             </td>
                                             <td className="px-3 py-4 text-sm text-gray-500">
                                                 <input type="text" placeholder="Puesto" value={newForm.position}
@@ -425,7 +448,18 @@ export default function Admin() {
                                                 </div>
                                             </td>
                                             <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
-                                                <button onClick={handleCreate} className="text-indigo-600 hover:text-indigo-900 block w-full text-right mb-2">Crear</button>
+                                                <button
+                                                    onClick={handleCreate}
+                                                    disabled={!isCreateFormValid()}
+                                                    className={`block w-full text-right mb-2 font-semibold transition-colors ${
+                                                        isCreateFormValid()
+                                                            ? 'text-green-600 hover:text-green-900 cursor-pointer'
+                                                            : 'text-gray-300 cursor-not-allowed'
+                                                    }`}
+                                                    title={!isCreateFormValid() ? 'Completa nombre y correo válido' : ''}
+                                                >
+                                                    Grabar
+                                                </button>
                                                 <button onClick={() => setIsCreating(false)} className="text-gray-600 hover:text-gray-900 block w-full text-right">Cancelar</button>
                                             </td>
                                         </tr>
