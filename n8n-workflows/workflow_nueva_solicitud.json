@@ -1,5 +1,5 @@
 {
-  "name": "MAR Fund - Nueva Solicitud (Google Workspace)",
+  "name": "MAR Fund - Nueva Solicitud Vacaciones",
   "nodes": [
     {
       "parameters": {
@@ -9,98 +9,51 @@
         "responseData": "allEntries",
         "options": {}
       },
-      "id": "webhook-nueva-solicitud",
+      "id": "caff6485-fbae-4c88-81ee-4ef7979a62c5",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
       "position": [
-        200,
-        300
+        -256,
+        128
       ],
       "webhookId": "nueva-solicitud-webhook-id"
     },
     {
       "parameters": {
-        "resource": "message",
-        "subject": "=✅ Solicitud {{ $json[\"body\"][\"request_number\"] }} recibida - {{ $json[\"body\"][\"request_type\"] }}",
-        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:#1e40af;\">Hemos recibido tu Solicitud</h2>\n  </div>\n  <p>Hola {{ $json[\"body\"][\"employee_name\"] }},</p>\n  <p>Tu solicitud de <strong>{{ $json[\"body\"][\"request_type\"] }}</strong> ha sido recibida y se ha enviado a tu supervisor inmediato ({{ $json[\"body\"][\"manager_name\"] }}) para su aprobación al correo {{ $json[\"body\"][\"manager_email\"] }}.</p>\n  <p>Te notificaremos en cuanto haya una actualización.</p>\n</body>\n</html>",
-        "toList": "={{ $json[\"body\"][\"employee_email\"] }}",
+        "sendTo": "={{ $json.body.employee_email }}, {{ $json.body.manager_email }}",
+        "subject": "=Nueva Solicitud de {{ $json.body.request_type }}: {{ $json.body.employee_name }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <p>El colaborador <strong>{{ $json.body.employee_name }}</strong> ha solicitado: <strong>{{ $json.body.request_type }}</strong></p>\n  <p>Justificación: <em>{{ $json.body.request_reason }}</em>.</p>\n  <hr style=\"border:none; border-top:1px solid #e2e8f0; margin:20px 0;\">\n  <p>Para aprobar o rechazar esta solicitud, accede a la aplicación:</p>\n  <div style=\"margin:20px 0; text-align:center;\">\n    <a href=\"{{ $json.body.pending_approvals_url }}\"\n       style=\"background:#3b82f6; color:white; padding:12px 30px; border-radius:8px;\n              text-decoration:none; font-weight:bold; display:inline-block;\">\n      📋 Ir a Pendientes de Aprobación\n    </a>\n  </div>\n  <p style=\"color:#64748b; font-size:12px;\">\n    Desde la aplicación podrás ver todas tus solicitudes pendientes, aprobar o rechazar con comentarios, y acceder a tu historial completo de decisiones.\n  </p>\n</body>\n</html>",
         "options": {
-          "appendAttribution": false
+          "appendAttribution": false,
+          "senderName": "Solicitud Vacaciones/Permisos",
+          "replyTo": "={{ $json.body.employee_email }}"
         }
       },
-      "id": "gmail-empleado",
-      "name": "Gmail - Notificar Empleado",
       "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
-        460,
-        180
+        -48,
+        128
       ],
+      "id": "70ed946c-1049-48b4-907f-5fcc6cd55c4a",
+      "name": "Send a message",
+      "webhookId": "c7dd72ee-462f-4bfd-9896-6190c097907d",
       "credentials": {
         "gmailOAuth2": {
-          "id": "ID_CREDENCIAL_GMAIL",
-          "name": "Gmail account"
+          "id": "YChCRFQmaAh3b256",
+          "name": "Gmail IA Automatizaciones"
         }
       }
-    },
-    {
-      "parameters": {
-        "resource": "message",
-        "subject": "={{ $json[\"body\"][\"subject_line\"] }}",
-        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <p>El colaborador <strong>{{ $json[\"body\"][\"employee_name\"] }}</strong> ha solicitado: <strong>{{ $json[\"body\"][\"request_type\"] }}</strong></p>\n  <p>Justificación: <em>{{ $json[\"body\"][\"request_reason\"] }}</em>.</p>\n  <hr style=\"border:none; border-top:1px solid #e2e8f0; margin:20px 0;\">\n  <p>Para aprobar o rechazar esta solicitud, accede a la aplicación:</p>\n  <div style=\"margin:20px 0; text-align:center;\">\n    <a href=\"{{ $json[\"body\"][\"pending_approvals_url\"] }}\"\n       style=\"background:#3b82f6; color:white; padding:12px 30px; border-radius:8px;\n              text-decoration:none; font-weight:bold; display:inline-block;\">\n      📋 Ir a Pendientes de Aprobación\n    </a>\n  </div>\n  <p style=\"color:#64748b; font-size:12px;\">\n    Desde la aplicación podrás ver todas tus solicitudes pendientes, aprobar o rechazar con comentarios, y acceder a tu historial completo de decisiones.\n  </p>\n</body>\n</html>",
-        "toList": "={{ $json[\"body\"][\"manager_email\"] }}",
-        "options": {
-          "appendAttribution": false
-        }
-      },
-      "id": "gmail-jefe",
-      "name": "Gmail - Notificar supervisor",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [
-        460,
-        380
-      ],
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "ID_CREDENCIAL_GMAIL",
-          "name": "Gmail account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "{\n  \"success\": true\n}",
-        "options": {}
-      },
-      "id": "respond-webhook",
-      "name": "Respond to Webhook",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        680,
-        300
-      ]
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook": {
       "main": [
         [
           {
-            "node": "Gmail - Notificar Empleado",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Gmail - Notificar supervisor",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Respond to Webhook",
+            "node": "Send a message",
             "type": "main",
             "index": 0
           }
@@ -108,8 +61,15 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
-  }
+  },
+  "versionId": "1048b45e-1a98-4bff-8dee-9fe1eb4b1cdd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1ea341a36cec386426e1272da2b5eb2850386a693cc55d1b10266e6b1ba97344"
+  },
+  "id": "GK5NDEXUxQ1uSht7",
+  "tags": []
 }
