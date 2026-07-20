@@ -303,7 +303,6 @@ export default function PendingApprovals() {
                             </div>
                         </div>
                     </div>
-                </div>
             )}
         </div>
     );
