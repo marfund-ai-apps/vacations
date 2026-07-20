@@ -55,20 +55,19 @@ exports.triggerNewRequest = async ({ request, dateRanges, totalDays, approveToke
     const datesTable = buildDatesTable(dateRanges);
     const requestTypeLabel = formatRequestType(request.request_type);
 
-    // Links de acción directa para el jefe (desde email)
-    // Nota: /requests/token/:token es una ruta del frontend React, no un endpoint API
-    const approveUrl = `${appUrl}/requests/token/${approveToken}`;
-    const rejectUrl = `${appUrl}/requests/token/${rejectToken}`;
+    // Link a pendientes de aprobación en la app (todos usan el mismo link)
+    // El usuario aprueba/rechaza desde el modal en /pending-approvals
+    const pendingApprovalsUrl = `${appUrl}/pending-approvals`;
 
     const payload = {
-        // Asunto del correo (AJUSTE 1)
+        // Asunto del correo
         subject_line: `Nueva Solicitud de ${requestTypeLabel} para: ${request.employee_name}`,
 
         // Metadatos de la solicitud
         request_number: request.request_number,
         request_type: requestTypeLabel,
         reason: request.reason,
-        request_reason: request.reason, // Alias para AJUSTE 2
+        request_reason: request.reason,
         notes: request.notes,
         total_days: totalDays,
         created_at: formatDate(request.created_at),
@@ -84,9 +83,9 @@ exports.triggerNewRequest = async ({ request, dateRanges, totalDays, approveToke
         manager_name: request.manager_name,
         manager_email: request.manager_email,
 
-        // Links de aprobación por email (redirigen a TokenApprovalPage - AJUSTE 3)
-        approve_url: approveUrl,
-        reject_url: rejectUrl,
+        // Link único a pendientes de aprobación
+        // El supervisor aprueba/rechaza desde el modal en la app
+        pending_approvals_url: pendingApprovalsUrl,
         app_url: appUrl,
     };
 
