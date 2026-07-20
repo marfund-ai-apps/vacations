@@ -159,13 +159,14 @@ export default function PendingApprovals() {
                                         <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nota del Supervisor</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {processedRequests.length === 0 ? (
                                         <tr>
-                                            <td colSpan="4" className="py-8 text-center text-sm text-gray-500">
+                                            <td colSpan="5" className="py-8 text-center text-sm text-gray-500">
                                                 No hay historial de solicitudes procesadas.
                                             </td>
                                         </tr>
@@ -188,6 +189,15 @@ export default function PendingApprovals() {
                                                         <span className="text-xs text-gray-400">
                                                             {formatDate(req.date_ranges[0].date_from)} a {formatDate(req.date_ranges[0].date_to)}
                                                         </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-3 py-4 text-sm text-gray-600 max-w-xs">
+                                                    {req.status === 'rejected' && req.comments ? (
+                                                        <div className="text-sm text-gray-700 bg-red-50 p-2 rounded border border-red-200">
+                                                            {req.comments}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-gray-400">—</span>
                                                     )}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm">
