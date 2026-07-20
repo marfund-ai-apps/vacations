@@ -204,8 +204,8 @@ export default function PendingApprovals() {
                                                     {req.total_days}
                                                 </td>
                                                 <td className="px-3 py-4 text-sm text-gray-600 max-w-xs">
-                                                    {req.status === 'rejected' && req.comments ? (
-                                                        <span title={req.comments} className="text-indigo-600 hover:text-indigo-900 cursor-help">
+                                                    {req.status === 'rejected' && req.manager_comments ? (
+                                                        <span title={req.manager_comments} className="text-indigo-600 hover:text-indigo-900 cursor-help">
                                                             Nota del Supervisor
                                                         </span>
                                                     ) : (
