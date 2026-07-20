@@ -236,7 +236,7 @@ All routes are implemented. Role-gated routes:
 4. **Email via N8N** — Lógica de correos delegada completamente a N8N. El workflow `MAR Fund - Decisión Final` incluye CC a `recursoshumanos@marfund.org` solo cuando `$json.body.decision === 'approved'`.
 5. **Magic link approvals** — Supervisores reciben links con tokens para aprobar/rechazar sin iniciar sesión.
 6. **Day balance computed in Node.js** — Balance = `base_vacation_days + SUM(adjustments.days_added) - consumed_vacation_days`. Solo vacaciones aprobadas descuentan.
-7. **N8N reads manager email from Google Sheets** — `workflow_nueva_solicitud` consulta Google Sheets antes de enviar correo.
+7. **N8N recibe todos los datos desde el payload** — `workflow_nueva_solicitud` ya **no** consulta Google Sheets. El backend envía `employee_email`, `manager_name` y `manager_email` (desde la BD) en el payload del webhook; los nodos Gmail leen directo de `$json["body"][...]`. El nodo de Google Sheets fue eliminado.
 8. **Medio día (0.5)** — Checkbox en `NewRequest.jsx` resta 0.5 al último día del rango. `business_days` es `DECIMAL(5,2)`.
 9. **Fechas siempre en UTC-6** — Todo pasa por `dateUtils.js` con `timeZone: 'America/Guatemala'`.
 10. **Terminología UI** — "Colaborador" y "Supervisor" en textos visibles; los valores de enum y campos de BD permanecen en inglés.

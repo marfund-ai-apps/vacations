@@ -21,41 +21,10 @@
     },
     {
       "parameters": {
-        "operation": "lookup",
-        "documentId": {
-          "__rl": true,
-          "value": "15jsGttqbNogEPYDEfvGMcNGUsUYbmg2RqupxtajMMb8",
-          "mode": "id"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "empleados",
-          "mode": "name"
-        },
-        "lookupColumn": "Correo empleado",
-        "lookupValue": "={{ $($node[\"Webhook\"].json[\"body\"][\"employee_email\"]) }}"
-      },
-      "id": "google-sheets-empleado",
-      "name": "Google Sheets - Buscar Empleado",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4,
-      "position": [
-        400,
-        300
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "ID_CREDENCIAL_GOOGLESHEETS",
-          "name": "Google Sheets account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "resource": "message",
-        "subject": "=✅ Solicitud {{ $($node[\"Webhook\"].json[\"body\"][\"request_number\"]) }} recibida - {{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}",
-        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:#1e40af;\">Hemos recibido tu Solicitud</h2>\n  </div>\n  <p>Hola {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }},</p>\n  <p>Tu solicitud de <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</strong> ha sido recibida y se ha enviado a tu supervisor inmediato ({{ $json[\"Nombre del supervisor inmediato\"] }}) para su aprobación al correo {{ $json[\"Correo supervisor inmediato\"] }}.</p>\n  <p>Te notificaremos en cuanto haya una actualización.</p>\n</body>\n</html>",
-        "toList": "={{ $json[\"Correo empleado\"] }}",
+        "subject": "=✅ Solicitud {{ $json[\"body\"][\"request_number\"] }} recibida - {{ $json[\"body\"][\"request_type\"] }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:#1e40af;\">Hemos recibido tu Solicitud</h2>\n  </div>\n  <p>Hola {{ $json[\"body\"][\"employee_name\"] }},</p>\n  <p>Tu solicitud de <strong>{{ $json[\"body\"][\"request_type\"] }}</strong> ha sido recibida y se ha enviado a tu supervisor inmediato ({{ $json[\"body\"][\"manager_name\"] }}) para su aprobación al correo {{ $json[\"body\"][\"manager_email\"] }}.</p>\n  <p>Te notificaremos en cuanto haya una actualización.</p>\n</body>\n</html>",
+        "toList": "={{ $json[\"body\"][\"employee_email\"] }}",
         "options": {
           "appendAttribution": false
         }
@@ -65,7 +34,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        640,
+        460,
         180
       ],
       "credentials": {
@@ -78,9 +47,9 @@
     {
       "parameters": {
         "resource": "message",
-        "subject": "={{ $($node[\"Webhook\"].json[\"body\"][\"subject_line\"]) }}",
-        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <p>El colaborador <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }}</strong> ha solicitado: <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</strong></p>\n  <p>Justificación: <em>{{ $($node[\"Webhook\"].json[\"body\"][\"request_reason\"]) }}</em>.</p>\n  <hr style=\"border:none; border-top:1px solid #e2e8f0; margin:20px 0;\">\n  <p>Para aprobar o rechazar esta solicitud, accede a la aplicación:</p>\n  <div style=\"margin:20px 0; text-align:center;\">\n    <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"pending_approvals_url\"]) }}\"\n       style=\"background:#3b82f6; color:white; padding:12px 30px; border-radius:8px;\n              text-decoration:none; font-weight:bold; display:inline-block;\">\n      📋 Ir a Pendientes de Aprobación\n    </a>\n  </div>\n  <p style=\"color:#64748b; font-size:12px;\">\n    Desde la aplicación podrás ver todas tus solicitudes pendientes, aprobar o rechazar con comentarios, y acceder a tu historial completo de decisiones.\n  </p>\n</body>\n</html>",
-        "toList": "={{ $json[\"Correo supervisor inmediato\"] }}",
+        "subject": "={{ $json[\"body\"][\"subject_line\"] }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <p>El colaborador <strong>{{ $json[\"body\"][\"employee_name\"] }}</strong> ha solicitado: <strong>{{ $json[\"body\"][\"request_type\"] }}</strong></p>\n  <p>Justificación: <em>{{ $json[\"body\"][\"request_reason\"] }}</em>.</p>\n  <hr style=\"border:none; border-top:1px solid #e2e8f0; margin:20px 0;\">\n  <p>Para aprobar o rechazar esta solicitud, accede a la aplicación:</p>\n  <div style=\"margin:20px 0; text-align:center;\">\n    <a href=\"{{ $json[\"body\"][\"pending_approvals_url\"] }}\"\n       style=\"background:#3b82f6; color:white; padding:12px 30px; border-radius:8px;\n              text-decoration:none; font-weight:bold; display:inline-block;\">\n      📋 Ir a Pendientes de Aprobación\n    </a>\n  </div>\n  <p style=\"color:#64748b; font-size:12px;\">\n    Desde la aplicación podrás ver todas tus solicitudes pendientes, aprobar o rechazar con comentarios, y acceder a tu historial completo de decisiones.\n  </p>\n</body>\n</html>",
+        "toList": "={{ $json[\"body\"][\"manager_email\"] }}",
         "options": {
           "appendAttribution": false
         }
@@ -90,7 +59,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        640,
+        460,
         380
       ],
       "credentials": {
@@ -111,24 +80,13 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        860,
+        680,
         300
       ]
     }
   ],
   "connections": {
     "Webhook": {
-      "main": [
-        [
-          {
-            "node": "Google Sheets - Buscar Empleado",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Sheets - Buscar Empleado": {
       "main": [
         [
           {
