@@ -88,10 +88,11 @@ export default function PendingApprovals() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Colaborador</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Motivo</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right font-semibold text-gray-900">
                                             Acciones
                                         </th>
@@ -100,17 +101,20 @@ export default function PendingApprovals() {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {pendingRequests.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="py-8 text-center text-sm text-gray-500">
+                                            <td colSpan="6" className="py-8 text-center text-sm text-gray-500">
                                                 No tienes solicitudes pendientes de aprobación.
                                             </td>
                                         </tr>
                                     ) : (
                                         pendingRequests.map((req) => (
                                             <tr key={req.id}>
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                                    {req.request_number}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm sm:pl-6">
                                                     {req.employee_number && <div className="text-xs font-mono font-semibold text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     <div className="font-medium text-gray-900">{req.employee_name}</div>
-                                                    <div className="text-gray-500">{req.employee_email}</div>
+                                                    <div className="text-xs text-gray-500">{req.employee_email}</div>
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-700">
                                                     {req.request_type === 'vacation' ? 'Vacaciones' :
@@ -118,15 +122,15 @@ export default function PendingApprovals() {
                                                         req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {req.total_days} días hábiles <br />
-                                                    {req.date_ranges && req.date_ranges.length > 0 && (
-                                                        <span className="text-xs text-gray-400">
-                                                            {formatDate(req.date_ranges[0].date_from)} a {formatDate(req.date_ranges[0].date_to)}
+                                                    {req.date_ranges && req.date_ranges.length > 0 ? (
+                                                        <span>
+                                                            {formatDate(req.date_ranges[0].date_from)} a <br />
+                                                            {formatDate(req.date_ranges[0].date_to)}
                                                         </span>
-                                                    )}
+                                                    ) : 'N/A'}
                                                 </td>
-                                                <td className="px-3 py-4 text-sm text-gray-500 max-w-xs truncate" title={req.reason}>
-                                                    {req.reason}
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                    {req.total_days}
                                                 </td>
                                                 <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
                                                     <button
@@ -156,9 +160,11 @@ export default function PendingApprovals() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Colaborador</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nota del Supervisor</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
                                     </tr>
@@ -166,17 +172,20 @@ export default function PendingApprovals() {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {processedRequests.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="py-8 text-center text-sm text-gray-500">
+                                            <td colSpan="7" className="py-8 text-center text-sm text-gray-500">
                                                 No hay historial de solicitudes procesadas.
                                             </td>
                                         </tr>
                                     ) : (
                                         processedRequests.map((req) => (
                                             <tr key={req.id} className="opacity-75">
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                                    {req.request_number}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm sm:pl-6">
                                                     {req.employee_number && <div className="text-xs font-mono font-semibold text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     <div className="font-medium text-gray-900">{req.employee_name}</div>
-                                                    <div className="text-gray-500">{req.employee_email}</div>
+                                                    <div className="text-xs text-gray-500">{req.employee_email}</div>
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-700">
                                                     {req.request_type === 'vacation' ? 'Vacaciones' :
@@ -184,18 +193,21 @@ export default function PendingApprovals() {
                                                         req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {req.total_days} días hábiles <br />
-                                                    {req.date_ranges && req.date_ranges.length > 0 && (
-                                                        <span className="text-xs text-gray-400">
-                                                            {formatDate(req.date_ranges[0].date_from)} a {formatDate(req.date_ranges[0].date_to)}
+                                                    {req.date_ranges && req.date_ranges.length > 0 ? (
+                                                        <span>
+                                                            {formatDate(req.date_ranges[0].date_from)} a <br />
+                                                            {formatDate(req.date_ranges[0].date_to)}
                                                         </span>
-                                                    )}
+                                                    ) : 'N/A'}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                    {req.total_days}
                                                 </td>
                                                 <td className="px-3 py-4 text-sm text-gray-600 max-w-xs">
                                                     {req.status === 'rejected' && req.comments ? (
-                                                        <div className="text-sm text-gray-700 bg-red-50 p-2 rounded border border-red-200">
-                                                            {req.comments}
-                                                        </div>
+                                                        <span title={req.comments} className="text-indigo-600 hover:text-indigo-900 cursor-help">
+                                                            Nota del Supervisor
+                                                        </span>
                                                     ) : (
                                                         <span className="text-gray-400">—</span>
                                                     )}
