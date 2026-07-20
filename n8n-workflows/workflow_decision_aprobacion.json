@@ -54,15 +54,15 @@
             "parameters": {
                 "resource": "message",
                 "subject": "=Tu solicitud {{ $($node[\"Webhook\"].json[\"body\"][\"request_number\"]) }} ha sido {{ $($node[\"Webhook\"].json[\"body\"][\"decision_label\"]) }}",
-                "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:{{ $($node[\"Webhook\"].json[\"body\"][\"decision_color\"]) }};\">{{ $($node[\"Webhook\"].json[\"body\"][\"decision_label\"]) }}</h2>\n  </div>\n  <p>Hola {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }},</p>\n  <p>Tu solicitud de <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</strong> ha sido actualizada por {{ $json[\"Nombre del jefe inmediato\"] }}.</p>\n  <p><strong>Comentarios del Jefe:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"manager_comments\"]) }}</p>\n  <p>Ve más detalles en tu portal: <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"app_url\"]) }}/my-requests\">Mis Solicitudes</a></p>\n</body>\n</html>",
+                "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"text-align:center; margin-bottom:20px;\">\n    <h2 style=\"color:{{ $($node[\"Webhook\"].json[\"body\"][\"decision_color\"]) }};\">{{ $($node[\"Webhook\"].json[\"body\"][\"decision_label\"]) }}</h2>\n  </div>\n  <p>Hola {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }},</p>\n  <p>Tu solicitud de <strong>{{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</strong> ha sido actualizada por {{ $json[\"Nombre del supervisor inmediato\"] }}.</p>\n  <p><strong>Comentarios del supervisor:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"manager_comments\"]) }}</p>\n  <p>Ve más detalles en tu portal: <a href=\"{{ $($node[\"Webhook\"].json[\"body\"][\"app_url\"]) }}/my-requests\">Mis Solicitudes</a></p>\n</body>\n</html>",
                 "toList": "={{ $json[\"Correo empleado\"] }}",
-                "ccList": "={{ $json[\"Correo jefe inmediato\"] }}",
+                "ccList": "={{ $json[\"Correo supervisor inmediato\"] }}",
                 "options": {
                     "appendAttribution": false
                 }
             },
             "id": "gmail-empleado-decision",
-            "name": "Gmail - Notificar Empleado (Copia Jefe)",
+            "name": "Gmail - Notificar Empleado (Copia supervisor)",
             "type": "n8n-nodes-base.gmail",
             "typeVersion": 2.1,
             "position": [
@@ -80,7 +80,7 @@
             "parameters": {
                 "resource": "message",
                 "subject": "=📋 Notificación RRHH - {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }} - {{ $($node[\"Webhook\"].json[\"body\"][\"decision_label\"]) }}",
-                "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"background:#f8fafc; border-left:4px solid {{ $($node[\"Webhook\"].json[\"body\"][\"decision_color\"]) }}; padding:16px;\">\n    <p><strong>N° Solicitud:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"request_number\"]) }}</p>\n    <p><strong>Empleado:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }}</p>\n    <p><strong>Cargo:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"employee_position\"]) }}</p>\n    <p><strong>Tipo:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</p>\n    <p><strong>Decisión:</strong> <span style=\"color:{{ $($node[\"Webhook\"].json[\"body\"][\"decision_color\"]) }}; font-weight:bold;\">{{ $($node[\"Webhook\"].json[\"body\"][\"decision_label\"]) }}</span></p>\n    <p><strong>Aprobado/Rechazado por:</strong> {{ $json[\"Nombre del jefe inmediato\"] }} ({{ $json[\"Correo jefe inmediato\"] }})</p>\n    <p><strong>Comentarios del Jefe:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"manager_comments\"]) }}</p>\n    <p><strong>Total días hábiles:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"total_days\"]) }}</p>\n  </div>\n</body>\n</html>",
+                "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;\">\n  <div style=\"background:#f8fafc; border-left:4px solid {{ $($node[\"Webhook\"].json[\"body\"][\"decision_color\"]) }}; padding:16px;\">\n    <p><strong>N° Solicitud:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"request_number\"]) }}</p>\n    <p><strong>Empleado:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"employee_name\"]) }}</p>\n    <p><strong>Cargo:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"employee_position\"]) }}</p>\n    <p><strong>Tipo:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"request_type\"]) }}</p>\n    <p><strong>Decisión:</strong> <span style=\"color:{{ $($node[\"Webhook\"].json[\"body\"][\"decision_color\"]) }}; font-weight:bold;\">{{ $($node[\"Webhook\"].json[\"body\"][\"decision_label\"]) }}</span></p>\n    <p><strong>Aprobado/Rechazado por:</strong> {{ $json[\"Nombre del supervisor inmediato\"] }} ({{ $json[\"Correo supervisor inmediato\"] }})</p>\n    <p><strong>Comentarios del supervisor:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"manager_comments\"]) }}</p>\n    <p><strong>Total días hábiles:</strong> {{ $($node[\"Webhook\"].json[\"body\"][\"total_days\"]) }}</p>\n  </div>\n</body>\n</html>",
                 "toList": "={{ $($node[\"Webhook\"].json[\"body\"][\"hr_emails\"].join(',')) }}",
                 "options": {
                     "appendAttribution": false
@@ -133,7 +133,7 @@
             "main": [
                 [
                     {
-                        "node": "Gmail - Notificar Empleado (Copia Jefe)",
+                        "node": "Gmail - Notificar Empleado (Copia supervisor)",
                         "type": "main",
                         "index": 0
                     },
