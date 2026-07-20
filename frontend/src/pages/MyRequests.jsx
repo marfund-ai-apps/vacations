@@ -125,9 +125,7 @@ export default function MyRequests() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor Inmediato</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
-                                        <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                                            <span className="sr-only">Comentarios</span>
-                                        </th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nota del Supervisor</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
@@ -167,16 +165,15 @@ export default function MyRequests() {
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {getStatusBadge(req.status)}
                                                 </td>
-                                                <td className="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                    {req.status === 'annulled' && req.annulment_reason && (
-                                                        <span title={req.annulment_reason} className="text-gray-500 hover:text-gray-700 cursor-help text-xs">
-                                                            Motivo anulación
+                                                <td className="px-3 py-4 text-sm text-gray-700 max-w-xs">
+                                                    {req.status === 'annulled' && req.annulment_reason ? (
+                                                        <span className="whitespace-normal text-gray-500 text-xs">
+                                                            <span className="font-medium">Anulación:</span> {req.annulment_reason}
                                                         </span>
-                                                    )}
-                                                    {req.status !== 'annulled' && req.manager_comments && (
-                                                        <span title={req.manager_comments} className="text-indigo-600 hover:text-indigo-900 cursor-help">
-                                                            Nota del Supervisor
-                                                        </span>
+                                                    ) : req.status === 'rejected' && req.manager_comments ? (
+                                                        <span className="whitespace-normal">{req.manager_comments}</span>
+                                                    ) : (
+                                                        <span className="text-gray-400">—</span>
                                                     )}
                                                 </td>
                                             </tr>

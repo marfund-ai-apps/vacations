@@ -165,8 +165,8 @@ export default function PendingApprovals() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nota del Supervisor</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nota del Supervisor</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
@@ -203,15 +203,6 @@ export default function PendingApprovals() {
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {req.total_days}
                                                 </td>
-                                                <td className="px-3 py-4 text-sm text-gray-600 max-w-xs">
-                                                    {req.status === 'rejected' && req.manager_comments ? (
-                                                        <span title={req.manager_comments} className="text-indigo-600 hover:text-indigo-900 cursor-help">
-                                                            Nota del Supervisor
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-gray-400">—</span>
-                                                    )}
-                                                </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm">
                                                     {req.status === 'approved' && (
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -232,6 +223,13 @@ export default function PendingApprovals() {
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600">
                                                             <Ban className="w-3 h-3 mr-1" />Anulada
                                                         </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-3 py-4 text-sm text-gray-700 max-w-xs">
+                                                    {req.status === 'rejected' && req.manager_comments ? (
+                                                        <span className="whitespace-normal">{req.manager_comments}</span>
+                                                    ) : (
+                                                        <span className="text-gray-400">—</span>
                                                     )}
                                                 </td>
                                             </tr>

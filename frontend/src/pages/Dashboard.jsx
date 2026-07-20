@@ -209,7 +209,7 @@ export default function Dashboard() {
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor</th>
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
-                                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6"><span className="sr-only">Nota</span></th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nota del Supervisor</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
@@ -239,11 +239,11 @@ export default function Dashboard() {
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{req.total_days}</td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{req.manager_name || 'Desconocido'}</td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{getStatusBadge(req.status)}</td>
-                                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                            {req.manager_comments && (
-                                                <span title={req.manager_comments} className="text-indigo-600 hover:text-indigo-900 cursor-help">
-                                                    Nota del Supervisor
-                                                </span>
+                                        <td className="px-3 py-4 text-sm text-gray-700 max-w-xs">
+                                            {req.status === 'rejected' && req.manager_comments ? (
+                                                <span className="whitespace-normal">{req.manager_comments}</span>
+                                            ) : (
+                                                <span className="text-gray-400">—</span>
                                             )}
                                         </td>
                                     </tr>
