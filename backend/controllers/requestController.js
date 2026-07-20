@@ -69,8 +69,8 @@ exports.createRequest = async (req, res) => {
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
 
         await conn.query(
-            'INSERT INTO approval_tokens (request_id, token, expires_at) VALUES (?, ?, ?), (?, ?, ?)',
-            [requestId, approveToken, expiresAt, requestId, rejectToken, expiresAt]
+            'INSERT INTO approval_tokens (request_id, token, action, expires_at) VALUES (?, ?, ?, ?), (?, ?, ?, ?)',
+            [requestId, approveToken, 'approve', expiresAt, requestId, rejectToken, 'reject', expiresAt]
         );
 
         // Registrar en historial
@@ -411,7 +411,7 @@ exports.validateToken = async (req, res) => {
             action: tokenData.action, // 'approve' o 'reject'
             request_number: tokenData.request_number,
             employee_name: tokenData.employee_name,
-            request_type: tokenData.request_type, // Valor enum
+            request_type: formatRequestType(tokenData.request_type), // Formateado: 'Vacaciones', 'Permiso Personal', etc.
             total_days: tokenData.total_days
         });
     } catch (error) {

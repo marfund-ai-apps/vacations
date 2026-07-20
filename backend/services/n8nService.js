@@ -15,6 +15,9 @@ const formatRequestType = (type) => ({
     seniority_benefit: 'Beneficio Antigüedad'
 }[type] || type);
 
+// Exportar para uso en otros controladores
+exports.formatRequestType = formatRequestType;
+
 // Formatea fechas legibles
 const formatDate = (date) => new Date(date).toLocaleDateString('es-GT', {
     day: '2-digit', month: 'long', year: 'numeric'
