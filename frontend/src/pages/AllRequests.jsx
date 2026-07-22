@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Clock, CheckCircle, XCircle, Ban, Info, Filter, X } from 'lucide-react';
-import { formatDate, formatDateTime } from '../utils/dateUtils';
+import { formatDate } from '../utils/dateUtils';
 import { useAuth } from '../context/AuthContext';
+import FechaSolicitud from '../components/FechaSolicitud';
 
 const TYPE_LABEL = (type) =>
     type === 'vacation' ? 'Vacaciones' :
@@ -17,20 +18,6 @@ const MONTHS = [
     { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' },
     { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
 ];
-
-// Fecha de solicitud en dos líneas (fecha arriba, hora abajo), en azul claro
-const FechaSolicitud = ({ ts }) => {
-    const s = formatDateTime(ts);
-    const idx = s.indexOf(', ');
-    const date = idx === -1 ? s : s.slice(0, idx);
-    const time = idx === -1 ? '' : s.slice(idx + 2);
-    return (
-        <>
-            <div className="font-medium">{date}</div>
-            <div className="text-sky-400">{time}</div>
-        </>
-    );
-};
 
 export default function AllRequests() {
     const { user } = useAuth();

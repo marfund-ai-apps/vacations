@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Clock, CheckCircle, XCircle, Ban } from 'lucide-react';
-import { formatDate, formatDateTime } from '../utils/dateUtils';
+import { formatDate } from '../utils/dateUtils';
+import FechaSolicitud from '../components/FechaSolicitud';
 
 export default function PendingApprovals() {
     const [pendingRequests, setPendingRequests] = useState([]);
@@ -91,12 +92,12 @@ export default function PendingApprovals() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha V/PP/AJ</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">No. Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Colaborador</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Tipo</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Fecha V/PP/AJ</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Días Hábiles</th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right font-semibold text-gray-900">
                                             Acciones
                                         </th>
@@ -112,23 +113,23 @@ export default function PendingApprovals() {
                                     ) : (
                                         pendingRequests.map((req) => (
                                             <tr key={req.id}>
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
-                                                    {formatDateTime(req.created_at)}
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-xs text-sky-600 sm:pl-6">
+                                                    <FechaSolicitud ts={req.created_at} />
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs font-medium text-gray-900">
                                                     {req.request_number}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm sm:pl-6">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs sm:pl-6">
                                                     {req.employee_number && <div className="text-xs font-mono font-semibold text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     <div className="font-medium text-gray-900">{req.employee_name}</div>
                                                     <div className="text-xs text-gray-500">{req.employee_email}</div>
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-700">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-700">
                                                     {req.request_type === 'vacation' ? 'Vacaciones' :
                                                         req.request_type === 'permission' ? 'Permiso' :
                                                         req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {req.date_ranges && req.date_ranges.length > 0 ? (
                                                         <span>
                                                             {formatDate(req.date_ranges[0].date_from)} a <br />
@@ -136,7 +137,7 @@ export default function PendingApprovals() {
                                                         </span>
                                                     ) : 'N/A'}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {req.total_days}
                                                 </td>
                                                 <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
@@ -167,14 +168,14 @@ export default function PendingApprovals() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha V/PP/AJ</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nota del Supervisor</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">No. Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Colaborador</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Tipo</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Fecha V/PP/AJ</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Días Hábiles</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Estado</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Nota del Supervisor</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
@@ -187,23 +188,23 @@ export default function PendingApprovals() {
                                     ) : (
                                         processedRequests.map((req) => (
                                             <tr key={req.id} className="opacity-75">
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
-                                                    {formatDateTime(req.created_at)}
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-xs text-sky-600 sm:pl-6">
+                                                    <FechaSolicitud ts={req.created_at} />
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs font-medium text-gray-900">
                                                     {req.request_number}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm sm:pl-6">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs sm:pl-6">
                                                     {req.employee_number && <div className="text-xs font-mono font-semibold text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     <div className="font-medium text-gray-900">{req.employee_name}</div>
                                                     <div className="text-xs text-gray-500">{req.employee_email}</div>
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-700">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-700">
                                                     {req.request_type === 'vacation' ? 'Vacaciones' :
                                                         req.request_type === 'permission' ? 'Permiso' :
                                                         req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {req.date_ranges && req.date_ranges.length > 0 ? (
                                                         <span>
                                                             {formatDate(req.date_ranges[0].date_from)} a <br />
@@ -211,10 +212,10 @@ export default function PendingApprovals() {
                                                         </span>
                                                     ) : 'N/A'}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {req.total_days}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs">
                                                     {req.status === 'approved' && (
                                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                             <CheckCircle className="w-3 h-3 mr-1" />Aprobado
@@ -236,7 +237,7 @@ export default function PendingApprovals() {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-3 py-4 text-sm text-gray-700 max-w-xs">
+                                                <td className="px-3 py-4 text-xs text-gray-700 max-w-xs">
                                                     {req.status === 'rejected' && req.manager_comments ? (
                                                         <span className="whitespace-normal">{req.manager_comments}</span>
                                                     ) : (

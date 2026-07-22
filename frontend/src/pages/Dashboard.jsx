@@ -5,6 +5,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Calendar, Clock, CheckCircle, XCircle, TrendingUp, Ban } from 'lucide-react';
 import { formatDate, formatDateTime } from '../utils/dateUtils';
+import FechaSolicitud from '../components/FechaSolicitud';
 
 export default function Dashboard() {
     const { user } = useAuth();
@@ -149,12 +150,12 @@ export default function Dashboard() {
                     <table className="min-w-full divide-y divide-gray-300">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha V/PP/AJ</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor Inmediato</th>
+                                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">No. Solicitud</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Tipo</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Fecha V/PP/AJ</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Días Hábiles</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Supervisor Inmediato</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
@@ -167,18 +168,18 @@ export default function Dashboard() {
                             ) : (
                                 pendingHistory.slice(0, 5).map((req) => (
                                     <tr key={req.id}>
-                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
-                                            {formatDateTime(req.created_at)}
+                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-xs text-sky-600 sm:pl-6">
+                                            <FechaSolicitud ts={req.created_at} />
                                         </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs font-medium text-gray-900">
                                             {req.request_number}
                                         </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                             {req.request_type === 'vacation' ? 'Vacaciones' :
                                                 req.request_type === 'permission' ? 'Permiso' :
                                                 req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                         </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                             {req.date_ranges && req.date_ranges.length > 0 ? (
                                                 <span>
                                                     {formatDate(req.date_ranges[0].date_from)} a{' '}
@@ -186,10 +187,10 @@ export default function Dashboard() {
                                                 </span>
                                             ) : 'N/A'}
                                         </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                             {req.total_days}
                                         </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                             {req.manager_name || 'Desconocido'}
                                         </td>
                                     </tr>
@@ -210,14 +211,14 @@ export default function Dashboard() {
                     <table className="min-w-full divide-y divide-gray-300">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha V/PP/AJ</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
-                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nota del Supervisor</th>
+                                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">No. Solicitud</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Tipo</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Fecha V/PP/AJ</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Días Hábiles</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Supervisor</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Estado</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Nota del Supervisor</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
@@ -230,14 +231,14 @@ export default function Dashboard() {
                             ) : (
                                 processedHistory.slice(0, 5).map((req) => (
                                     <tr key={req.id} className="opacity-75">
-                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">{formatDateTime(req.created_at)}</td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">{req.request_number}</td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-xs text-sky-600 sm:pl-6"><FechaSolicitud ts={req.created_at} /></td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs font-medium text-gray-900">{req.request_number}</td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                             {req.request_type === 'vacation' ? 'Vacaciones' :
                                                 req.request_type === 'permission' ? 'Permiso' :
                                                 req.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia'}
                                         </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                             {req.date_ranges && req.date_ranges.length > 0 ? (
                                                 <span>
                                                     {formatDate(req.date_ranges[0].date_from)} a{' '}
@@ -245,10 +246,10 @@ export default function Dashboard() {
                                                 </span>
                                             ) : 'N/A'}
                                         </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{req.total_days}</td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{req.manager_name || 'Desconocido'}</td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{getStatusBadge(req.status)}</td>
-                                        <td className="px-3 py-4 text-sm text-gray-700 max-w-xs">
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">{req.total_days}</td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">{req.manager_name || 'Desconocido'}</td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">{getStatusBadge(req.status)}</td>
+                                        <td className="px-3 py-4 text-xs text-gray-700 max-w-xs">
                                             {req.status === 'rejected' && req.manager_comments ? (
                                                 <span className="whitespace-normal">{req.manager_comments}</span>
                                             ) : (
@@ -273,11 +274,11 @@ export default function Dashboard() {
                         <table className="min-w-full divide-y divide-gray-300">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">#</th>
-                                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha</th>
-                                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Descripción</th>
-                                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Detalle</th>
-                                    <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 pr-6">Días</th>
+                                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-900 sm:pl-6">#</th>
+                                    <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Fecha</th>
+                                    <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Descripción</th>
+                                    <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Detalle</th>
+                                    <th scope="col" className="px-3 py-3.5 text-right text-xs font-semibold text-gray-900 pr-6">Días</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 bg-white">
@@ -287,19 +288,19 @@ export default function Dashboard() {
                                     const sign = mov.type === 'credit' ? '+' : mov.type === 'seniority' ? '' : '-';
                                     return (
                                     <tr key={mov.id} className={rowBg}>
-                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-semibold sm:pl-6">
+                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-xs font-semibold sm:pl-6">
                                             <span className={textColor}>{mov.number}</span>
                                         </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
+                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-600">
                                             {formatDateTime(mov.date)}
                                         </td>
-                                        <td className={`whitespace-nowrap px-3 py-4 text-sm font-medium ${textColor}`}>
+                                        <td className={`whitespace-nowrap px-3 py-4 text-xs font-medium ${textColor}`}>
                                             {mov.description}
                                         </td>
-                                        <td className="px-3 py-4 text-sm text-gray-500 max-w-xs truncate" title={mov.detail}>
+                                        <td className="px-3 py-4 text-xs text-gray-500 max-w-xs truncate" title={mov.detail}>
                                             {mov.detail}
                                         </td>
-                                        <td className={`whitespace-nowrap px-3 py-4 text-sm font-bold text-right pr-6 ${textColor}`}>
+                                        <td className={`whitespace-nowrap px-3 py-4 text-xs font-bold text-right pr-6 ${textColor}`}>
                                             {sign}{mov.days}
                                         </td>
                                     </tr>
