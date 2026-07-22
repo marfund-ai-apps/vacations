@@ -285,6 +285,12 @@ exports.getAllEmployeesReport = async (req, res) => {
         COALESCE(SUM(CASE WHEN vr.request_type = 'permission' THEN rdr.business_days END), 0) as permission_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'justified_absence' THEN rdr.business_days END), 0) as absence_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'seniority_benefit' THEN rdr.business_days END), 0) as seniority_benefit_days,
+        COALESCE((
+          SELECT SUM(uda.days_added)
+          FROM user_day_adjustments uda
+          WHERE uda.user_id = u.id
+            AND uda.adjustment_type IN ('monthly_auto', 'manual')
+        ), 0) as extra_days,
         COUNT(DISTINCT vr.id) as total_requests
       FROM users u
       LEFT JOIN users m ON u.manager_id = m.id
@@ -326,15 +332,18 @@ exports.getTeamReport = async (req, res) => {
         COALESCE(SUM(CASE WHEN vr.request_type = 'permission'         AND vr.status = 'approved' THEN rdr.business_days ELSE 0 END), 0) as permission_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'justified_absence'  AND vr.status = 'approved' THEN rdr.business_days ELSE 0 END), 0) as absence_days,
         COALESCE(SUM(CASE WHEN vr.request_type = 'seniority_benefit'  AND vr.status = 'approved' THEN rdr.business_days ELSE 0 END), 0) as seniority_benefit_days,
-        COALESCE(SUM(CASE WHEN uda.adjustment_type IN ('monthly_auto', 'manual') THEN uda.days_added ELSE 0 END), 0) as extra_days
+        COALESCE((
+          SELECT SUM(uda.days_added)
+          FROM user_day_adjustments uda
+          WHERE uda.user_id = u.id
+            AND uda.adjustment_type IN ('monthly_auto', 'manual')
+        ), 0) as extra_days
       FROM users u
       LEFT JOIN users m ON u.manager_id = m.id
       LEFT JOIN vacation_requests vr ON u.id = vr.employee_id
         AND YEAR(vr.created_at) = ?
         ${monthCondition}
       LEFT JOIN request_date_ranges rdr ON vr.id = rdr.request_id
-      LEFT JOIN user_day_adjustments uda ON u.id = uda.user_id
-        AND uda.adjustment_type IN ('monthly_auto', 'manual')
       WHERE u.manager_id = ?
       GROUP BY u.id, u.full_name, u.email, u.employee_number, u.position,
                u.base_vacation_days, u.manager_id, u.benefit_extra_day,

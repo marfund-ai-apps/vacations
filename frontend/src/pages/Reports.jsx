@@ -87,10 +87,11 @@ export default function Reports() {
 
     const handleExportCSV = () => {
         if (!filteredData.length) return;
-        const headers = ["Código Colaborador", "Nombre", "Email", "Posición", "Supervisor", "Días Base", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "B. Antigüedad (info)", "Saldo Final"];
+        const headers = ["Código Colaborador", "Nombre", "Email", "Posición", "Supervisor", "Días Base", "Incrementos", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "B. Antigüedad (info)", "Saldo Final"];
         const rows = filteredData.map(emp => {
             const vacDays = parseFloat(emp.vacation_days) || 0;
             const baseDays = parseFloat(emp.base_vacation_days) || 0;
+            const extraDays = parseFloat(emp.extra_days) || 0;
             return [
                 emp.employee_number || '',
                 `"${emp.full_name}"`,
@@ -98,11 +99,12 @@ export default function Reports() {
                 `"${emp.position || ''}"`,
                 `"${emp.manager_name || ''}"`,
                 baseDays,
+                extraDays,
                 vacDays,
                 parseFloat(emp.permission_days) || 0,
                 parseFloat(emp.absence_days) || 0,
                 parseFloat(emp.seniority_benefit_days) || 0,
-                (baseDays - vacDays).toFixed(2),
+                (baseDays + extraDays - vacDays).toFixed(2),
             ];
         });
         const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
@@ -252,6 +254,7 @@ export default function Reports() {
                                             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-500">Supervisor</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-blue-50">Días Base</th>
+                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-green-700 bg-green-50">Incrementos</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-red-700">Vacaciones</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Permisos</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Ausencias</th>
@@ -262,7 +265,7 @@ export default function Reports() {
                                     <tbody className="divide-y divide-gray-200 bg-white">
                                         {filteredData.length === 0 ? (
                                             <tr>
-                                                <td colSpan="9" className="py-8 text-center text-sm text-gray-500">
+                                                <td colSpan="10" className="py-8 text-center text-sm text-gray-500">
                                                     {reportData.length === 0
                                                         ? 'No hay datos para el período seleccionado.'
                                                         : 'Ningún colaborador coincide con los filtros aplicados.'}
@@ -272,7 +275,8 @@ export default function Reports() {
                                             filteredData.map((emp) => {
                                                 const vacDays = parseFloat(emp.vacation_days) || 0;
                                                 const baseDays = parseFloat(emp.base_vacation_days) || 0;
-                                                const saldoFinal = baseDays - vacDays;
+                                                const extraDays = parseFloat(emp.extra_days) || 0;
+                                                const saldoFinal = baseDays + extraDays - vacDays;
                                                 return (
                                                     <tr key={emp.id}>
                                                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
@@ -294,6 +298,9 @@ export default function Reports() {
                                                         </td>
                                                         <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-blue-700 text-center bg-blue-50">
                                                             {baseDays}
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-green-700 text-center font-medium bg-green-50">
+                                                            {extraDays > 0 ? `+${extraDays}` : '0'}
                                                         </td>
                                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-red-600 text-center font-medium">
                                                             {vacDays > 0 ? `-${vacDays}` : '0'}
