@@ -18,6 +18,20 @@ const MONTHS = [
     { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
 ];
 
+// Fecha de solicitud en dos líneas (fecha arriba, hora abajo), en azul claro
+const FechaSolicitud = ({ ts }) => {
+    const s = formatDateTime(ts);
+    const idx = s.indexOf(', ');
+    const date = idx === -1 ? s : s.slice(0, idx);
+    const time = idx === -1 ? '' : s.slice(idx + 2);
+    return (
+        <>
+            <div className="font-medium">{date}</div>
+            <div className="text-sky-400">{time}</div>
+        </>
+    );
+};
+
 export default function AllRequests() {
     const { user } = useAuth();
     const isSuperAdmin = user?.role === 'super_admin';
@@ -249,13 +263,13 @@ export default function AllRequests() {
                     <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha V/PP/AJ</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">No. Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Colaborador</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Tipo</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Fecha V/PP/AJ</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Días</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Supervisor</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
@@ -268,21 +282,21 @@ export default function AllRequests() {
                                     ) : (
                                         pendingRequests.map((req) => (
                                             <tr key={req.id}>
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
-                                                    {formatDateTime(req.created_at)}
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-xs text-sky-600 sm:pl-6">
+                                                    <FechaSolicitud ts={req.created_at} />
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs font-medium text-gray-500">
                                                     {req.request_number}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-900">
                                                     {req.employee_number && <div className="text-xs font-mono font-semibold text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     {req.employee_name}
                                                     <div className="text-xs text-gray-500">{req.employee_email}</div>
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {TYPE_LABEL(req.request_type)}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {req.date_ranges && req.date_ranges.length > 0 ? (
                                                         <span>
                                                             {formatDate(req.date_ranges[0].date_from)} a <br />
@@ -290,10 +304,10 @@ export default function AllRequests() {
                                                         </span>
                                                     ) : 'N/A'}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {req.total_days}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {req.manager_name || 'Desconocido'}
                                                 </td>
                                             </tr>
@@ -313,16 +327,16 @@ export default function AllRequests() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha V/PP/AJ</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">No. Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Colaborador</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Tipo</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Fecha V/PP/AJ</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Días</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Supervisor</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-xs font-semibold text-gray-900">Estado</th>
                                         {isSuperAdmin && (
-                                            <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Acciones</th>
+                                            <th scope="col" className="px-3 py-3.5 text-right text-xs font-semibold text-gray-900">Acciones</th>
                                         )}
                                     </tr>
                                 </thead>
@@ -336,23 +350,23 @@ export default function AllRequests() {
                                     ) : (
                                         processedRequests.map((req) => (
                                             <tr key={req.id} className={req.status === 'annulled' ? 'opacity-50' : 'opacity-75'}>
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
-                                                    {formatDateTime(req.created_at)}
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-xs text-sky-600 sm:pl-6">
+                                                    <FechaSolicitud ts={req.created_at} />
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm font-medium">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs font-medium">
                                                     <span className={req.status === 'approved' ? 'text-red-600' : 'text-gray-500'}>
                                                         {req.request_number}
                                                     </span>
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-900">
                                                     {req.employee_number && <div className="text-xs font-mono font-semibold text-indigo-600 mb-0.5">{req.employee_number}</div>}
                                                     {req.employee_name}
                                                     <div className="text-xs text-gray-500">{req.employee_email}</div>
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {TYPE_LABEL(req.request_type)}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {req.date_ranges && req.date_ranges.length > 0 ? (
                                                         <span>
                                                             {formatDate(req.date_ranges[0].date_from)} a <br />
@@ -360,13 +374,13 @@ export default function AllRequests() {
                                                         </span>
                                                     ) : 'N/A'}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {req.total_days}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-500">
                                                     {req.manager_name || 'Desconocido'}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                <td className="whitespace-nowrap px-3 py-4 text-xs">
                                                     <div className="flex items-center gap-2">
                                                         {getStatusBadge(req.status)}
                                                         {req.status === 'annulled' && req.annulment_reason && (
