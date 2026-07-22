@@ -77,6 +77,9 @@ export default function PendingApprovals() {
                     <p className="mt-2 text-sm text-gray-700">
                         Gestiona y revisa las solicitudes de vacaciones y permisos de las personas a tu cargo.
                     </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                        <span className="font-medium">V/PP/AJ</span> = Vacaciones / Permiso Personal / Ausencia Justificada
+                    </p>
                 </div>
             </div>
 
@@ -92,7 +95,7 @@ export default function PendingApprovals() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha V/PP/AJ</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right font-semibold text-gray-900">
                                             Acciones
@@ -168,7 +171,7 @@ export default function PendingApprovals() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha V/PP/AJ</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nota del Supervisor</th>

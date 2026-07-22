@@ -241,18 +241,19 @@ export default function AllRequests() {
             </div>
 
             <div className="mt-8 flow-root">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Pendientes de Aprobación</h2>
-                <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                    <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg mb-8">
-                            <table className="min-w-full divide-y divide-gray-300">
+                <h2 className="text-lg font-medium text-gray-900 mb-2">Pendientes de Aprobación</h2>
+                <p className="text-xs text-gray-500 mb-4">
+                    <span className="font-medium">V/PP/AJ</span> = Vacaciones / Permiso Personal / Ausencia Justificada
+                </p>
+                <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg mb-8">
+                    <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha V/PP/AJ</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor</th>
                                     </tr>
@@ -302,13 +303,13 @@ export default function AllRequests() {
                             </table>
                         </div>
 
-                        <div className="flex items-center justify-between mb-4 mt-8">
+                        <div className="flex items-center justify-between mb-4 mt-8 flex-wrap gap-2">
                             <h2 className="text-lg font-medium text-gray-900">Historial de Solicitudes</h2>
                             <span className="text-sm text-gray-500">
                                 Mostrando {processedRequests.length} solicitud{processedRequests.length === 1 ? '' : 'es'}
                             </span>
                         </div>
-                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+                        <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
@@ -316,7 +317,7 @@ export default function AllRequests() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha V/PP/AJ</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Supervisor</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
@@ -397,8 +398,6 @@ export default function AllRequests() {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                </div>
             </div>
 
             {/* Tooltip global de motivo de anulación */}
