@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Clock, CheckCircle, XCircle, Ban } from 'lucide-react';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, formatDateTime } from '../utils/dateUtils';
 
 export default function MyRequests() {
     const [pendingRequests, setPendingRequests] = useState([]);
@@ -68,7 +68,8 @@ export default function MyRequests() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
@@ -78,14 +79,17 @@ export default function MyRequests() {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {pendingRequests.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="py-8 text-center text-sm text-gray-500">
+                                            <td colSpan="6" className="py-8 text-center text-sm text-gray-500">
                                                 No tienes solicitudes pendientes de autorización.
                                             </td>
                                         </tr>
                                     ) : (
                                         pendingRequests.map((req) => (
                                             <tr key={req.id}>
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-500 sm:pl-6">
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
+                                                    {formatDateTime(req.created_at)}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-500">
                                                     {req.request_number}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -119,7 +123,8 @@ export default function MyRequests() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
@@ -131,14 +136,17 @@ export default function MyRequests() {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {processedRequests.length === 0 ? (
                                         <tr>
-                                            <td colSpan="7" className="py-8 text-center text-sm text-gray-500">
+                                            <td colSpan="8" className="py-8 text-center text-sm text-gray-500">
                                                 No tienes historial de solicitudes cerradas.
                                             </td>
                                         </tr>
                                     ) : (
                                         processedRequests.map((req) => (
                                             <tr key={req.id} className="opacity-75">
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
+                                                    {formatDateTime(req.created_at)}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm font-medium">
                                                     <span className={req.status === 'approved' ? 'text-red-600' : 'text-gray-500'}>
                                                         {req.request_number}
                                                     </span>

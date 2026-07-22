@@ -216,6 +216,15 @@ All routes are implemented. Role-gated routes:
     ADD COLUMN annulled_at DATETIME NULL AFTER annulled_by;
   ```
 
+### Columna "Fecha Solicitud" (created_at)
+- Todas las tablas de solicitudes muestran `formatDateTime(req.created_at)` como primera columna: `Dashboard.jsx`, `MyRequests.jsx`, `PendingApprovals.jsx`, `AllRequests.jsx`
+- Siempre ordenadas de más reciente a más antiguo (los queries del backend ya devuelven `ORDER BY vr.created_at DESC`; `AllRequests` reordena explícitamente tras filtrar)
+
+### AllRequests — filtros
+- Filtros client-side sobre `/requests?scope=all`: **Año**, **Mes**, **Supervisor** (dropdown), **Colaborador** (búsqueda por nombre/correo/código)
+- Aplican a ambas tablas (Pendientes + Historial); contador "Limpiar filtros (N)" y "Mostrando X solicitudes"
+- Mismo patrón visual que `Reports.jsx`
+
 ### PendingApprovals — columnas
 - **Pendientes de Aprobación**: Colaborador | Tipo | Fechas | Motivo | Acciones
 - **Historial de Solicitudes**: Colaborador | Tipo | Fechas | Estado

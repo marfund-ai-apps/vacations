@@ -146,7 +146,8 @@ export default function Dashboard() {
                     <table className="min-w-full divide-y divide-gray-300">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
+                                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
@@ -156,14 +157,17 @@ export default function Dashboard() {
                         <tbody className="divide-y divide-gray-200 bg-white">
                             {pendingHistory.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="py-8 text-center text-sm text-gray-500">
+                                    <td colSpan="6" className="py-8 text-center text-sm text-gray-500">
                                         No tienes solicitudes recientes pendientes de autorización.
                                     </td>
                                 </tr>
                             ) : (
                                 pendingHistory.slice(0, 5).map((req) => (
                                     <tr key={req.id}>
-                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
+                                            {formatDateTime(req.created_at)}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
                                             {req.request_number}
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -203,7 +207,8 @@ export default function Dashboard() {
                     <table className="min-w-full divide-y divide-gray-300">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
+                                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Días Hábiles</th>
@@ -215,14 +220,15 @@ export default function Dashboard() {
                         <tbody className="divide-y divide-gray-200 bg-white">
                             {processedHistory.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="py-8 text-center text-sm text-gray-500">
+                                    <td colSpan="8" className="py-8 text-center text-sm text-gray-500">
                                         No tienes historial reciente de solicitudes cerradas.
                                     </td>
                                 </tr>
                             ) : (
                                 processedHistory.slice(0, 5).map((req) => (
                                     <tr key={req.id} className="opacity-75">
-                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{req.request_number}</td>
+                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">{formatDateTime(req.created_at)}</td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">{req.request_number}</td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             {req.request_type === 'vacation' ? 'Vacaciones' :
                                                 req.request_type === 'permission' ? 'Permiso' :

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { Clock, CheckCircle, XCircle, Ban, Info } from 'lucide-react';
-import { formatDate } from '../utils/dateUtils';
+import { Clock, CheckCircle, XCircle, Ban, Info, Filter, X } from 'lucide-react';
+import { formatDate, formatDateTime } from '../utils/dateUtils';
 import { useAuth } from '../context/AuthContext';
 
 const TYPE_LABEL = (type) =>
@@ -10,15 +10,28 @@ const TYPE_LABEL = (type) =>
     type === 'permission' ? 'Permiso' :
     type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia';
 
+const MONTHS = [
+    { value: 0, label: 'Todos los meses' },
+    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
+    { value: 4, label: 'Abril' }, { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
+    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' },
+    { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
+];
+
 export default function AllRequests() {
     const { user } = useAuth();
     const isSuperAdmin = user?.role === 'super_admin';
 
-    const [pendingRequests, setPendingRequests] = useState([]);
-    const [processedRequests, setProcessedRequests] = useState([]);
+    const [allRequests, setAllRequests] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const [annulModal, setAnnulModal] = useState(null); // { id, request_number, request_type, status, employee_name }
+    // Filtros
+    const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+    const [filterMonth, setFilterMonth] = useState(0);
+    const [filterManager, setFilterManager] = useState('');
+    const [searchEmployee, setSearchEmployee] = useState('');
+
+    const [annulModal, setAnnulModal] = useState(null);
     const [annulReason, setAnnulReason] = useState('');
     const [submittingAnnul, setSubmittingAnnul] = useState(false);
     const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, text: '' });
@@ -32,8 +45,7 @@ export default function AllRequests() {
     const fetchRequests = async () => {
         try {
             const res = await api.get('/requests?scope=all');
-            setPendingRequests(res.data.filter(req => req.status === 'pending'));
-            setProcessedRequests(res.data.filter(req => req.status !== 'pending'));
+            setAllRequests(res.data);
         } catch (error) {
             console.error("Error fetching all requests:", error);
             toast.error("Ocurrió un error al cargar las solicitudes de la organización.");
@@ -43,6 +55,61 @@ export default function AllRequests() {
     };
 
     useEffect(() => { fetchRequests(); }, []);
+
+    // Años disponibles según los datos (desc), incluyendo el año actual
+    const years = useMemo(() => {
+        const set = new Set([new Date().getFullYear()]);
+        allRequests.forEach(r => { if (r.created_at) set.add(new Date(r.created_at).getFullYear()); });
+        return [...set].sort((a, b) => b - a);
+    }, [allRequests]);
+
+    // Supervisores únicos presentes en las solicitudes
+    const managers = useMemo(() => {
+        const map = new Map();
+        allRequests.forEach(r => {
+            if (r.manager_id && r.manager_name) map.set(r.manager_id, { id: r.manager_id, name: r.manager_name });
+        });
+        return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+    }, [allRequests]);
+
+    // Aplica filtros comunes y ordena de más reciente a más antiguo
+    const applyFilters = (list) => list
+        .filter(req => {
+            const d = req.created_at ? new Date(req.created_at) : null;
+            if (filterYear && d && d.getFullYear() !== Number(filterYear)) return false;
+            if (filterMonth > 0 && d && (d.getMonth() + 1) !== Number(filterMonth)) return false;
+            if (filterManager && String(req.manager_id) !== String(filterManager)) return false;
+            if (searchEmployee.trim()) {
+                const q = searchEmployee.trim().toLowerCase();
+                const hay = `${req.employee_name || ''} ${req.employee_email || ''} ${req.employee_number || ''}`.toLowerCase();
+                if (!hay.includes(q)) return false;
+            }
+            return true;
+        })
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    const pendingRequests = useMemo(
+        () => applyFilters(allRequests.filter(r => r.status === 'pending')),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [allRequests, filterYear, filterMonth, filterManager, searchEmployee]
+    );
+    const processedRequests = useMemo(
+        () => applyFilters(allRequests.filter(r => r.status !== 'pending')),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [allRequests, filterYear, filterMonth, filterManager, searchEmployee]
+    );
+
+    const activeFilterCount = [
+        filterMonth > 0,
+        filterManager !== '',
+        searchEmployee.trim() !== '',
+    ].filter(Boolean).length;
+
+    const resetFilters = () => {
+        setFilterMonth(0);
+        setFilterManager('');
+        setSearchEmployee('');
+    };
 
     const openAnnulModal = (req) => {
         setAnnulReason('');
@@ -100,7 +167,8 @@ export default function AllRequests() {
         );
     }
 
-    const histColSpan = isSuperAdmin ? 8 : 7;
+    const pendingColSpan = 7;
+    const histColSpan = isSuperAdmin ? 9 : 8;
 
     return (
         <div className="px-4 sm:px-6 lg:px-8">
@@ -113,6 +181,65 @@ export default function AllRequests() {
                 </div>
             </div>
 
+            {/* Filtros */}
+            <div className="mt-6 rounded-lg bg-white ring-1 ring-gray-200 shadow-sm p-4">
+                <div className="flex items-center gap-2 mb-3">
+                    <Filter className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm font-medium text-gray-700">Filtros</span>
+                    {activeFilterCount > 0 && (
+                        <button
+                            onClick={resetFilters}
+                            className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                        >
+                            <X className="w-3 h-3" /> Limpiar filtros ({activeFilterCount})
+                        </button>
+                    )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Año</label>
+                        <select
+                            value={filterYear}
+                            onChange={e => setFilterYear(Number(e.target.value))}
+                            className="block w-full rounded-md border-0 py-1.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                        >
+                            {years.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Mes</label>
+                        <select
+                            value={filterMonth}
+                            onChange={e => setFilterMonth(Number(e.target.value))}
+                            className="block w-full rounded-md border-0 py-1.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                        >
+                            {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Supervisor</label>
+                        <select
+                            value={filterManager}
+                            onChange={e => setFilterManager(e.target.value)}
+                            className="block w-full rounded-md border-0 py-1.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                        >
+                            <option value="">Todos los supervisores</option>
+                            {managers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Colaborador</label>
+                        <input
+                            type="text"
+                            value={searchEmployee}
+                            onChange={e => setSearchEmployee(e.target.value)}
+                            placeholder="Nombre, correo o código..."
+                            className="block w-full rounded-md border-0 py-1.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                        />
+                    </div>
+                </div>
+            </div>
+
             <div className="mt-8 flow-root">
                 <h2 className="text-lg font-medium text-gray-900 mb-4">Pendientes de Aprobación</h2>
                 <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -121,7 +248,8 @@ export default function AllRequests() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
@@ -132,14 +260,17 @@ export default function AllRequests() {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {pendingRequests.length === 0 ? (
                                         <tr>
-                                            <td colSpan="6" className="py-8 text-center text-sm text-gray-500">
-                                                No hay ninguna solicitud pendiente de aprobación en la organización.
+                                            <td colSpan={pendingColSpan} className="py-8 text-center text-sm text-gray-500">
+                                                No hay ninguna solicitud pendiente de aprobación con los filtros aplicados.
                                             </td>
                                         </tr>
                                     ) : (
                                         pendingRequests.map((req) => (
                                             <tr key={req.id}>
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-500 sm:pl-6">
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
+                                                    {formatDateTime(req.created_at)}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-500">
                                                     {req.request_number}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
@@ -171,12 +302,18 @@ export default function AllRequests() {
                             </table>
                         </div>
 
-                        <h2 className="text-lg font-medium text-gray-900 mb-4 mt-8">Historial de Solicitudes</h2>
+                        <div className="flex items-center justify-between mb-4 mt-8">
+                            <h2 className="text-lg font-medium text-gray-900">Historial de Solicitudes</h2>
+                            <span className="text-sm text-gray-500">
+                                Mostrando {processedRequests.length} solicitud{processedRequests.length === 1 ? '' : 'es'}
+                            </span>
+                        </div>
                         <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Número</th>
+                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Fecha Solicitud</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Número</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fechas</th>
@@ -192,13 +329,16 @@ export default function AllRequests() {
                                     {processedRequests.length === 0 ? (
                                         <tr>
                                             <td colSpan={histColSpan} className="py-8 text-center text-sm text-gray-500">
-                                                Aún no se ha procesado ninguna solicitud en la organización.
+                                                No hay solicitudes procesadas con los filtros aplicados.
                                             </td>
                                         </tr>
                                     ) : (
                                         processedRequests.map((req) => (
                                             <tr key={req.id} className={req.status === 'annulled' ? 'opacity-50' : 'opacity-75'}>
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
+                                                    {formatDateTime(req.created_at)}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm font-medium">
                                                     <span className={req.status === 'approved' ? 'text-red-600' : 'text-gray-500'}>
                                                         {req.request_number}
                                                     </span>
