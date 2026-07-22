@@ -225,7 +225,7 @@ All routes are implemented. Role-gated routes:
 - Componente: `frontend/src/components/CollaboratorDetailModal.jsx`
 - Llama `GET /api/reports/employee/:id/detail`
 - Muestra: info del colaborador + 3 widgets (Días Base, Consumidos, Disponibles) + tabla de movimientos con colores
-- Los movimientos están ordenados: saldo inicial primero, luego el resto por fecha descendente
+- Los movimientos están ordenados por fecha, de más reciente a más antiguo
 - Incluye solicitudes anuladas (`color_type: 'annulled'`) con texto tachado y motivo de anulación
 
 ## Key Design Decisions

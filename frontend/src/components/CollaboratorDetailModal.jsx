@@ -73,10 +73,14 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
                         </div>
 
                         {/* Widgets de resumen */}
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-4 gap-4">
                             <div className="rounded-lg bg-blue-50 ring-1 ring-blue-200 px-4 py-3 text-center">
                                 <p className="text-xs font-medium text-blue-600">Días Base Actuales</p>
                                 <p className="text-2xl font-bold text-blue-700 mt-1">{data.summary.base_days}</p>
+                            </div>
+                            <div className="rounded-lg bg-green-50 ring-1 ring-green-200 px-4 py-3 text-center">
+                                <p className="text-xs font-medium text-green-600">Incrementos</p>
+                                <p className="text-2xl font-bold text-green-700 mt-1">+{(parseFloat(data.summary.extra_days) || 0).toFixed(2)}</p>
                             </div>
                             <div className="rounded-lg bg-red-50 ring-1 ring-red-200 px-4 py-3 text-center">
                                 <p className="text-xs font-medium text-red-600">Vacaciones Consumidas</p>

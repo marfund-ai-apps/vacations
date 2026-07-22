@@ -239,11 +239,8 @@ exports.getEmployeeDetail = async (req, res) => {
       });
     }
 
-    // Saldo inicial primero, luego el resto por fecha DESC
-    movements.sort((a, b) => {
-      if (a.sort_priority !== b.sort_priority) return a.sort_priority - b.sort_priority;
-      return new Date(b.date) - new Date(a.date);
-    });
+    // Ordenar por fecha, de más reciente a más antiguo
+    movements.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     // Excluir initial_balance del cálculo: ese valor ya está capturado en base_vacation_days
     const totalAdjDays = adjustments
@@ -255,6 +252,7 @@ exports.getEmployeeDetail = async (req, res) => {
       user: userData,
       summary: {
         base_days: baseDays,
+        extra_days: totalAdjDays,
         consumed_days: consumedDays,
         available_days: baseDays + totalAdjDays - consumedDays
       },
