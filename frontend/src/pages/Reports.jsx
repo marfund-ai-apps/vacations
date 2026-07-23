@@ -13,6 +13,12 @@ const MONTHS = [
 
 const MANAGER_ROLES = ['manager', 'hr_admin', 'super_admin'];
 
+// El sistema inició en julio 2026: no mostrar años anteriores ni meses futuros
+const START_YEAR = 2026;
+const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_MONTH = new Date().getMonth() + 1; // 1-12
+const AVAILABLE_YEARS = Array.from({ length: CURRENT_YEAR - START_YEAR + 1 }, (_, i) => CURRENT_YEAR - i);
+
 export default function Reports() {
     const [reportData, setReportData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -165,10 +171,14 @@ export default function Reports() {
                         <label className="block text-xs font-medium text-gray-500 mb-1">Año</label>
                         <select
                             value={year}
-                            onChange={e => setYear(e.target.value)}
+                            onChange={e => {
+                                const y = e.target.value;
+                                setYear(y);
+                                if (Number(y) >= CURRENT_YEAR && month > CURRENT_MONTH) setMonth(0);
+                            }}
                             className="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-sm"
                         >
-                            {[2023, 2024, 2025, 2026, 2027].map(y => (
+                            {AVAILABLE_YEARS.map(y => (
                                 <option key={y} value={y}>{y}</option>
                             ))}
                         </select>
@@ -181,9 +191,11 @@ export default function Reports() {
                             onChange={e => setMonth(parseInt(e.target.value))}
                             className="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-sm"
                         >
-                            {MONTHS.map(m => (
-                                <option key={m.value} value={m.value}>{m.label}</option>
-                            ))}
+                            {MONTHS
+                                .filter(m => m.value === 0 || Number(year) < CURRENT_YEAR || m.value <= CURRENT_MONTH)
+                                .map(m => (
+                                    <option key={m.value} value={m.value}>{m.label}</option>
+                                ))}
                         </select>
                     </div>
 
