@@ -23,9 +23,12 @@ export default function Reports() {
     const [reportData, setReportData] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Filtros que van al backend
-    const [year, setYear] = useState(new Date().getFullYear());
-    const [month, setMonth] = useState(0);
+    // Filtros que van al backend.
+    // Nota: los filtros de Año y Mes están ocultos temporalmente (ver JSX). Quedan fijos en
+    // año actual y "todos los meses". Para reactivarlos: restaurar setYear/setMonth aquí y
+    // descomentar los <select> de Año/Mes en el panel de filtros.
+    const [year] = useState(new Date().getFullYear());
+    const [month] = useState(0);
 
     // Filtros client-side
     const [selectedManager, setSelectedManager] = useState('');
@@ -165,8 +168,9 @@ export default function Reports() {
                     )}
                 </div>
 
-                {/* Fila 1: Año / Mes / Supervisor / Beneficio */}
+                {/* Fila 1: Supervisor / Beneficio (Año y Mes ocultos temporalmente) */}
                 <div className="flex flex-wrap gap-3 items-end">
+                    {/* --- Filtros de Año y Mes ocultos temporalmente (se reactivarán más adelante) ---
                     <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Año</label>
                         <select
@@ -198,6 +202,7 @@ export default function Reports() {
                                 ))}
                         </select>
                     </div>
+                    --- fin filtros Año/Mes --- */}
 
                     <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Supervisor / Coordinador</label>
