@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: marfund-ia_gestion_vacaciones_ai:3306
--- Generation Time: May 23, 2026 at 10:01 PM
+-- Generation Time: Aug 10, 2026 at 03:13 AM
 -- Server version: 9.6.0
 -- PHP Version: 8.2.27
 
@@ -92,6 +92,8 @@ CREATE TABLE `users` (
   `avatar_url` varchar(500) DEFAULT NULL,
   `employee_number` varchar(50) DEFAULT NULL,
   `position` varchar(255) DEFAULT NULL,
+  `fecha_ingreso` date DEFAULT NULL,
+  `dias_beneficio_anno_laboral` int NOT NULL DEFAULT '0',
   `role` enum('employee','manager','hr_admin','super_admin') DEFAULT 'employee',
   `manager_id` int DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT '1',
@@ -133,7 +135,10 @@ CREATE TABLE `vacation_requests` (
   `request_type` enum('vacation','permission','justified_absence','seniority_benefit') NOT NULL,
   `reason` text,
   `notes` text,
-  `status` enum('pending','approved','rejected','cancelled') DEFAULT 'pending',
+  `annulment_reason` varchar(500) DEFAULT NULL,
+  `annulled_by` int DEFAULT NULL,
+  `annulled_at` datetime DEFAULT NULL,
+  `status` enum('pending','approved','rejected','cancelled','annulled') NOT NULL DEFAULT 'pending',
   `manager_id` int NOT NULL,
   `manager_comments` text,
   `manager_decision_date` timestamp NULL DEFAULT NULL,
@@ -151,14 +156,14 @@ CREATE TABLE `vacation_requests` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_employee_days_summary` (
-`employee_id` int
-,`full_name` varchar(255)
-,`email` varchar(255)
+`email` varchar(255)
+,`employee_id` int
 ,`employee_number` varchar(50)
+,`fiscal_year` year
+,`full_name` varchar(255)
 ,`position` varchar(255)
 ,`request_type` enum('vacation','permission','justified_absence','seniority_benefit')
-,`status` enum('pending','approved','rejected','cancelled')
-,`fiscal_year` year
+,`status` enum('pending','approved','rejected','cancelled','annulled')
 ,`total_business_days` decimal(27,2)
 ,`total_requests` bigint
 );

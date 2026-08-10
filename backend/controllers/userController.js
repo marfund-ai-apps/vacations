@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { calcDiasBeneficioBono } = require('../utils/beneficioAnios');
 
 // Genera número correlativo unificado VAC-YYYY-NNNN (comparte secuencia con vacation_requests)
 async function generateAdjustmentNumber() {
@@ -42,14 +43,19 @@ exports.getAllUsers = async (req, res) => {
 // Actualizar usuario (solo Admin)
 exports.updateUser = async (req, res) => {
     const { id } = req.params;
-    const { full_name, employee_number, position, role, manager_id, base_vacation_days,
+    const { full_name, employee_number, position, fecha_ingreso, role, manager_id, base_vacation_days,
             is_active, benefit_extra_day, benefit_extra_day_used } = req.body;
+
+    // Días de beneficio: siempre calculado desde la fecha de ingreso (solo lectura en la ficha)
+    const diasBeneficio = calcDiasBeneficioBono(fecha_ingreso);
 
     try {
         await db.query(
-            `UPDATE users SET full_name = ?, employee_number = ?, position = ?, role = ?, manager_id = ?,
+            `UPDATE users SET full_name = ?, employee_number = ?, position = ?, fecha_ingreso = ?,
+             dias_beneficio_anno_laboral = ?, role = ?, manager_id = ?,
              base_vacation_days = ?, is_active = ?, benefit_extra_day = ?, benefit_extra_day_used = ? WHERE id = ?`,
-            [full_name, employee_number, position, role, manager_id || null, base_vacation_days,
+            [full_name, employee_number, position, fecha_ingreso || null, diasBeneficio,
+             role, manager_id || null, base_vacation_days,
              is_active ? 1 : 0, benefit_extra_day ? 1 : 0, benefit_extra_day_used ? 1 : 0, id]
         );
         res.json({ success: true, message: 'Usuario actualizado correctamente' });
@@ -173,21 +179,23 @@ exports.addDayAdjustment = async (req, res) => {
 
 // Crear usuario manualmente
 exports.createUser = async (req, res) => {
-    const { full_name, email, employee_number, position, base_vacation_days, role, manager_id,
+    const { full_name, email, employee_number, position, fecha_ingreso, base_vacation_days, role, manager_id,
             benefit_extra_day, benefit_extra_day_used } = req.body;
 
     if (!full_name || !email) {
         return res.status(400).json({ message: "Nombre y correo son requeridos" });
     }
 
+    const diasBeneficio = calcDiasBeneficioBono(fecha_ingreso);
+
     try {
         const fakeGoogleId = 'manual_' + email;
         const [result] = await db.query(
-            `INSERT INTO users (full_name, email, employee_number, position, base_vacation_days, role,
-             manager_id, google_id, is_active, benefit_extra_day, benefit_extra_day_used)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
-            [full_name, email, employee_number || null, position || null, base_vacation_days || 15,
-             role || 'employee', manager_id || null, fakeGoogleId,
+            `INSERT INTO users (full_name, email, employee_number, position, fecha_ingreso, dias_beneficio_anno_laboral,
+             base_vacation_days, role, manager_id, google_id, is_active, benefit_extra_day, benefit_extra_day_used)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+            [full_name, email, employee_number || null, position || null, fecha_ingreso || null, diasBeneficio,
+             base_vacation_days || 15, role || 'employee', manager_id || null, fakeGoogleId,
              benefit_extra_day ? 1 : 0, benefit_extra_day_used ? 1 : 0]
         );
         res.status(201).json({ success: true, id: result.insertId, message: "Usuario creado correctamente" });

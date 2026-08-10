@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { Pencil, Trash2, Search, ChevronLeft, ChevronRight, Download, FileBarChart2, Upload, CheckCircle, AlertCircle, X, PlusCircle } from 'lucide-react';
 import CollaboratorDetailModal from '../components/CollaboratorDetailModal';
 import { formatDateTime } from '../utils/dateUtils';
+import { calcDiasBeneficioBono } from '../utils/beneficio';
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 'Todos'];
 
@@ -22,7 +23,7 @@ export default function Admin() {
 
     // Creación inline
     const [isCreating, setIsCreating] = useState(false);
-    const [newForm, setNewForm] = useState({ full_name: '', email: '', employee_number: '', position: '', base_vacation_days: 15, role: 'employee', manager_id: '', benefit_extra_day: false, benefit_extra_day_used: false });
+    const [newForm, setNewForm] = useState({ full_name: '', email: '', employee_number: '', position: '', fecha_ingreso: '', base_vacation_days: 15, role: 'employee', manager_id: '', benefit_extra_day: false, benefit_extra_day_used: false });
 
     // Modal ajuste de días
     const [adjustModal, setAdjustModal] = useState(null);
@@ -141,6 +142,7 @@ export default function Admin() {
             full_name: u.full_name || '',
             employee_number: u.employee_number || '',
             position: u.position || '',
+            fecha_ingreso: u.fecha_ingreso || '',
             role: u.role,
             manager_id: u.manager_id || '',
             base_vacation_days: u.base_vacation_days || 15,
@@ -184,7 +186,7 @@ export default function Admin() {
             await api.post('/users', { ...newForm, manager_id: newForm.manager_id || null });
             toast.success("Colaborador creado correctamente");
             setIsCreating(false);
-            setNewForm({ full_name: '', email: '', employee_number: '', position: '', base_vacation_days: 15, role: 'employee', manager_id: '', benefit_extra_day: false, benefit_extra_day_used: false });
+            setNewForm({ full_name: '', email: '', employee_number: '', position: '', fecha_ingreso: '', base_vacation_days: 15, role: 'employee', manager_id: '', benefit_extra_day: false, benefit_extra_day_used: false });
             fetchData();
         } catch (error) {
             console.error("Error creating user:", error);
@@ -409,6 +411,9 @@ export default function Admin() {
                                                 <input type="text" placeholder="Puesto" value={newForm.position}
                                                     onChange={(e) => setNewForm({ ...newForm, position: e.target.value })}
                                                     className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
+                                                <input type="date" title="Fecha de ingreso" value={newForm.fecha_ingreso}
+                                                    onChange={(e) => setNewForm({ ...newForm, fecha_ingreso: e.target.value })}
+                                                    className="block w-full mt-1 rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
                                             </td>
                                             <td className="px-3 py-4 text-sm text-gray-500">
                                                 <select value={newForm.role} onChange={(e) => setNewForm({ ...newForm, role: e.target.value })}
@@ -726,6 +731,19 @@ export default function Admin() {
                                     <input type="number" step="0.5" min="0" value={editForm.base_vacation_days || 0}
                                         onChange={(e) => setEditForm({ ...editForm, base_vacation_days: e.target.value })}
                                         className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Ingreso</label>
+                                    <input type="date" value={editForm.fecha_ingreso || ''}
+                                        onChange={(e) => setEditForm({ ...editForm, fecha_ingreso: e.target.value })}
+                                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Días Beneficio (Años Laborales)</label>
+                                    <div className="flex items-center h-[38px] px-3 rounded-md bg-green-50 ring-1 ring-inset ring-green-200 text-sm font-semibold text-green-700">
+                                        {calcDiasBeneficioBono(editForm.fecha_ingreso)} día(s)
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-1">Calculado automáticamente desde la fecha de ingreso (solo lectura).</p>
                                 </div>
                             </div>
                         </div>

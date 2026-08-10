@@ -10,7 +10,10 @@ const pool = mysql.createPool({
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
-    charset: 'utf8mb4'
+    charset: 'utf8mb4',
+    // Devolver columnas DATE como 'YYYY-MM-DD' (string) para evitar corrimientos de
+    // zona horaria (ej. fecha_ingreso). No afecta TIMESTAMP/DATETIME.
+    dateStrings: ['DATE']
 });
 
 module.exports = pool;

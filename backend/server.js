@@ -93,4 +93,6 @@ app.listen(PORT, '0.0.0.0', () => {
   startMonthlyVacationIncrement();
   const { startAnnualBenefitReset } = require('./jobs/annualBenefitReset');
   startAnnualBenefitReset();
+  const { startRecalcBeneficioAnios } = require('./jobs/recalcBeneficioAnios');
+  startRecalcBeneficioAnios();
 });

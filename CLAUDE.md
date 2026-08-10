@@ -104,6 +104,17 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
 - El saldo disponible se calcula como `base_vacation_days + SUM(monthly_auto + manual) - vacation_approved`
 - Se inicia en `server.js` dentro del callback de `app.listen`
 
+### Fecha de Ingreso y Días Beneficio por Años Laborales (Bono)
+- `users.fecha_ingreso DATE` — fecha de ingreso a la institución (editable en la Ficha, date picker)
+- `users.dias_beneficio_anno_laboral INT` — **siempre calculado** (solo lectura); no se edita a mano
+- Regla (bono asignado en **enero**, por año calendario): `dias = min(máx(añoRef − añoIngreso − 3, 0), 10)`. Primer día en el 1.er enero posterior al 3.er aniversario (inicio del 4.º año); tope 10 (25 totales: 15 base + 10 bono)
+- Helper: `backend/utils/beneficioAnios.js` (`calcDiasBeneficioBono`) y espejo frontend `frontend/src/utils/beneficio.js` (preview en vivo)
+- Se recalcula al guardar la Ficha (`userController` create/update) y cada **1 de enero 02:00 (America/Guatemala)** vía cron `backend/jobs/recalcBeneficioAnios.js` (no acumulable)
+- **Backfill inicial:** `database/migration_fecha_ingreso_beneficio.sql` usa referencia fija **2026**
+- **Visibilidad:** el dato solo se muestra a `super_admin`/`hr_admin` (la Ficha vive en `/admin`, ya restringido). No se expone a `manager`/`employee`
+- **Por ahora NO se consume** el bono; las vacaciones se toman como siempre. La política de uso (descuento primero de días base, luego bono) está documentada en `plans/Plan_Fecha_Ingreso_y_Beneficio_Anios_Laborales.md` pero **no implementada**
+- `mysql2` pool con `dateStrings: ['DATE']` para que `fecha_ingreso` (y demás `DATE`) no sufran corrimiento de zona horaria
+
 ### Cron Job — Reset anual de Beneficio Antigüedad
 - Archivo: `backend/jobs/annualBenefitReset.js`
 - Schedule producción: `5 6 1 1 *` (1 de enero a las 00:05am, `America/Guatemala`)
