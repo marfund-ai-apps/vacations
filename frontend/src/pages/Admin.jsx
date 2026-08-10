@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { Pencil, Trash2, Search, ChevronLeft, ChevronRight, Download, FileBarChart2, Upload, CheckCircle, AlertCircle, X, PlusCircle } from 'lucide-react';
+import { Pencil, Trash2, Search, ChevronLeft, ChevronRight, Download, FileBarChart2, Upload, CheckCircle, AlertCircle, X, PlusCircle, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import CollaboratorDetailModal from '../components/CollaboratorDetailModal';
 import { formatDateTime } from '../utils/dateUtils';
 import { calcDiasBeneficioBono } from '../utils/beneficio';
@@ -90,8 +90,30 @@ export default function Admin() {
     // Filtros y paginación
     const [searchTerm, setSearchTerm] = useState('');
     const [filterManagerId, setFilterManagerId] = useState('');
+    const [onlyWithBenefit, setOnlyWithBenefit] = useState(false);
+    const [sortBy, setSortBy] = useState(null); // 'manager' | 'vac' | 'benefit'
+    const [sortDir, setSortDir] = useState('asc');
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
+
+    // Alterna el orden por columna (mismo header: invierte dirección)
+    const toggleSort = (key) => {
+        if (sortBy === key) {
+            setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortBy(key);
+            setSortDir('asc');
+        }
+        setCurrentPage(1);
+    };
+
+    const sortIcon = (key) => (
+        sortBy !== key
+            ? <ArrowUpDown className="w-3 h-3 text-gray-300" />
+            : sortDir === 'asc'
+                ? <ArrowUp className="w-3 h-3 text-indigo-600" />
+                : <ArrowDown className="w-3 h-3 text-indigo-600" />
+    );
 
     const fetchData = async () => {
         setLoading(true);
@@ -113,19 +135,37 @@ export default function Admin() {
     useEffect(() => { fetchData(); }, []);
 
     // Resetear página al cambiar filtros
-    useEffect(() => { setCurrentPage(1); }, [searchTerm, filterManagerId, pageSize]);
+    useEffect(() => { setCurrentPage(1); }, [searchTerm, filterManagerId, onlyWithBenefit, pageSize]);
 
     // Filtrado derivado
     const filteredUsers = useMemo(() => {
-        return users.filter(u => {
+        const list = users.filter(u => {
             const matchSearch = searchTerm.trim() === '' ||
                 u.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 u.email.toLowerCase().includes(searchTerm.toLowerCase());
             const matchManager = filterManagerId === '' ||
                 String(u.manager_id) === String(filterManagerId);
-            return matchSearch && matchManager;
+            const matchBenefit = !onlyWithBenefit ||
+                (parseInt(u.dias_beneficio_anno_laboral) || 0) >= 1;
+            return matchSearch && matchManager && matchBenefit;
         });
-    }, [users, searchTerm, filterManagerId]);
+
+        if (sortBy) {
+            const dir = sortDir === 'asc' ? 1 : -1;
+            list.sort((a, b) => {
+                let cmp = 0;
+                if (sortBy === 'manager') {
+                    cmp = (a.manager_name || '').localeCompare(b.manager_name || '', 'es', { sensitivity: 'base' });
+                } else if (sortBy === 'vac') {
+                    cmp = (parseFloat(a.base_vacation_days) || 0) - (parseFloat(b.base_vacation_days) || 0);
+                } else if (sortBy === 'benefit') {
+                    cmp = (parseInt(a.dias_beneficio_anno_laboral) || 0) - (parseInt(b.dias_beneficio_anno_laboral) || 0);
+                }
+                return cmp * dir;
+            });
+        }
+        return list;
+    }, [users, searchTerm, filterManagerId, onlyWithBenefit, sortBy, sortDir]);
 
     // Paginación derivada
     const totalPages = pageSize === 'Todos' ? 1 : Math.ceil(filteredUsers.length / pageSize);
@@ -242,7 +282,7 @@ export default function Admin() {
             ? `supervisor_${managers.find(m => String(m.id) === String(filterManagerId))?.full_name?.replace(/\s+/g, '_') || filterManagerId}`
             : 'todos';
 
-        const headers = ['Código Colaborador', 'Nombre', 'Correo', 'Cargo', 'Rol', 'Supervisor Inmediato', 'Días Vac.'];
+        const headers = ['Código Colaborador', 'Nombre', 'Correo', 'Cargo', 'Rol', 'Supervisor Inmediato', 'Días Vac.', 'Fecha Ingreso', 'Días Beneficio (Años Laborales)'];
         const rows = filteredUsers.map(u => [
             u.employee_number || '',
             `"${u.full_name}"`,
@@ -250,7 +290,9 @@ export default function Admin() {
             `"${u.position || ''}"`,
             u.role,
             `"${u.manager_name || ''}"`,
-            u.base_vacation_days || 15
+            u.base_vacation_days || 15,
+            u.fecha_ingreso || '',
+            parseInt(u.dias_beneficio_anno_laboral) || 0
         ]);
 
         const csv = 'data:text/csv;charset=utf-8,'
@@ -349,6 +391,17 @@ export default function Admin() {
                     </select>
                 </div>
 
+                {/* Filtro: solo con Días Beneficio */}
+                <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700">
+                    <input
+                        type="checkbox"
+                        checked={onlyWithBenefit}
+                        onChange={(e) => setOnlyWithBenefit(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    Solo con Días Beneficio
+                </label>
+
                 {/* Mostrar X por página */}
                 <div className="flex items-center gap-2 ml-auto text-sm text-gray-600">
                     <span>Mostrar:</span>
@@ -379,9 +432,22 @@ export default function Admin() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-44">Colaborador</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-36">Cargo</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-28">Rol Sistema</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-40">Supervisor Inmediato</th>
-                                        <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-20">Días Vac.</th>
-                                        <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-28">Días Beneficio<br /><span className="font-normal text-xs text-gray-400">(Años Laborales)</span></th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-40">
+                                            <button onClick={() => toggleSort('manager')} className="inline-flex items-center gap-1 hover:text-indigo-600">
+                                                Supervisor Inmediato {sortIcon('manager')}
+                                            </button>
+                                        </th>
+                                        <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-20">
+                                            <button onClick={() => toggleSort('vac')} className="inline-flex items-center gap-1 hover:text-indigo-600">
+                                                Días Vac. {sortIcon('vac')}
+                                            </button>
+                                        </th>
+                                        <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-28">
+                                            <button onClick={() => toggleSort('benefit')} className="inline-flex flex-col items-center hover:text-indigo-600">
+                                                <span className="inline-flex items-center gap-1">Días Beneficio {sortIcon('benefit')}</span>
+                                                <span className="font-normal text-xs text-gray-400">(Años Laborales)</span>
+                                            </button>
+                                        </th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 w-44">
                                             <span className="sr-only">Acciones</span>
                                         </th>

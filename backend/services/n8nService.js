@@ -18,10 +18,18 @@ const formatRequestType = (type) => ({
 // Exportar para uso en otros controladores
 exports.formatRequestType = formatRequestType;
 
-// Formatea fechas legibles
-const formatDate = (date) => new Date(date).toLocaleDateString('es-GT', {
-    day: '2-digit', month: 'long', year: 'numeric'
-});
+// Formatea fechas legibles en hora de Guatemala (UTC-6).
+// Ancla las fechas date-only ('YYYY-MM-DD') a mediodía UTC para evitar corrimiento de un día.
+const formatDate = (date) => {
+    if (!date) return '';
+    const d = (typeof date === 'string' && date.length === 10)
+        ? new Date(date + 'T12:00:00Z')
+        : new Date(date);
+    return d.toLocaleDateString('es-GT', {
+        day: '2-digit', month: 'long', year: 'numeric',
+        timeZone: 'America/Guatemala'
+    });
+};
 
 // Genera tabla HTML de fechas para emails
 const buildDatesTable = (dateRanges) => {
