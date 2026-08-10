@@ -13,5 +13,5 @@ ALTER TABLE users
 --    posterior al 3.er aniversario. Fórmula: min(max(2026 - YEAR(fecha_ingreso) - 3, 0), 10)
 --    Ej.: ingreso 2022 -> 1 · 2020 -> 3 · 2013 o antes -> 10 (tope) · 2023+ -> 0
 UPDATE users
-SET dias_beneficio_anno_laboral = LEAST(GREATEST(2026 - YEAR(fecha_ingreso) - 3, 0), 10)
+SET dias_beneficio_anno_laboral = LEAST(GREATEST(2026 - CAST(YEAR(fecha_ingreso) AS SIGNED) - 3, 0), 10)
 WHERE fecha_ingreso IS NOT NULL;

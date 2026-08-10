@@ -42,8 +42,9 @@ UPDATE users SET fecha_ingreso = '2026-04-20' WHERE employee_number = '1141'; --
 UPDATE users SET fecha_ingreso = '2026-04-13' WHERE employee_number = '1142'; -- Cristina Fernández   (0)
 
 -- Recalcular el bono para todos (referencia FIJA 2026)
+-- CAST a SIGNED evita el error #1690 (BIGINT UNSIGNED out of range) cuando la resta es negativa
 UPDATE users
-SET dias_beneficio_anno_laboral = LEAST(GREATEST(2026 - YEAR(fecha_ingreso) - 3, 0), 10)
+SET dias_beneficio_anno_laboral = LEAST(GREATEST(2026 - CAST(YEAR(fecha_ingreso) AS SIGNED) - 3, 0), 10)
 WHERE fecha_ingreso IS NOT NULL;
 
 -- Verificación sugerida:

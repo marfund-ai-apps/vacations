@@ -15,7 +15,7 @@ function startRecalcBeneficioAnios() {
         try {
             const [result] = await db.query(
                 `UPDATE users
-                 SET dias_beneficio_anno_laboral = LEAST(GREATEST(YEAR(CURDATE()) - YEAR(fecha_ingreso) - 3, 0), 10)
+                 SET dias_beneficio_anno_laboral = LEAST(GREATEST(CAST(YEAR(CURDATE()) AS SIGNED) - CAST(YEAR(fecha_ingreso) AS SIGNED) - 3, 0), 10)
                  WHERE fecha_ingreso IS NOT NULL`
             );
             console.log(`[CRON] Recálculo de bono completado: ${result.affectedRows} colaborador(es).`);
