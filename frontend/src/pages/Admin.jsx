@@ -381,7 +381,7 @@ export default function Admin() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-28">Rol Sistema</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-40">Supervisor Inmediato</th>
                                         <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-20">Días Vac.</th>
-                                        <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-28">Antigüedad</th>
+                                        <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-28">Días Beneficio<br /><span className="font-normal text-xs text-gray-400">(Años Laborales)</span></th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 w-44">
                                             <span className="sr-only">Acciones</span>
                                         </th>
@@ -504,18 +504,13 @@ export default function Admin() {
                                                 {u.base_vacation_days || 15}
                                             </td>
                                             <td className="px-3 py-4 text-sm text-center">
-                                                <div className="flex flex-col items-center gap-1">
-                                                    {u.benefit_extra_day ? (
-                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">★ Aplica</span>
-                                                    ) : (
-                                                        <span className="text-gray-300 text-xs">—</span>
-                                                    )}
-                                                    {u.benefit_extra_day && (
-                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${u.benefit_extra_day_used ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                                                            {u.benefit_extra_day_used ? 'Gozado' : 'Pendiente'}
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                {parseInt(u.dias_beneficio_anno_laboral) > 0 ? (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-sm font-semibold bg-green-50 text-green-700 ring-1 ring-inset ring-green-200">
+                                                        {u.dias_beneficio_anno_laboral}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-300 text-xs">—</span>
+                                                )}
                                             </td>
                                             <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 whitespace-nowrap">
                                                 <div className="flex justify-end gap-3">
