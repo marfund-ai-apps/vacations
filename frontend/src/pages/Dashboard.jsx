@@ -126,29 +126,15 @@ export default function Dashboard() {
                 </div>
             </dl>
 
-            {/* Días Beneficio (Bono) — solo super_admin / hr_admin */}
-            {['super_admin', 'hr_admin'].includes(user?.role) && (
-                <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:max-w-lg">
+            {/* Fila secundaria: Bono (super_admin/hr_admin) + informativos */}
+            <dl className={`grid grid-cols-2 gap-5 ${['super_admin', 'hr_admin'].includes(user?.role) ? 'sm:grid-cols-3 sm:max-w-3xl' : 'sm:grid-cols-2 sm:max-w-lg'}`}>
+                {['super_admin', 'hr_admin'].includes(user?.role) && (
                     <div className="overflow-hidden rounded-lg bg-amber-50 px-4 py-5 shadow sm:p-6 ring-1 ring-amber-300">
-                        <dt className="truncate text-sm font-medium text-amber-700">Días Beneficio disponibles</dt>
-                        <dd className="mt-1 text-3xl font-semibold tracking-tight text-amber-700">{Number(summary.bono_avail ?? 0).toFixed(2)}</dd>
-                        <p className="text-xs text-amber-600 mt-1">Bono por antigüedad</p>
+                        <dt className="truncate text-sm font-medium text-amber-700">Días Beneficio (Bono)</dt>
+                        <dd className="mt-1 text-2xl font-semibold tracking-tight text-amber-700">{Number(summary.bono_avail ?? 0).toFixed(2)} <span className="text-sm font-normal">disp.</span></dd>
+                        <p className="text-xs text-amber-600 mt-1">de {Number(summary.bono_allot ?? 0)} · usados {Number(summary.bono_used ?? 0).toFixed(2)}</p>
                     </div>
-                    <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-gray-200">
-                        <dt className="truncate text-sm font-medium text-gray-400">Bono asignado (año)</dt>
-                        <dd className="mt-1 text-2xl font-semibold tracking-tight text-gray-600">{Number(summary.bono_allot ?? 0)}</dd>
-                        <p className="text-xs text-gray-400 mt-1">Tope 10</p>
-                    </div>
-                    <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-gray-200">
-                        <dt className="truncate text-sm font-medium text-gray-400">Bono usado (año)</dt>
-                        <dd className="mt-1 text-2xl font-semibold tracking-tight text-gray-600">{Number(summary.bono_used ?? 0).toFixed(2)}</dd>
-                        <p className="text-xs text-gray-400 mt-1">Vacaciones que tomaron del bono</p>
-                    </div>
-                </dl>
-            )}
-
-            {/* Stats — fila informativa (no afectan saldo) */}
-            <dl className="grid grid-cols-2 gap-5 sm:grid-cols-2 sm:max-w-lg">
+                )}
                 <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-gray-200">
                     <dt className="truncate text-sm font-medium text-gray-400">Permisos Personales</dt>
                     <dd className="mt-1 text-2xl font-semibold tracking-tight text-gray-500">{summary.total_permission_days} <span className="text-sm font-normal">días</span></dd>
