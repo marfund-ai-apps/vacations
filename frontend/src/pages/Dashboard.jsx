@@ -128,7 +128,7 @@ export default function Dashboard() {
 
             {/* Días Beneficio (Bono) — solo super_admin / hr_admin */}
             {['super_admin', 'hr_admin'].includes(user?.role) && (
-                <dl className="grid grid-cols-2 gap-5 sm:grid-cols-3 sm:max-w-2xl">
+                <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:max-w-lg">
                     <div className="overflow-hidden rounded-lg bg-amber-50 px-4 py-5 shadow sm:p-6 ring-1 ring-amber-300">
                         <dt className="truncate text-sm font-medium text-amber-700">Días Beneficio disponibles</dt>
                         <dd className="mt-1 text-3xl font-semibold tracking-tight text-amber-700">{Number(summary.bono_avail ?? 0).toFixed(2)}</dd>
