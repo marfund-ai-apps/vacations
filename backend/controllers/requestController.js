@@ -1,18 +1,23 @@
 const db = require('../config/db');
 const n8nService = require('../services/n8nService');
 const crypto = require('crypto');
+const { getSaldos } = require('../utils/saldos');
+const { splitByBusinessDays } = require('../utils/splitFechas');
 
-// Generar número correlativo de solicitud
-async function generateRequestNumber() {
+// ¿El consumo de bono (auto-split) está activo para este usuario? (fase de prueba: solo super_admin)
+const bonoConsumoActivo = (user) => user?.role === 'super_admin';
+
+// Generar número correlativo de solicitud (conn-aware para transacciones con múltiples inserts)
+async function generateRequestNumber(conn = db) {
     const year = new Date().getFullYear();
-    const [rows] = await db.query(
+    const [rows] = await conn.query(
         'SELECT COUNT(*) as count FROM vacation_requests WHERE YEAR(created_at) = ?', [year]
     );
     const count = rows[0].count + 1;
     return `VAC-${year}-${String(count).padStart(4, '0')}`;
 }
 
-// POST /api/requests — Crear nueva solicitud
+// POST /api/requests — Crear nueva solicitud (con auto-split base+bono para super_admin)
 exports.createRequest = async (req, res) => {
     const { request_type, reason, notes, manager_id, date_ranges } = req.body;
     const employee_id = req.user.id;
@@ -21,97 +26,124 @@ exports.createRequest = async (req, res) => {
     try {
         await conn.beginTransaction();
 
-        // Validaciones para Beneficio Antigüedad
+        // Validaciones del Beneficio Antigüedad "viejo" (solicitud directa, no auto-split)
         if (request_type === 'seniority_benefit') {
             const [userRows] = await conn.query(
                 'SELECT benefit_extra_day, benefit_extra_day_used FROM users WHERE id = ?', [employee_id]
             );
             if (!userRows[0]?.benefit_extra_day) {
-                await conn.rollback();
-                conn.release();
+                await conn.rollback(); conn.release();
                 return res.status(403).json({ message: 'No tienes habilitado el Beneficio Antigüedad.' });
             }
             if (userRows[0]?.benefit_extra_day_used) {
-                await conn.rollback();
-                conn.release();
+                await conn.rollback(); conn.release();
                 return res.status(400).json({ message: 'Ya gozaste el Beneficio Antigüedad en el período actual.' });
             }
-            const totalDays = (date_ranges || []).reduce((sum, r) => sum + parseFloat(r.business_days || 0), 0);
-            if (totalDays !== 1) {
-                await conn.rollback();
-                conn.release();
+            const t = (date_ranges || []).reduce((sum, r) => sum + parseFloat(r.business_days || 0), 0);
+            if (t !== 1) {
+                await conn.rollback(); conn.release();
                 return res.status(400).json({ message: 'El Beneficio Antigüedad corresponde exactamente a 1 día completo.' });
             }
         }
 
-        const request_number = await generateRequestNumber();
+        const totalDays = (date_ranges || []).reduce((s, r) => s + parseFloat(r.business_days || 0), 0);
 
-        // Insertar solicitud principal
-        const [result] = await conn.query(
-            `INSERT INTO vacation_requests 
-       (request_number, employee_id, request_type, reason, notes, status, manager_id) 
-       VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
-            [request_number, employee_id, request_type, reason, notes, manager_id]
-        );
-        const requestId = result.insertId;
-
-        // Insertar rangos de fechas
-        for (const range of date_ranges) {
-            await conn.query(
-                'INSERT INTO request_date_ranges (request_id, date_from, date_to, business_days) VALUES (?, ?, ?, ?)',
-                [requestId, range.date_from, range.date_to, range.business_days]
-            );
+        // ¿Auto-split? Solo super_admin + vacation cuando la base no alcanza y hay que usar bono
+        let doSplit = false, baseUsed = totalDays;
+        if (bonoConsumoActivo(req.user) && request_type === 'vacation') {
+            const { baseAvail, bonoAvail } = await getSaldos(employee_id, conn);
+            baseUsed = Math.min(totalDays, Math.max(baseAvail, 0));
+            const bonoUsed = Math.round((totalDays - baseUsed) * 100) / 100;
+            if (bonoUsed > 1e-9) {
+                if (bonoUsed > bonoAvail + 1e-9) {
+                    await conn.rollback(); conn.release();
+                    return res.status(400).json({
+                        message: `Saldo insuficiente. Disponible: ${Math.max(baseAvail, 0).toFixed(2)} base + ${Math.max(bonoAvail, 0).toFixed(2)} bono = ${(Math.max(baseAvail, 0) + Math.max(bonoAvail, 0)).toFixed(2)} días. Solicitaste ${totalDays}.`
+                    });
+                }
+                doSplit = true;
+            }
         }
 
-        // Generar tokens de aprobación/rechazo para el jefe (link en el email)
-        const approveToken = crypto.randomBytes(32).toString('hex');
-        const rejectToken = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+        // Inserta una solicitud (número + rangos + tokens + historial) y devuelve sus datos
+        const insertOne = async (rtype, ranges, groupId) => {
+            const number = await generateRequestNumber(conn);
+            const [r] = await conn.query(
+                `INSERT INTO vacation_requests (request_number, split_group_id, employee_id, request_type, reason, notes, status, manager_id)
+                 VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`,
+                [number, groupId, employee_id, rtype, reason, notes, manager_id]
+            );
+            const rid = r.insertId;
+            for (const rg of ranges) {
+                await conn.query(
+                    'INSERT INTO request_date_ranges (request_id, date_from, date_to, business_days) VALUES (?, ?, ?, ?)',
+                    [rid, rg.date_from, rg.date_to, rg.business_days]
+                );
+            }
+            const approveToken = crypto.randomBytes(32).toString('hex');
+            const rejectToken = crypto.randomBytes(32).toString('hex');
+            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            await conn.query(
+                'INSERT INTO approval_tokens (request_id, token, action, expires_at) VALUES (?, ?, ?, ?), (?, ?, ?, ?)',
+                [rid, approveToken, 'approve', expiresAt, rid, rejectToken, 'reject', expiresAt]
+            );
+            await conn.query(
+                'INSERT INTO request_history (request_id, action, performed_by, details) VALUES (?, ?, ?, ?)',
+                [rid, 'created', employee_id, `Solicitud ${number} creada`]
+            );
+            return { rid, number, ranges };
+        };
 
-        await conn.query(
-            'INSERT INTO approval_tokens (request_id, token, action, expires_at) VALUES (?, ?, ?, ?), (?, ?, ?, ?)',
-            [requestId, approveToken, 'approve', expiresAt, requestId, rejectToken, 'reject', expiresAt]
-        );
-
-        // Registrar en historial
-        await conn.query(
-            'INSERT INTO request_history (request_id, action, performed_by, details) VALUES (?, ?, ?, ?)',
-            [requestId, 'created', employee_id, `Solicitud ${request_number} creada`]
-        );
+        let primaryId, splitParts = null;
+        if (doSplit) {
+            const { baseRange, bonoRange } = splitByBusinessDays(date_ranges, baseUsed);
+            const groupId = crypto.randomUUID();
+            const parts = [];
+            if (baseRange && baseRange.business_days > 1e-9) {
+                const b = await insertOne('vacation', [baseRange], groupId);
+                parts.push({ label: 'Días Vacaciones (base)', ...b });
+            }
+            const bo = await insertOne('seniority_benefit', [bonoRange], groupId);
+            parts.push({ label: 'Días Beneficio (bono)', ...bo });
+            primaryId = parts[0].rid;
+            splitParts = parts;
+        } else {
+            const single = await insertOne(request_type, date_ranges, null);
+            primaryId = single.rid;
+        }
 
         await conn.commit();
 
-        // Obtener datos completos para notificación
+        // Datos para notificación (solicitud primaria)
         const [requestData] = await db.query(`
-      SELECT vr.*, 
-             u.full_name as employee_name, u.email as employee_email, 
-             u.position as employee_position, u.employee_number,
-             m.full_name as manager_name, m.email as manager_email
-      FROM vacation_requests vr
-      JOIN users u ON vr.employee_id = u.id
-      JOIN users m ON vr.manager_id = m.id
-      WHERE vr.id = ?
-    `, [requestId]);
+            SELECT vr.*, u.full_name as employee_name, u.email as employee_email,
+                   u.position as employee_position, u.employee_number,
+                   m.full_name as manager_name, m.email as manager_email
+            FROM vacation_requests vr
+            JOIN users u ON vr.employee_id = u.id
+            JOIN users m ON vr.manager_id = m.id
+            WHERE vr.id = ?`, [primaryId]);
 
-        const [dateRangesArray] = await db.query(
-            'SELECT * FROM request_date_ranges WHERE request_id = ?', [requestId]
-        );
-
-        const totalDays = dateRangesArray.reduce((sum, r) => sum + parseFloat(r.business_days), 0);
-
-        // Disparar webhook n8n para notificaciones
-        await n8nService.triggerNewRequest({
-            request: requestData[0],
-            dateRanges: dateRangesArray,
-            totalDays,
-            approveToken,
-            rejectToken,
-            appUrl: process.env.APP_URL
-        });
+        if (splitParts) {
+            // UN solo correo combinado con el desglose base + bono
+            await n8nService.triggerNewRequest({
+                request: requestData[0],
+                dateRanges: [],
+                totalDays,
+                splitParts: splitParts.map(p => ({ label: p.label, ranges: p.ranges })),
+                appUrl: process.env.APP_URL
+            });
+        } else {
+            const [dr] = await db.query('SELECT * FROM request_date_ranges WHERE request_id = ?', [primaryId]);
+            await n8nService.triggerNewRequest({
+                request: requestData[0], dateRanges: dr, totalDays, appUrl: process.env.APP_URL
+            });
+        }
 
         res.status(201).json({
             success: true,
-            request_number,
+            request_number: requestData[0].request_number,
+            split: !!splitParts,
             message: 'Solicitud creada y notificaciones enviadas'
         });
 
@@ -185,45 +217,46 @@ exports.makeDecision = async (req, res) => {
     const manager_id = req.user.id;
 
     try {
-        let requestQuery = '';
-        let requestParams = [];
-
-        if (req.user.role === 'manager') {
-            requestQuery = 'SELECT * FROM vacation_requests WHERE id = ? AND manager_id = ? AND status = "pending"';
-            requestParams = [id, manager_id];
-        } else {
-            requestQuery = 'SELECT * FROM vacation_requests WHERE id = ? AND status = "pending"';
-            requestParams = [id];
-        }
-
-        const [requestArr] = await db.query(requestQuery, requestParams);
+        const permClause = req.user.role === 'manager' ? ' AND manager_id = ?' : '';
+        const permParams = req.user.role === 'manager' ? [id, manager_id] : [id];
+        const [requestArr] = await db.query(
+            `SELECT * FROM vacation_requests WHERE id = ?${permClause} AND status = "pending"`, permParams
+        );
 
         if (!requestArr.length) {
             return res.status(404).json({ message: 'Solicitud no encontrada o ya procesada/sin permisos' });
         }
+        const request = requestArr[0];
 
-        await db.query(
-            `UPDATE vacation_requests
-       SET status = ?, manager_comments = ?, manager_decision_date = NOW()
-       WHERE id = ?`,
-            [decision, comments, id]
-        );
-
-        if (decision === 'approved' && requestArr[0].request_type === 'seniority_benefit') {
-            await db.query(
-                'UPDATE users SET benefit_extra_day_used = 1 WHERE id = ?',
-                [requestArr[0].employee_id]
+        // Aprobación AGRUPADA: si es parte de un auto-split, aplicar la decisión a todo el grupo
+        let ids = [Number(id)];
+        if (request.split_group_id) {
+            const [grp] = await db.query(
+                'SELECT id FROM vacation_requests WHERE split_group_id = ? AND status = "pending"',
+                [request.split_group_id]
             );
+            ids = grp.map(g => g.id);
         }
 
         await db.query(
-            'INSERT INTO request_history (request_id, action, performed_by, details) VALUES (?, ?, ?, ?)',
-            [id, decision, manager_id, `Decisión: ${decision}. Comentarios: ${comments || 'N/A'}`]
+            'UPDATE vacation_requests SET status = ?, manager_comments = ?, manager_decision_date = NOW() WHERE id IN (?)',
+            [decision, comments, ids]
         );
+        for (const rid of ids) {
+            await db.query(
+                'INSERT INTO request_history (request_id, action, performed_by, details) VALUES (?, ?, ?, ?)',
+                [rid, decision, manager_id, `Decisión: ${decision}. Comentarios: ${comments || 'N/A'}`]
+            );
+        }
+
+        // Beneficio "viejo" (solicitud directa, no split): marcar usado
+        if (!request.split_group_id && decision === 'approved' && request.request_type === 'seniority_benefit') {
+            await db.query('UPDATE users SET benefit_extra_day_used = 1 WHERE id = ?', [request.employee_id]);
+        }
 
         // Obtener datos completos para notificación de decisión
         const [fullRequest] = await db.query(`
-      SELECT vr.*, 
+      SELECT vr.*,
              u.full_name as employee_name, u.email as employee_email,
              m.full_name as manager_name, m.email as manager_email
       FROM vacation_requests vr
@@ -233,7 +266,7 @@ exports.makeDecision = async (req, res) => {
     `, [id]);
 
         const [dateRanges] = await db.query(
-            'SELECT * FROM request_date_ranges WHERE request_id = ?', [id]
+            'SELECT * FROM request_date_ranges WHERE request_id IN (?)', [ids]
         );
         const totalDays = dateRanges.reduce((sum, r) => sum + parseFloat(r.business_days), 0);
 
@@ -280,22 +313,34 @@ exports.annulRequest = async (req, res) => {
             return res.status(400).json({ message: 'La solicitud ya fue anulada o cancelada.' });
         }
 
-        // seniority_benefit aprobada → devolver el beneficio al colaborador
-        if (request.request_type === 'seniority_benefit' && request.status === 'approved') {
+        // Anulación AGRUPADA: si es parte de un auto-split, anular todo el grupo
+        let ids = [Number(id)];
+        if (request.split_group_id) {
+            const [grp] = await db.query(
+                "SELECT id FROM vacation_requests WHERE split_group_id = ? AND status NOT IN ('annulled','cancelled')",
+                [request.split_group_id]
+            );
+            ids = grp.map(g => g.id);
+        }
+
+        // Beneficio "viejo" (solicitud directa, no split) aprobada → devolver el flag
+        if (!request.split_group_id && request.request_type === 'seniority_benefit' && request.status === 'approved') {
             await db.query('UPDATE users SET benefit_extra_day_used = 0 WHERE id = ?', [request.employee_id]);
         }
+        // (En el esquema nuevo, base y bono se recalculan solos al cambiar status a 'annulled'.)
 
         await db.query(
             `UPDATE vacation_requests
              SET status = 'annulled', annulment_reason = ?, annulled_by = ?, annulled_at = NOW()
-             WHERE id = ?`,
-            [reason.trim(), adminId, id]
+             WHERE id IN (?)`,
+            [reason.trim(), adminId, ids]
         );
-
-        await db.query(
-            'INSERT INTO request_history (request_id, action, performed_by, details) VALUES (?, ?, ?, ?)',
-            [id, 'annulled', adminId, `Solicitud anulada. Motivo: ${reason.trim()}`]
-        );
+        for (const rid of ids) {
+            await db.query(
+                'INSERT INTO request_history (request_id, action, performed_by, details) VALUES (?, ?, ?, ?)',
+                [rid, 'annulled', adminId, `Solicitud anulada. Motivo: ${reason.trim()}`]
+            );
+        }
 
         res.json({ message: 'Solicitud anulada correctamente.' });
     } catch (err) {

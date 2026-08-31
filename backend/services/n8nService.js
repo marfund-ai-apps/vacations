@@ -55,13 +55,39 @@ const buildDatesTable = (dateRanges) => {
   `;
 };
 
+// Tabla HTML combinada para una solicitud dividida (base + bono)
+const buildSplitDatesTable = (parts) => {
+    const rows = parts.map(p => (p.ranges || []).map(r => `
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">${p.label}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${formatDate(r.date_from)}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${formatDate(r.date_to)}</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:center;">${r.business_days}</td>
+    </tr>`).join('')).join('');
+
+    return `
+    <table style="width:100%; border-collapse:collapse; margin:16px 0;">
+      <thead>
+        <tr style="background:#374151; color:white;">
+          <th style="padding:10px; border:1px solid #ddd;">Concepto</th>
+          <th style="padding:10px; border:1px solid #ddd;">Fecha Inicio</th>
+          <th style="padding:10px; border:1px solid #ddd;">Fecha Fin</th>
+          <th style="padding:10px; border:1px solid #ddd;">Días</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+};
+
 // ═══════════════════════════════════════════════════════════
 // NOTIFICACIÓN 1: Nueva solicitud creada
 // Envía a: empleado, jefe inmediato, RRHH
+// splitParts (opcional): [{label, ranges}] → un solo correo con el desglose base+bono
 // ═══════════════════════════════════════════════════════════
-exports.triggerNewRequest = async ({ request, dateRanges, totalDays, approveToken, rejectToken, appUrl }) => {
-    const datesTable = buildDatesTable(dateRanges);
-    const requestTypeLabel = formatRequestType(request.request_type);
+exports.triggerNewRequest = async ({ request, dateRanges, totalDays, splitParts, appUrl }) => {
+    const datesTable = splitParts ? buildSplitDatesTable(splitParts) : buildDatesTable(dateRanges);
+    const requestTypeLabel = splitParts ? 'Vacaciones (Días base + Bono)' : formatRequestType(request.request_type);
 
     // Link a pendientes de aprobación en la app (todos usan el mismo link)
     // El usuario aprueba/rechaza desde el modal en /pending-approvals

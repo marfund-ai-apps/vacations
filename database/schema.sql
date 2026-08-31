@@ -131,6 +131,7 @@ CREATE TABLE `user_day_adjustments` (
 CREATE TABLE `vacation_requests` (
   `id` int NOT NULL,
   `request_number` varchar(20) NOT NULL,
+  `split_group_id` varchar(36) DEFAULT NULL,
   `employee_id` int NOT NULL,
   `request_type` enum('vacation','permission','justified_absence','seniority_benefit') NOT NULL,
   `reason` text,

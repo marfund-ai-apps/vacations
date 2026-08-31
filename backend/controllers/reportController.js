@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { getSaldos } = require('../utils/saldos');
 
 // GET /api/reports/employee-report (Dashboard del usuario logueado)
 exports.getMyReport = async (req, res) => {
@@ -76,6 +77,9 @@ exports.getMyReport = async (req, res) => {
       req.date_ranges = ranges;
     }
 
+    // Saldos autoritativos base/bono (mismos que usa el auto-split al crear solicitudes)
+    const saldos = await getSaldos(id);
+
     res.json({
       summary: {
         total_base_days: baseDays,
@@ -84,6 +88,11 @@ exports.getMyReport = async (req, res) => {
         total_available_days: availableDays,
         total_permission_days: permissionConsumed,
         total_absence_days: absenceConsumed,
+        // Bono por antigüedad (consumo)
+        base_avail: saldos.baseAvail,
+        bono_allot: saldos.bonoAllot,
+        bono_used: saldos.bonoUsed,
+        bono_avail: saldos.bonoAvail,
       },
       history: requests,
       adjustments: adjustmentList
