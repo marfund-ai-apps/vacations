@@ -428,27 +428,27 @@ export default function Admin() {
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 w-24">Código</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-44">Colaborador</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-36">Cargo</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-28">Rol Sistema</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 w-40">
-                                            <button onClick={() => toggleSort('manager')} className="inline-flex items-center gap-1 hover:text-indigo-600">
-                                                Supervisor Inmediato {sortIcon('manager')}
+                                        <th scope="col" className="py-3 pl-4 pr-2 text-left text-xs font-semibold text-gray-900 sm:pl-6 w-14">Código</th>
+                                        <th scope="col" className="px-2 py-3 text-left text-xs font-semibold text-gray-900 w-40">Colaborador</th>
+                                        <th scope="col" className="px-2 py-3 text-left text-xs font-semibold text-gray-900 w-32">Cargo</th>
+                                        <th scope="col" className="px-2 py-3 text-left text-xs font-semibold text-gray-900 w-24">Rol</th>
+                                        <th scope="col" className="px-2 py-3 text-left text-xs font-semibold text-gray-900 w-32">
+                                            <button onClick={() => toggleSort('manager')} className="inline-flex items-center gap-1 hover:text-indigo-600 text-left">
+                                                Supervisor {sortIcon('manager')}
                                             </button>
                                         </th>
-                                        <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-20">
+                                        <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-900 w-16">
                                             <button onClick={() => toggleSort('vac')} className="inline-flex items-center gap-1 hover:text-indigo-600">
                                                 Días Vac. {sortIcon('vac')}
                                             </button>
                                         </th>
-                                        <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 w-28">
+                                        <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-900 w-24">
                                             <button onClick={() => toggleSort('benefit')} className="inline-flex flex-col items-center hover:text-indigo-600">
                                                 <span className="inline-flex items-center gap-1">Días Beneficio {sortIcon('benefit')}</span>
-                                                <span className="font-normal text-xs text-gray-400">(Años Laborales)</span>
+                                                <span className="font-normal text-[10px] text-gray-400">(Años Laborales)</span>
                                             </button>
                                         </th>
-                                        <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 w-44">
+                                        <th scope="col" className="relative py-3 pl-2 pr-4 sm:pr-6 w-24">
                                             <span className="sr-only">Acciones</span>
                                         </th>
                                     </tr>
@@ -456,12 +456,12 @@ export default function Admin() {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {isCreating && (
                                         <tr className="bg-indigo-50">
-                                            <td className="py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                            <td className="py-3 pl-4 pr-2 text-xs sm:pl-6">
                                                 <input type="text" placeholder="Código" value={newForm.employee_number}
                                                     onChange={(e) => setNewForm({ ...newForm, employee_number: e.target.value })}
                                                     className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
                                             </td>
-                                            <td className="px-3 py-4 text-sm sm:pl-3 space-y-2">
+                                            <td className="px-2 py-3 text-xs sm:pl-3 space-y-2">
                                                 <input type="text" placeholder="Nombre Completo *" value={newForm.full_name}
                                                     onChange={(e) => setNewForm({ ...newForm, full_name: e.target.value })}
                                                     className={`block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ${
@@ -473,7 +473,7 @@ export default function Admin() {
                                                         newForm.email.includes('@') && newForm.email.includes('.') ? 'ring-green-300 focus:ring-green-600' : 'ring-gray-300 focus:ring-indigo-600'
                                                     } focus:ring-2 focus:ring-inset sm:text-xs sm:leading-6`} />
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500">
+                                            <td className="px-2 py-3 text-xs text-gray-500">
                                                 <input type="text" placeholder="Puesto" value={newForm.position}
                                                     onChange={(e) => setNewForm({ ...newForm, position: e.target.value })}
                                                     className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
@@ -481,7 +481,7 @@ export default function Admin() {
                                                     onChange={(e) => setNewForm({ ...newForm, fecha_ingreso: e.target.value })}
                                                     className="block w-full mt-1 rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500">
+                                            <td className="px-2 py-3 text-xs text-gray-500">
                                                 <select value={newForm.role} onChange={(e) => setNewForm({ ...newForm, role: e.target.value })}
                                                     className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6">
                                                     <option value="employee">Colaborador</option>
@@ -490,19 +490,19 @@ export default function Admin() {
                                                     <option value="super_admin">Super Admin</option>
                                                 </select>
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500">
+                                            <td className="px-2 py-3 text-xs text-gray-500">
                                                 <select value={newForm.manager_id} onChange={(e) => setNewForm({ ...newForm, manager_id: e.target.value })}
                                                     className="block w-full rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6">
                                                     <option value="">Ninguno</option>
                                                     {managers.map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
                                                 </select>
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500 text-center">
+                                            <td className="px-2 py-3 text-xs text-gray-500 text-center">
                                                 <input type="number" value={newForm.base_vacation_days}
                                                     onChange={(e) => setNewForm({ ...newForm, base_vacation_days: e.target.value })}
                                                     className="block w-16 mx-auto rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-center">
+                                            <td className="px-2 py-3 text-xs text-center">
                                                 <div className="flex flex-col items-start gap-1.5">
                                                     <label className="flex items-center gap-1.5 cursor-pointer">
                                                         <input type="checkbox" checked={newForm.benefit_extra_day}
@@ -544,17 +544,17 @@ export default function Admin() {
                                         </tr>
                                     ) : paginatedUsers.map((u) => (
                                         <tr key={u.id} className="hover:bg-gray-50">
-                                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                            <td className="whitespace-nowrap py-3 pl-4 pr-2 text-xs sm:pl-6">
                                                 <span className="font-mono font-semibold text-indigo-600 text-xs">{u.employee_number || '—'}</span>
                                             </td>
-                                            <td className="px-3 py-4 text-sm">
+                                            <td className="px-2 py-3 text-xs">
                                                 <div className="font-medium text-gray-900">{u.full_name}</div>
                                                 <div className="text-gray-500 text-xs">{u.email}</div>
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500 max-w-[144px]">
+                                            <td className="px-2 py-3 text-xs text-gray-500 max-w-[120px]">
                                                 <span className="block break-words leading-snug">{u.position || '-'}</span>
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500">
+                                            <td className="px-2 py-3 text-xs text-gray-500">
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap
                                                     ${u.role === 'super_admin' ? 'bg-purple-100 text-purple-800' :
                                                       u.role === 'hr_admin'    ? 'bg-blue-100 text-blue-800' :
@@ -563,34 +563,34 @@ export default function Admin() {
                                                     {u.role}
                                                 </span>
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500 max-w-[160px]">
+                                            <td className="px-2 py-3 text-xs text-gray-500 max-w-[128px]">
                                                 <span className="block break-words leading-snug">{u.manager_name || '-'}</span>
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-gray-500 text-center whitespace-nowrap">
+                                            <td className="px-2 py-3 text-xs text-gray-500 text-center whitespace-nowrap">
                                                 {u.base_vacation_days || 15}
                                             </td>
-                                            <td className="px-3 py-4 text-sm text-center">
+                                            <td className="px-2 py-3 text-xs text-center">
                                                 {parseInt(u.dias_beneficio_anno_laboral) > 0 ? (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-sm font-semibold bg-green-50 text-green-700 ring-1 ring-inset ring-green-200">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-50 text-green-700 ring-1 ring-inset ring-green-200">
                                                         {u.dias_beneficio_anno_laboral}
                                                     </span>
                                                 ) : (
                                                     <span className="text-gray-300 text-xs">—</span>
                                                 )}
                                             </td>
-                                            <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 whitespace-nowrap">
-                                                <div className="flex justify-end gap-3">
-                                                    <button onClick={() => openAdjustModal(u)} className="cursor-pointer text-green-600 hover:text-green-800 inline-flex items-center font-medium gap-1">
-                                                        <PlusCircle className="w-3.5 h-3.5" /> Días
+                                            <td className="relative py-3 pl-2 pr-4 text-right text-xs font-medium sm:pr-6 whitespace-nowrap">
+                                                <div className="flex justify-end gap-1.5">
+                                                    <button onClick={() => openAdjustModal(u)} title="Agregar días" className="cursor-pointer text-green-600 hover:text-green-800 p-1 rounded hover:bg-green-50">
+                                                        <PlusCircle className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => handleOpenEdit(u)} className="cursor-pointer text-indigo-600 hover:text-indigo-900 inline-flex items-center gap-1">
-                                                        <Pencil className="w-3.5 h-3.5" /> Editar
+                                                    <button onClick={() => handleOpenEdit(u)} title="Editar ficha" className="cursor-pointer text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50">
+                                                        <Pencil className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => setDetailUserId(u.id)} className="cursor-pointer text-violet-600 hover:text-violet-900 inline-flex items-center gap-1">
-                                                        <FileBarChart2 className="w-3.5 h-3.5" /> Reporte
+                                                    <button onClick={() => setDetailUserId(u.id)} title="Ver reporte" className="cursor-pointer text-violet-600 hover:text-violet-900 p-1 rounded hover:bg-violet-50">
+                                                        <FileBarChart2 className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => handleDeactivate(u.id, u.full_name)} className="cursor-pointer text-red-600 hover:text-red-900 inline-flex items-center gap-1">
-                                                        <Trash2 className="w-3.5 h-3.5" /> Desactivar
+                                                    <button onClick={() => handleDeactivate(u.id, u.full_name)} title="Desactivar" className="cursor-pointer text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50">
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             </td>
