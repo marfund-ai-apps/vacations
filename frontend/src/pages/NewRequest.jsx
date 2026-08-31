@@ -19,6 +19,9 @@ export default function NewRequest() {
         notes: ''
     });
     const [halfDay, setHalfDay] = useState(false);
+    const [saldos, setSaldos] = useState(null); // { base_avail, bono_avail } — solo super_admin (fase prueba)
+
+    const isSuperAdmin = user?.role === 'super_admin';
 
     useEffect(() => {
         const fetchManagers = async () => {
@@ -32,6 +35,14 @@ export default function NewRequest() {
         };
         fetchManagers();
     }, []);
+
+    // Saldos base/bono para la vista previa del auto-split (solo super_admin en fase de prueba)
+    useEffect(() => {
+        if (!isSuperAdmin) return;
+        api.get('/reports/employee-report')
+            .then(res => setSaldos(res.data.summary))
+            .catch(() => { });
+    }, [isSuperAdmin]);
 
     // Helper para calcular días hábiles excluyendo sábados y domingos (simplificado)
     const calculateBusinessDays = (start, end) => {
@@ -64,6 +75,14 @@ export default function NewRequest() {
     const showSeniorityOption = user?.benefit_extra_day && !user?.benefit_extra_day_used;
     const reasonDisabled = isSeniorityBenefit;
 
+    // Vista previa del auto-split (solo super_admin, tipo Vacaciones)
+    const baseAvail = saldos ? Math.max(parseFloat(saldos.base_avail) || 0, 0) : null;
+    const bonoAvail = saldos ? Math.max(parseFloat(saldos.bono_avail) || 0, 0) : null;
+    const willSplit = isSuperAdmin && isVacation && baseAvail !== null && businessDays > 0 && businessDays > baseAvail;
+    const splitBase = willSplit ? baseAvail : businessDays;
+    const splitBono = willSplit ? Math.round((businessDays - baseAvail) * 100) / 100 : 0;
+    const bonoInsufficient = willSplit && bonoAvail !== null && splitBono > bonoAvail + 1e-9;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -77,6 +96,10 @@ export default function NewRequest() {
 
         if (!formData.manager_id) {
             return toast.error("Por favor, selecciona al supervisor inmediato que aprobará la solicitud.");
+        }
+
+        if (bonoInsufficient) {
+            return toast.error("Saldo insuficiente: el bono disponible no cubre los días requeridos.");
         }
 
         setLoading(true);
@@ -269,6 +292,32 @@ export default function NewRequest() {
                                 </div>
                             )}
 
+                            {isSuperAdmin && isVacation && saldos && (
+                                <div className="sm:col-span-6 rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">
+                                        Saldos (modo prueba · super_admin)
+                                    </p>
+                                    <div className="flex flex-wrap gap-4 text-sm">
+                                        <span className="text-gray-700">Días Vacaciones disponibles: <strong className="text-blue-700">{baseAvail?.toFixed(2)}</strong></span>
+                                        <span className="text-gray-700">Días Beneficio (bono) disponibles: <strong className="text-green-700">{bonoAvail?.toFixed(2)}</strong></span>
+                                    </div>
+                                    {willSplit && (
+                                        <div className="mt-3 rounded-md bg-white ring-1 ring-inset ring-indigo-200 p-3">
+                                            <p className="text-sm font-medium text-gray-800 mb-1">La solicitud se dividirá automáticamente:</p>
+                                            <ul className="text-sm text-gray-700 space-y-0.5">
+                                                <li>• <strong className="text-blue-700">{splitBase.toFixed(2)}</strong> día(s) de <strong>Vacaciones (base)</strong></li>
+                                                <li>• <strong className="text-green-700">{splitBono.toFixed(2)}</strong> día(s) de <strong>Días Beneficio (bono)</strong></li>
+                                            </ul>
+                                            {bonoInsufficient && (
+                                                <p className="mt-2 text-sm font-medium text-red-600">
+                                                    ⚠ Saldo insuficiente: el bono disponible ({bonoAvail?.toFixed(2)}) no cubre los {splitBono.toFixed(2)} día(s) requeridos.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="col-span-full">
                                 <label htmlFor="reason" className={`block text-sm font-medium leading-6 ${reasonDisabled ? 'text-gray-400' : 'text-gray-900'}`}>
                                     Motivo / Justificación
@@ -303,7 +352,7 @@ export default function NewRequest() {
                             </button>
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || bonoInsufficient}
                                 className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
                             >
                                 {loading ? 'Enviando...' : 'Enviar Solicitud'}

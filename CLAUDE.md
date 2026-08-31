@@ -112,7 +112,13 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
 - Se recalcula al guardar la Ficha (`userController` create/update) y cada **1 de enero 02:00 (America/Guatemala)** vía cron `backend/jobs/recalcBeneficioAnios.js` (no acumulable)
 - **Backfill inicial:** `database/migration_fecha_ingreso_beneficio.sql` usa referencia fija **2026**
 - **Visibilidad:** el dato solo se muestra a `super_admin`/`hr_admin` (la Ficha vive en `/admin`, ya restringido). No se expone a `manager`/`employee`
-- **Por ahora NO se consume** el bono; las vacaciones se toman como siempre. La política de uso (descuento primero de días base, luego bono) está documentada en `plans/Plan_Fecha_Ingreso_y_Beneficio_Anios_Laborales.md` pero **no implementada**
+- **Consumo del bono — FASE DE PRUEBA (solo `super_admin`):** al pedir Vacaciones, si la base no alcanza, el backend hace **auto-split**: crea 2 solicitudes vinculadas por `vacation_requests.split_group_id` — una `vacation` (base, días tempranos) + una `seniority_benefit` (bono, días finales). Gate: `bonoConsumoActivo(user) = role === 'super_admin'` en `requestController.js`. Otros roles: comportamiento anterior sin cambios.
+  - Saldos (calculados) en `backend/utils/saldos.js` (`getSaldos`); split de fechas por días hábiles en `backend/utils/splitFechas.js`.
+  - **Aprobación y anulación AGRUPADAS**: decidir/anular una del grupo aplica a ambas (`makeDecision`/`annulRequest` con `split_group_id`). **Un solo correo combinado** (`n8nService.buildSplitDatesTable`).
+  - Bono disponible = `dias_beneficio_anno_laboral − SUM(seniority_benefit aprobado del año)`. Se permite consumo fraccionario. Expuesto en `getMyReport.summary` (`base_avail`/`bono_avail`/`bono_used`/`bono_allot`) y previsualizado en `NewRequest.jsx` (solo super_admin).
+  - Migración: `database/migration_split_group_bono.sql` (**correr antes de desplegar el backend**, si no, toda creación de solicitud falla por columna faltante).
+  - Checkpoint de retorno antes de la prueba: tag `checkpoint-pre-consumo-bono`.
+- Política de uso completa documentada en `plans/Plan_detalla_Consumo_Ingreso_beneficio.md`.
 - `mysql2` pool con `dateStrings: ['DATE']` para que `fecha_ingreso` (y demás `DATE`) no sufran corrimiento de zona horaria
 
 ### Cron Job — Reset anual de Beneficio Antigüedad
