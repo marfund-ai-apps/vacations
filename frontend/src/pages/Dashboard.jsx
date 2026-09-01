@@ -129,7 +129,12 @@ export default function Dashboard() {
                 </div>
                 <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-indigo-500">
                     <dt className="truncate text-sm font-medium text-indigo-600">Días Disponibles Hoy</dt>
-                    <dd className="mt-1 text-3xl font-semibold tracking-tight text-indigo-700">{summary.total_available_days}</dd>
+                    <dd className="mt-1 text-3xl font-semibold tracking-tight text-indigo-700">
+                        {showBono
+                            ? (Number(summary.total_available_days ?? 0) + Number(summary.bono_avail ?? 0)).toFixed(2)
+                            : summary.total_available_days}
+                    </dd>
+                    {showBono && <p className="text-xs text-indigo-400 mt-1">Incluye base + bono</p>}
                 </div>
             </dl>
 
