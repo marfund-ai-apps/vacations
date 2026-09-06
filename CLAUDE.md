@@ -30,7 +30,7 @@ npm run preview  # Preview production build
 
 ### Stack
 - **Backend**: Express.js 5 + MySQL 2 (promise pool, raw SQL — no ORM) + Passport.js (Google OAuth 2.0) + express-session (MySQL store) + node-cron + multer + xlsx (SheetJS)
-- **Frontend**: React 19 + Vite + Tailwind CSS 4 + React Router 7 + Axios + Inter (Google Font)
+- **Frontend**: React 19 + Vite + Tailwind CSS 4 + React Router 7 + Axios + Inter (Google Font) + `xlsx` (SheetJS, exportar Excel — dynamic import)
 - **Automation**: N8N webhook workflows for email notifications
 
 ### Terminología en UI
@@ -188,22 +188,28 @@ All routes are implemented. Role-gated routes:
 ### Admin page — funcionalidades
 - Búsqueda en tiempo real por nombre o correo
 - Filtro dropdown por Supervisor Inmediato
-- Paginación: 5 / 10 / 20 / Todos con flechas prev/next
-- **Exportar CSV**: exporta colaboradores del filtro activo con Código Colaborador como primera columna
+- Paginación: 5 / 10 / 20 / Todos con flechas prev/next. **Barra de paginación duplicada arriba y abajo del grid** (helper `renderPagination()`)
+- **Columnas del grid:** Código · Colaborador · Cargo · Rol · Supervisor (sortable) · **Días Vacaciones Disponibles** (sortable) · **Días Beneficio disponibles** (sortable, badge ámbar; `—` si 0) · Acciones
+  - `available_days` y `bono_avail` los calcula el backend `getAllUsers` con subqueries correlacionadas (misma fórmula que el dashboard/`getSaldos`). Reemplazaron a las columnas "Días Vac." (`base_vacation_days`) y "Días Beneficio (Años Laborales)" (`dias_beneficio_anno_laboral`)
+  - Frontend resiliente: si el backend viejo no manda `available_days`, muestra `base_vacation_days` de respaldo
+- **Exportar CSV**: exporta colaboradores del filtro activo con Código Colaborador como primera columna (incluye Fecha Ingreso y Días Beneficio Años Laborales)
 - **Cargar Saldos**: carga CSV con saldos iniciales (flujo de dos pasos: previsualización → confirmar)
 - **+ Días**: modal para agregar días manualmente con motivo
 - **Reporte**: abre `CollaboratorDetailModal` con historial unificado del colaborador
 - **Ficha del Colaborador** (modal Editar): el campo **Código Colaborador** (`employee_number`) es editable; aparece junto a Puesto en la sección Información Personal
 
 ### Dashboard — KPIs
-- **Fila 1** (4 tarjetas con color): Saldo Inicial | Días Agregados (año) | Días Consumidos | Días Disponibles Hoy
-- **Fila 2** (2 tarjetas grises, "Solo informativo"): Permisos Personales | Ausencia Justificada
+- **Fila 1 — solo vacaciones** (4 tarjetas): Saldo Inicial | **Días Vacaciones Agregados** | Días Consumidos | **Días Vacaciones Disponibles Hoy**
+  - La ecuación cuadra exacta en pantalla: `Saldo Inicial + Días Vacaciones Agregados − Días Consumidos = Días Vacaciones Disponibles Hoy`. **El bono NO entra en la Fila 1.**
+- **Fila 2** (5 tarjetas si `showBono`, 2 si no): Bono por antigüedad | Bono usado (año) | **Días Beneficio disponibles** | Permisos Personales | Ausencia Justificada
+  - `showBono = ['super_admin','hr_admin'].includes(user?.role)`. Para `employee`/`manager` la Fila 2 muestra solo Permisos + Ausencia.
 - Fórmulas backend (`getMyReport`):
   - `total_base_days` = `base_vacation_days` (saldo base importado — nunca lo modifica el cron ni ajustes manuales)
-  - `total_extra_days` = incrementos `monthly_auto` del año + `seniority_benefit` aprobado del año
-  - `total_consumed_days` = `vacation` aprobada + `seniority_benefit` aprobado del año (display)
-  - `total_available_days` = `base_vacation_days` + SUM(`monthly_auto` + `manual`, todos los tiempos) − `vacation` aprobada
+  - `total_extra_days` (Días Vacaciones Agregados) = SUM(`monthly_auto` + `manual`, excl. `initial_balance`). **Ya NO incluye `seniority_benefit`.**
+  - `total_consumed_days` (Días Consumidos) = **solo `vacation` aprobada**. Ya NO incluye bono, permisos ni ausencias.
+  - `total_available_days` = `base_vacation_days` + SUM(`monthly_auto` + `manual`, todos los tiempos) − `vacation` aprobada. **La tarjeta muestra este valor puro (ya NO se le suma `bono_avail`).**
   - `total_permission_days` / `total_absence_days` = días informativos del año
+  - Saldos de bono (vía `utils/saldos.js` → `getSaldos`): `bono_allot` (=`dias_beneficio_anno_laboral`), `bono_used` (seniority_benefit aprobado del año), `bono_avail` (=allot−used)
 - **Nota:** `initial_balance` en `user_day_adjustments` es solo histórico — **no** se suma a `total_available_days` (ya está en `base_vacation_days`)
 
 ### Reportes Generales — filtros avanzados
@@ -250,9 +256,14 @@ All routes are implemented. Role-gated routes:
 ### CollaboratorDetailModal
 - Componente: `frontend/src/components/CollaboratorDetailModal.jsx`
 - Llama `GET /api/reports/employee/:id/detail`
-- Muestra: info del colaborador + 3 widgets (Días Base, Consumidos, Disponibles) + tabla de movimientos con colores
+- Muestra: info del colaborador + **tarjetas en 2 filas idénticas al Dashboard** (Fila 1 solo vacaciones; Fila 2 bono + informativos) + tabla de movimientos con colores
+- **Filtro por tipo** (checkboxes, todos activos por defecto): Vacaciones · Permisos · Ausencias · Bono Beneficio. Los créditos (saldo inicial e incrementos) **siempre se muestran**; hay fallback por `color_type` si el backend aún no envía `category` (deploy parcial).
+- **Columnas:** Fecha · # Número · **Ref.** (descripción del movimiento con ícono) · **Tipo de Solicitud** (label como el dropdown: Vacaciones/Permiso Personal/Ausencia Justificada/Bono Beneficio, o `—` para créditos) · Días · **Motivo / Detalle** (ancho ~40%, con word-wrap `break-words`)
+- **Botón "Generar Excel"** (verde, en el header junto al nombre): exporta el historial **visible** (respeta filtros activos) a `.xlsx` con todas las columnas. Usa `xlsx` (SheetJS) cargado con **dynamic import** (`await import('xlsx')`) para no inflar el bundle. Archivo: `Historial_<código>_<nombre>.xlsx`.
+- Backend `getEmployeeDetail` expone en `summary`: `base_days`, `extra_days`, `consumed_days`, `available_days`, `permission_days`, `absence_days`, `bono_allot`, `bono_used`, `bono_avail`; y una `category` por movimiento (`credit`/`vacation`/`permission`/`absence`/`seniority`)
 - Los movimientos están ordenados por fecha, de más reciente a más antiguo
 - Incluye solicitudes anuladas (`color_type: 'annulled'`) con texto tachado y motivo de anulación
+- Solo se usa en `Admin.jsx` (roles `hr_admin`/`super_admin`)
 
 ## Key Design Decisions
 
