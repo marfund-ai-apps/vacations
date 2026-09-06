@@ -38,7 +38,16 @@ exports.getAllUsers = async (req, res) => {
                                 WHERE vr.employee_id = u.id AND vr.status = 'approved'
                                   AND vr.request_type = 'vacation'
                                   AND YEAR(vr.created_at) = YEAR(CURDATE())), 0)
-                ) AS available_days
+                ) AS available_days,
+                (
+                    u.dias_beneficio_anno_laboral
+                    - COALESCE((SELECT SUM(rdr.business_days)
+                                FROM vacation_requests vr
+                                JOIN request_date_ranges rdr ON vr.id = rdr.request_id
+                                WHERE vr.employee_id = u.id AND vr.status = 'approved'
+                                  AND vr.request_type = 'seniority_benefit'
+                                  AND YEAR(vr.created_at) = YEAR(CURDATE())), 0)
+                ) AS bono_avail
             FROM users u
             LEFT JOIN users m ON u.manager_id = m.id
             WHERE u.is_active = 1

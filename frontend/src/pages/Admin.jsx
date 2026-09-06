@@ -91,7 +91,7 @@ export default function Admin() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterManagerId, setFilterManagerId] = useState('');
     const [onlyWithBenefit, setOnlyWithBenefit] = useState(false);
-    const [sortBy, setSortBy] = useState(null); // 'manager' | 'available'
+    const [sortBy, setSortBy] = useState(null); // 'manager' | 'available' | 'bono'
     const [sortDir, setSortDir] = useState('asc');
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
@@ -160,6 +160,8 @@ export default function Admin() {
                     const av = a.available_days != null ? parseFloat(a.available_days) : (parseFloat(a.base_vacation_days) || 0);
                     const bv = b.available_days != null ? parseFloat(b.available_days) : (parseFloat(b.base_vacation_days) || 0);
                     cmp = av - bv;
+                } else if (sortBy === 'bono') {
+                    cmp = (parseFloat(a.bono_avail) || 0) - (parseFloat(b.bono_avail) || 0);
                 }
                 return cmp * dir;
             });
@@ -483,6 +485,12 @@ export default function Admin() {
                                                 <span className="font-normal text-[10px] text-gray-400">Disponibles</span>
                                             </button>
                                         </th>
+                                        <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-900 w-28">
+                                            <button onClick={() => toggleSort('bono')} className="inline-flex flex-col items-center hover:text-indigo-600">
+                                                <span className="inline-flex items-center gap-1">Días Beneficio {sortIcon('bono')}</span>
+                                                <span className="font-normal text-[10px] text-gray-400">Disponibles</span>
+                                            </button>
+                                        </th>
                                         <th scope="col" className="relative py-3 pl-2 pr-4 sm:pr-6 w-24">
                                             <span className="sr-only">Acciones</span>
                                         </th>
@@ -538,6 +546,7 @@ export default function Admin() {
                                                     className="block w-16 mx-auto rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
                                                 <span className="block text-[10px] text-gray-400 mt-0.5">Días base</span>
                                             </td>
+                                            <td className="px-2 py-3 text-xs text-center text-gray-300">—</td>
                                             <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
                                                 <button
                                                     onClick={handleCreate}
@@ -558,7 +567,7 @@ export default function Admin() {
 
                                     {paginatedUsers.length === 0 && !isCreating ? (
                                         <tr>
-                                            <td colSpan="7" className="py-10 text-center text-sm text-gray-500">
+                                            <td colSpan="8" className="py-10 text-center text-sm text-gray-500">
                                                 No se encontraron colaboradores con los filtros aplicados.
                                             </td>
                                         </tr>
@@ -590,6 +599,15 @@ export default function Admin() {
                                                 <span className="font-semibold text-indigo-700">
                                                     {u.available_days != null ? parseFloat(u.available_days) : (parseFloat(u.base_vacation_days) || 15)}
                                                 </span>
+                                            </td>
+                                            <td className="px-2 py-3 text-xs text-center whitespace-nowrap">
+                                                {u.bono_avail != null && parseFloat(u.bono_avail) > 0 ? (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">
+                                                        {parseFloat(u.bono_avail)}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-300 text-xs">—</span>
+                                                )}
                                             </td>
                                             <td className="relative py-3 pl-2 pr-4 text-right text-xs font-medium sm:pr-6 whitespace-nowrap">
                                                 <div className="flex justify-end gap-1.5">
