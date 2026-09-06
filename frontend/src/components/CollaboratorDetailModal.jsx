@@ -45,9 +45,21 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
         return <Minus className="w-3.5 h-3.5 text-gray-400 inline mr-1" />;
     };
 
+    // Deriva la categoría del movimiento; con fallback por color_type si el backend
+    // aún no envía `category` (evita esconder todo el historial durante un deploy parcial).
+    const catOf = (m) => {
+        if (m.category) return m.category;
+        if (m.color_type === 'credit') return 'credit';
+        if (m.color_type === 'debit') return 'vacation';
+        if (m.color_type === 'seniority') return 'seniority';
+        return null; // info/annulled sin category: no distinguible → siempre visible
+    };
     // Los créditos (saldo inicial e incrementos) siempre se muestran; el resto según los checks
     const visibleMovements = data
-        ? data.movements.filter(m => m.category === 'credit' || filters[m.category])
+        ? data.movements.filter(m => {
+            const c = catOf(m);
+            return c === 'credit' || c == null || filters[c];
+        })
         : [];
 
     return (
