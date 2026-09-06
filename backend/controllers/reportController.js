@@ -43,11 +43,13 @@ exports.getMyReport = async (req, res) => {
     );
     const totalAdjustmentDays = parseFloat(allAdjSum[0].total) || 0;
 
-    // Días Agregados = incrementos automáticos + beneficio antigüedad autorizado
-    const totalAdjusted = monthlyAutoDays + seniorityConsumed;
-    // Días Consumidos (display) = vacaciones + beneficio antigüedad autorizados
-    const consumedDays = vacationConsumed + seniorityConsumed;
-    // Días Disponibles = base + SUM(todos los ajustes) − vacaciones aprobadas
+    // Días Agregados = incrementos mensuales + ajustes manuales (excl. initial_balance).
+    // NO incluye bono por antigüedad (seniority_benefit); ese se muestra aparte en Fila 2.
+    const totalAdjusted = totalAdjustmentDays;
+    // Días Consumidos (display) = SOLO vacaciones aprobadas.
+    // NO incluye bono usado, permisos ni ausencias (esos van en sus propias cards).
+    const consumedDays = vacationConsumed;
+    // Días Disponibles Hoy = Saldo Inicial + Días Agregados − Días Consumidos.
     const availableDays = baseDays + totalAdjustmentDays - vacationConsumed;
 
     // Historial de ajustes del año actual (para mostrar en el dashboard como movimientos verdes)

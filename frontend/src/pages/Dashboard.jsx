@@ -106,7 +106,7 @@ export default function Dashboard() {
             </div>
 
             {/* Stats — fila principal */}
-            <dl className={`mt-5 grid grid-cols-2 gap-5 ${showBono ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
+            <dl className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-4">
                 <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
                     <dt className="truncate text-sm font-medium text-gray-500">Saldo Inicial</dt>
                     <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{summary.total_base_days}</dd>
@@ -117,12 +117,6 @@ export default function Dashboard() {
                     </dt>
                     <dd className="mt-1 text-3xl font-semibold tracking-tight text-green-700">+{summary.total_extra_days}</dd>
                 </div>
-                {showBono && (
-                    <div className="overflow-hidden rounded-lg bg-amber-50 px-4 py-5 shadow sm:p-6 ring-1 ring-amber-300">
-                        <dt className="truncate text-sm font-medium text-amber-700">Días Beneficio disponibles</dt>
-                        <dd className="mt-1 text-3xl font-semibold tracking-tight text-amber-700">{Number(summary.bono_avail ?? 0).toFixed(2)}</dd>
-                    </div>
-                )}
                 <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-red-300">
                     <dt className="truncate text-sm font-medium text-red-500">Días Consumidos</dt>
                     <dd className="mt-1 text-3xl font-semibold tracking-tight text-red-600">-{summary.total_consumed_days}</dd>
@@ -130,16 +124,14 @@ export default function Dashboard() {
                 <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-indigo-500">
                     <dt className="truncate text-sm font-medium text-indigo-600">Días Disponibles Hoy</dt>
                     <dd className="mt-1 text-3xl font-semibold tracking-tight text-indigo-700">
-                        {showBono
-                            ? (Number(summary.total_available_days ?? 0) + Number(summary.bono_avail ?? 0)).toFixed(2)
-                            : summary.total_available_days}
+                        {summary.total_available_days}
                     </dd>
-                    {showBono && <p className="text-xs text-indigo-400 mt-1">Incluye base + bono</p>}
+                    <p className="text-xs text-indigo-400 mt-1">Saldo Inicial + Agregados − Consumidos</p>
                 </div>
             </dl>
 
             {/* Fila secundaria: bono (super_admin/hr_admin) + informativos */}
-            <dl className={`grid grid-cols-2 gap-5 ${showBono ? 'sm:grid-cols-4' : 'sm:grid-cols-2 sm:max-w-lg'}`}>
+            <dl className={`grid grid-cols-2 gap-5 ${showBono ? 'sm:grid-cols-5' : 'sm:grid-cols-2 sm:max-w-lg'}`}>
                 {showBono && (
                     <div className="overflow-hidden rounded-lg bg-amber-50 px-4 py-5 shadow sm:p-6 ring-1 ring-amber-200">
                         <dt className="truncate text-sm font-medium text-amber-700">Bono por antigüedad</dt>
@@ -152,6 +144,13 @@ export default function Dashboard() {
                         <dt className="truncate text-sm font-medium text-gray-400">Bono usado (año)</dt>
                         <dd className="mt-1 text-2xl font-semibold tracking-tight text-gray-600">{Number(summary.bono_used ?? 0).toFixed(2)}</dd>
                         <p className="text-xs text-gray-400 mt-1">Vacaciones que tomaron del bono</p>
+                    </div>
+                )}
+                {showBono && (
+                    <div className="overflow-hidden rounded-lg bg-amber-50 px-4 py-5 shadow sm:p-6 ring-1 ring-amber-300">
+                        <dt className="truncate text-sm font-medium text-amber-700">Días Beneficio disponibles</dt>
+                        <dd className="mt-1 text-2xl font-semibold tracking-tight text-amber-700">{Number(summary.bono_avail ?? 0).toFixed(2)}</dd>
+                        <p className="text-xs text-amber-600 mt-1">Bono disponible hoy</p>
                     </div>
                 )}
                 <div className="overflow-hidden rounded-lg bg-sky-50 px-4 py-5 shadow sm:p-6 ring-1 ring-sky-200">
