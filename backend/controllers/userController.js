@@ -27,9 +27,20 @@ exports.getManagers = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
     try {
         const [rows] = await db.query(`
-            SELECT u.*, m.full_name as manager_name 
-            FROM users u 
-            LEFT JOIN users m ON u.manager_id = m.id 
+            SELECT u.*, m.full_name as manager_name,
+                (
+                    u.base_vacation_days
+                    + COALESCE((SELECT SUM(uda.days_added) FROM user_day_adjustments uda
+                                WHERE uda.user_id = u.id AND uda.adjustment_type != 'initial_balance'), 0)
+                    - COALESCE((SELECT SUM(rdr.business_days)
+                                FROM vacation_requests vr
+                                JOIN request_date_ranges rdr ON vr.id = rdr.request_id
+                                WHERE vr.employee_id = u.id AND vr.status = 'approved'
+                                  AND vr.request_type = 'vacation'
+                                  AND YEAR(vr.created_at) = YEAR(CURDATE())), 0)
+                ) AS available_days
+            FROM users u
+            LEFT JOIN users m ON u.manager_id = m.id
             WHERE u.is_active = 1
             ORDER BY u.full_name
         `);

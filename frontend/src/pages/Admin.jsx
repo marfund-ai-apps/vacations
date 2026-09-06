@@ -91,7 +91,7 @@ export default function Admin() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterManagerId, setFilterManagerId] = useState('');
     const [onlyWithBenefit, setOnlyWithBenefit] = useState(false);
-    const [sortBy, setSortBy] = useState(null); // 'manager' | 'vac' | 'benefit'
+    const [sortBy, setSortBy] = useState(null); // 'manager' | 'available'
     const [sortDir, setSortDir] = useState('asc');
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
@@ -156,10 +156,10 @@ export default function Admin() {
                 let cmp = 0;
                 if (sortBy === 'manager') {
                     cmp = (a.manager_name || '').localeCompare(b.manager_name || '', 'es', { sensitivity: 'base' });
-                } else if (sortBy === 'vac') {
-                    cmp = (parseFloat(a.base_vacation_days) || 0) - (parseFloat(b.base_vacation_days) || 0);
-                } else if (sortBy === 'benefit') {
-                    cmp = (parseInt(a.dias_beneficio_anno_laboral) || 0) - (parseInt(b.dias_beneficio_anno_laboral) || 0);
+                } else if (sortBy === 'available') {
+                    const av = a.available_days != null ? parseFloat(a.available_days) : (parseFloat(a.base_vacation_days) || 0);
+                    const bv = b.available_days != null ? parseFloat(b.available_days) : (parseFloat(b.base_vacation_days) || 0);
+                    cmp = av - bv;
                 }
                 return cmp * dir;
             });
@@ -174,6 +174,43 @@ export default function Admin() {
         const start = (currentPage - 1) * pageSize;
         return filteredUsers.slice(start, start + pageSize);
     }, [filteredUsers, pageSize, currentPage]);
+
+    // Barra de paginación reutilizable (se muestra arriba y abajo del grid)
+    const renderPagination = () => {
+        if (pageSize === 'Todos' || filteredUsers.length === 0) return null;
+        return (
+            <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>
+                    Mostrando {Math.min((currentPage - 1) * pageSize + 1, filteredUsers.length)}–{Math.min(currentPage * pageSize, filteredUsers.length)} de {filteredUsers.length} colaboradores
+                </span>
+                <div className="flex items-center gap-1">
+                    <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-8 h-8 rounded text-xs font-medium ${currentPage === page ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
+                        >
+                            {page}
+                        </button>
+                    ))}
+                    <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
     // Handlers edición en modal
     const handleOpenEdit = (u) => {
@@ -420,8 +457,11 @@ export default function Admin() {
                 </div>
             </div>
 
+            {/* Paginación superior */}
+            <div className="mt-4">{renderPagination()}</div>
+
             {/* Tabla */}
-            <div className="mt-4 flow-root">
+            <div className="mt-2 flow-root">
                 <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
                         <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
@@ -437,15 +477,10 @@ export default function Admin() {
                                                 Supervisor {sortIcon('manager')}
                                             </button>
                                         </th>
-                                        <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-900 w-16">
-                                            <button onClick={() => toggleSort('vac')} className="inline-flex items-center gap-1 hover:text-indigo-600">
-                                                Días Vac. {sortIcon('vac')}
-                                            </button>
-                                        </th>
-                                        <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-900 w-24">
-                                            <button onClick={() => toggleSort('benefit')} className="inline-flex flex-col items-center hover:text-indigo-600">
-                                                <span className="inline-flex items-center gap-1">Días Beneficio {sortIcon('benefit')}</span>
-                                                <span className="font-normal text-[10px] text-gray-400">(Años Laborales)</span>
+                                        <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-900 w-28">
+                                            <button onClick={() => toggleSort('available')} className="inline-flex flex-col items-center hover:text-indigo-600">
+                                                <span className="inline-flex items-center gap-1">Días Vacaciones {sortIcon('available')}</span>
+                                                <span className="font-normal text-[10px] text-gray-400">Disponibles</span>
                                             </button>
                                         </th>
                                         <th scope="col" className="relative py-3 pl-2 pr-4 sm:pr-6 w-24">
@@ -498,25 +533,10 @@ export default function Admin() {
                                                 </select>
                                             </td>
                                             <td className="px-2 py-3 text-xs text-gray-500 text-center">
-                                                <input type="number" value={newForm.base_vacation_days}
+                                                <input type="number" title="Días base de vacaciones" value={newForm.base_vacation_days}
                                                     onChange={(e) => setNewForm({ ...newForm, base_vacation_days: e.target.value })}
                                                     className="block w-16 mx-auto rounded-md border-0 py-1 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xs sm:leading-6" />
-                                            </td>
-                                            <td className="px-2 py-3 text-xs text-center">
-                                                <div className="flex flex-col items-start gap-1.5">
-                                                    <label className="flex items-center gap-1.5 cursor-pointer">
-                                                        <input type="checkbox" checked={newForm.benefit_extra_day}
-                                                            onChange={(e) => setNewForm({ ...newForm, benefit_extra_day: e.target.checked })}
-                                                            className="rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
-                                                        <span className="text-xs text-gray-600">Aplica</span>
-                                                    </label>
-                                                    <label className="flex items-center gap-1.5 cursor-pointer">
-                                                        <input type="checkbox" checked={newForm.benefit_extra_day_used}
-                                                            onChange={(e) => setNewForm({ ...newForm, benefit_extra_day_used: e.target.checked })}
-                                                            className="rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                                                        <span className="text-xs text-gray-600">Gozado</span>
-                                                    </label>
-                                                </div>
+                                                <span className="block text-[10px] text-gray-400 mt-0.5">Días base</span>
                                             </td>
                                             <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
                                                 <button
@@ -538,7 +558,7 @@ export default function Admin() {
 
                                     {paginatedUsers.length === 0 && !isCreating ? (
                                         <tr>
-                                            <td colSpan="8" className="py-10 text-center text-sm text-gray-500">
+                                            <td colSpan="7" className="py-10 text-center text-sm text-gray-500">
                                                 No se encontraron colaboradores con los filtros aplicados.
                                             </td>
                                         </tr>
@@ -566,17 +586,10 @@ export default function Admin() {
                                             <td className="px-2 py-3 text-xs text-gray-500 max-w-[128px]">
                                                 <span className="block break-words leading-snug">{u.manager_name || '-'}</span>
                                             </td>
-                                            <td className="px-2 py-3 text-xs text-gray-500 text-center whitespace-nowrap">
-                                                {u.base_vacation_days || 15}
-                                            </td>
-                                            <td className="px-2 py-3 text-xs text-center">
-                                                {parseInt(u.dias_beneficio_anno_laboral) > 0 ? (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-50 text-green-700 ring-1 ring-inset ring-green-200">
-                                                        {u.dias_beneficio_anno_laboral}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-gray-300 text-xs">—</span>
-                                                )}
+                                            <td className="px-2 py-3 text-sm text-center whitespace-nowrap">
+                                                <span className="font-semibold text-indigo-700">
+                                                    {u.available_days != null ? parseFloat(u.available_days) : (parseFloat(u.base_vacation_days) || 15)}
+                                                </span>
                                             </td>
                                             <td className="relative py-3 pl-2 pr-4 text-right text-xs font-medium sm:pr-6 whitespace-nowrap">
                                                 <div className="flex justify-end gap-1.5">
@@ -603,39 +616,8 @@ export default function Admin() {
                 </div>
             </div>
 
-            {/* Paginación */}
-            {pageSize !== 'Todos' && filteredUsers.length > 0 && (
-                <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-                    <span>
-                        Mostrando {Math.min((currentPage - 1) * pageSize + 1, filteredUsers.length)}–{Math.min(currentPage * pageSize, filteredUsers.length)} de {filteredUsers.length} colaboradores
-                    </span>
-                    <div className="flex items-center gap-1">
-                        <button
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="p-1 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                            <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`w-8 h-8 rounded text-xs font-medium ${currentPage === page ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
-                            >
-                                {page}
-                            </button>
-                        ))}
-                        <button
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="p-1 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
-                    </div>
-                </div>
-            )}
+            {/* Paginación inferior */}
+            <div className="mt-4">{renderPagination()}</div>
         </div>
 
         {/* Modal: Instrucciones para Cargar Saldos */}
