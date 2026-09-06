@@ -174,6 +174,18 @@ exports.getEmployeeDetail = async (req, res) => {
     );
     const consumedDays = parseFloat(consumed[0].total) || 0;
 
+    // Permisos y ausencias aprobados (informativos, no descuentan)
+    const [informative] = await db.query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN vr.request_type = 'permission' THEN rdr.business_days END), 0) as permission_days,
+         COALESCE(SUM(CASE WHEN vr.request_type = 'justified_absence' THEN rdr.business_days END), 0) as absence_days
+       FROM vacation_requests vr
+       JOIN request_date_ranges rdr ON vr.id = rdr.request_id
+       WHERE vr.employee_id = ? AND vr.status = 'approved'`, [id]
+    );
+    const permissionDays = parseFloat(informative[0].permission_days) || 0;
+    const absenceDays = parseFloat(informative[0].absence_days) || 0;
+
     // Ajustes de días (incrementos manuales, automáticos, saldo inicial)
     const [adjustments] = await db.query(
       `SELECT uda.id, uda.adjustment_number, uda.days_added, uda.adjustment_type,
@@ -210,6 +222,7 @@ exports.getEmployeeDetail = async (req, res) => {
         number: adj.adjustment_number || '—',
         type_label: typeLabel,
         color_type: 'credit',
+        category: 'credit',
         days: parseFloat(adj.days_added),
         reason: adj.reason,
         detail: adj.adjusted_by_name ? `Por: ${adj.adjusted_by_name}` : 'Sistema automático',
@@ -237,12 +250,18 @@ exports.getEmployeeDetail = async (req, res) => {
                     r.request_type === 'seniority_benefit' ? 'Beneficio Antigüedad' : 'Ausencia justificada';
       }
 
+      const category = r.request_type === 'vacation' ? 'vacation'
+                     : r.request_type === 'permission' ? 'permission'
+                     : r.request_type === 'justified_absence' ? 'absence'
+                     : r.request_type === 'seniority_benefit' ? 'seniority' : 'other';
+
       movements.push({
         id: `req-${r.id}`,
         date: isAnnulled ? (r.annulled_at || r.created_at) : (r.manager_decision_date || r.created_at),
         number: r.request_number,
         type_label: typeLabel,
         color_type: colorType,
+        category,
         days: r.total_days,
         reason: isAnnulled ? (r.annulment_reason || '') : (r.reason || ''),
         detail: isAnnulled ? 'Solicitud anulada' : '',
@@ -259,13 +278,21 @@ exports.getEmployeeDetail = async (req, res) => {
         .reduce((sum, a) => sum + (parseFloat(a.days_added) || 0), 0);
     const baseDays = parseFloat(userData.base_vacation_days);
 
+    // Saldos de bono por antigüedad (mismos que usa el dashboard/auto-split)
+    const saldos = await getSaldos(id);
+
     res.json({
       user: userData,
       summary: {
         base_days: baseDays,
         extra_days: totalAdjDays,
         consumed_days: consumedDays,
-        available_days: baseDays + totalAdjDays - consumedDays
+        available_days: baseDays + totalAdjDays - consumedDays,
+        permission_days: permissionDays,
+        absence_days: absenceDays,
+        bono_allot: saldos.bonoAllot,
+        bono_used: saldos.bonoUsed,
+        bono_avail: saldos.bonoAvail,
       },
       movements
     });

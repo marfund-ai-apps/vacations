@@ -6,6 +6,21 @@ import { formatDateTime } from '../utils/dateUtils';
 export default function CollaboratorDetailModal({ userId, onClose }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    // Filtro por tipo de movimiento (los incrementos/saldo inicial siempre se muestran)
+    const [filters, setFilters] = useState({
+        vacation: true,
+        permission: false,
+        absence: false,
+        seniority: false,
+    });
+    const toggleFilter = (key) => setFilters(f => ({ ...f, [key]: !f[key] }));
+
+    const FILTER_DEFS = [
+        { key: 'vacation', label: 'Vacaciones' },
+        { key: 'permission', label: 'Permisos' },
+        { key: 'absence', label: 'Ausencias' },
+        { key: 'seniority', label: 'Bono Beneficio' },
+    ];
 
     useEffect(() => {
         api.get(`/reports/employee/${userId}/detail`)
@@ -29,6 +44,11 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
         if (type === 'annulled') return  <Ban className="w-3.5 h-3.5 text-gray-400 inline mr-1" />;
         return <Minus className="w-3.5 h-3.5 text-gray-400 inline mr-1" />;
     };
+
+    // Los créditos (saldo inicial e incrementos) siempre se muestran; el resto según los checks
+    const visibleMovements = data
+        ? data.movements.filter(m => m.category === 'credit' || filters[m.category])
+        : [];
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
@@ -72,31 +92,70 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
                             </div>
                         </div>
 
-                        {/* Widgets de resumen */}
-                        <div className="grid grid-cols-4 gap-4">
-                            <div className="rounded-lg bg-blue-50 ring-1 ring-blue-200 px-4 py-3 text-center">
-                                <p className="text-xs font-medium text-blue-600">Días Base Actuales</p>
-                                <p className="text-2xl font-bold text-blue-700 mt-1">{data.summary.base_days}</p>
+                        {/* Widgets de resumen — mismas tarjetas que el Dashboard */}
+                        {/* Fila 1: solo vacaciones */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="rounded-lg bg-white ring-1 ring-gray-200 px-4 py-3 text-center">
+                                <p className="text-xs font-medium text-gray-500">Saldo Inicial</p>
+                                <p className="text-2xl font-bold text-gray-900 mt-1">{data.summary.base_days}</p>
                             </div>
-                            <div className="rounded-lg bg-green-50 ring-1 ring-green-200 px-4 py-3 text-center">
-                                <p className="text-xs font-medium text-green-600">Incrementos</p>
+                            <div className="rounded-lg bg-green-50 ring-1 ring-green-300 px-4 py-3 text-center">
+                                <p className="text-xs font-medium text-green-600">Días Vacaciones Agregados</p>
                                 <p className="text-2xl font-bold text-green-700 mt-1">+{(parseFloat(data.summary.extra_days) || 0).toFixed(2)}</p>
                             </div>
-                            <div className="rounded-lg bg-red-50 ring-1 ring-red-200 px-4 py-3 text-center">
-                                <p className="text-xs font-medium text-red-600">Vacaciones Consumidas</p>
+                            <div className="rounded-lg bg-red-50 ring-1 ring-red-300 px-4 py-3 text-center">
+                                <p className="text-xs font-medium text-red-600">Días Consumidos</p>
                                 <p className="text-2xl font-bold text-red-600 mt-1">-{data.summary.consumed_days}</p>
                             </div>
                             <div className="rounded-lg bg-indigo-50 ring-1 ring-indigo-400 px-4 py-3 text-center">
-                                <p className="text-xs font-medium text-indigo-600">Disponibles Hoy</p>
+                                <p className="text-xs font-medium text-indigo-600">Días Vacaciones Disponibles Hoy</p>
                                 <p className={`text-2xl font-bold mt-1 ${data.summary.available_days < 0 ? 'text-red-600' : 'text-indigo-700'}`}>
                                     {data.summary.available_days.toFixed(2)}
                                 </p>
                             </div>
                         </div>
+                        {/* Fila 2: bono + informativos */}
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                            <div className="rounded-lg bg-amber-50 ring-1 ring-amber-200 px-4 py-3 text-center">
+                                <p className="text-xs font-medium text-amber-700">Bono por antigüedad</p>
+                                <p className="text-2xl font-bold text-amber-700 mt-1">{Number(data.summary.bono_allot ?? 0)}</p>
+                            </div>
+                            <div className="rounded-lg bg-white ring-1 ring-gray-200 px-4 py-3 text-center">
+                                <p className="text-xs font-medium text-gray-400">Bono usado (año)</p>
+                                <p className="text-2xl font-bold text-gray-600 mt-1">{Number(data.summary.bono_used ?? 0).toFixed(2)}</p>
+                            </div>
+                            <div className="rounded-lg bg-amber-50 ring-1 ring-amber-300 px-4 py-3 text-center">
+                                <p className="text-xs font-medium text-amber-700">Días Beneficio disponibles</p>
+                                <p className="text-2xl font-bold text-amber-700 mt-1">{Number(data.summary.bono_avail ?? 0).toFixed(2)}</p>
+                            </div>
+                            <div className="rounded-lg bg-sky-50 ring-1 ring-sky-200 px-4 py-3 text-center">
+                                <p className="text-xs font-medium text-sky-700">Permisos Personales</p>
+                                <p className="text-2xl font-bold text-sky-700 mt-1">{Number(data.summary.permission_days ?? 0)}</p>
+                            </div>
+                            <div className="rounded-lg bg-violet-50 ring-1 ring-violet-200 px-4 py-3 text-center">
+                                <p className="text-xs font-medium text-violet-700">Ausencia Justificada</p>
+                                <p className="text-2xl font-bold text-violet-700 mt-1">{Number(data.summary.absence_days ?? 0)}</p>
+                            </div>
+                        </div>
 
                         {/* Tabla de movimientos */}
                         <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Historial de Movimientos</h4>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                                <h4 className="text-sm font-semibold text-gray-700">Historial de Movimientos</h4>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {FILTER_DEFS.map(f => (
+                                        <label key={f.key} className="inline-flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
+                                            <input
+                                                type="checkbox"
+                                                checked={filters[f.key]}
+                                                onChange={() => toggleFilter(f.key)}
+                                                className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            {f.label}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
                             <div className="overflow-x-auto rounded-lg ring-1 ring-gray-200">
                                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                                     <thead className="bg-gray-50">
@@ -105,17 +164,17 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
                                             <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide"># Número</th>
                                             <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Tipo</th>
                                             <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide">Días</th>
-                                            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Motivo / Detalle</th>
+                                            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide w-2/5">Motivo / Detalle</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 bg-white">
-                                        {data.movements.length === 0 ? (
+                                        {visibleMovements.length === 0 ? (
                                             <tr>
                                                 <td colSpan="5" className="py-8 text-center text-gray-400">
-                                                    Sin movimientos registrados.
+                                                    Sin movimientos para los filtros seleccionados.
                                                 </td>
                                             </tr>
-                                        ) : data.movements.map(mov => {
+                                        ) : visibleMovements.map(mov => {
                                             const c = colorClass(mov.color_type);
                                             return (
                                                 <tr key={mov.id} className={c.row}>
@@ -132,9 +191,9 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
                                                     <td className={`whitespace-nowrap px-3 py-3 text-center ${c.days}`}>
                                                         {c.sign}{mov.days}
                                                     </td>
-                                                    <td className="px-3 py-3 text-gray-500 max-w-xs">
-                                                        <p className="truncate" title={mov.reason}>{mov.reason || '—'}</p>
-                                                        {mov.detail && <p className="text-xs text-gray-400">{mov.detail}</p>}
+                                                    <td className="px-3 py-3 text-gray-500 w-2/5 align-top">
+                                                        <p className="whitespace-normal break-words">{mov.reason || '—'}</p>
+                                                        {mov.detail && <p className="text-xs text-gray-400 whitespace-normal break-words">{mov.detail}</p>}
                                                     </td>
                                                 </tr>
                                             );
