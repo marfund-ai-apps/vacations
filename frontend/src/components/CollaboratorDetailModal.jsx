@@ -9,9 +9,9 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
     // Filtro por tipo de movimiento (los incrementos/saldo inicial siempre se muestran)
     const [filters, setFilters] = useState({
         vacation: true,
-        permission: false,
-        absence: false,
-        seniority: false,
+        permission: true,
+        absence: true,
+        seniority: true,
     });
     const toggleFilter = (key) => setFilters(f => ({ ...f, [key]: !f[key] }));
 
@@ -54,6 +54,14 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
         if (m.color_type === 'seniority') return 'seniority';
         return null; // info/annulled sin category: no distinguible → siempre visible
     };
+    // Etiqueta "Tipo de Solicitud" (como el dropdown de Nueva Solicitud)
+    const SOLICITUD_LABEL = {
+        vacation: 'Vacaciones',
+        permission: 'Permiso Personal',
+        absence: 'Ausencia Justificada',
+        seniority: 'Bono Beneficio',
+    };
+    const solicitudLabel = (m) => SOLICITUD_LABEL[catOf(m)] || '—';
     // Los créditos (saldo inicial e incrementos) siempre se muestran; el resto según los checks
     const visibleMovements = data
         ? data.movements.filter(m => {
@@ -174,7 +182,8 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
                                         <tr>
                                             <th className="py-3 pl-4 pr-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Fecha</th>
                                             <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide"># Número</th>
-                                            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Tipo</th>
+                                            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Ref.</th>
+                                            <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Tipo de Solicitud</th>
                                             <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide">Días</th>
                                             <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide w-2/5">Motivo / Detalle</th>
                                         </tr>
@@ -182,7 +191,7 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
                                     <tbody className="divide-y divide-gray-100 bg-white">
                                         {visibleMovements.length === 0 ? (
                                             <tr>
-                                                <td colSpan="5" className="py-8 text-center text-gray-400">
+                                                <td colSpan="6" className="py-8 text-center text-gray-400">
                                                     Sin movimientos para los filtros seleccionados.
                                                 </td>
                                             </tr>
@@ -199,6 +208,9 @@ export default function CollaboratorDetailModal({ userId, onClose }) {
                                                     <td className="px-3 py-3 text-gray-700">
                                                         <Icon type={mov.color_type} />
                                                         {mov.type_label}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-3 text-gray-700">
+                                                        {solicitudLabel(mov)}
                                                     </td>
                                                     <td className={`whitespace-nowrap px-3 py-3 text-center ${c.days}`}>
                                                         {c.sign}{mov.days}
