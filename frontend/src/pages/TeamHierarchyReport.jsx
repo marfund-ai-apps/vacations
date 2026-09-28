@@ -27,7 +27,14 @@ export default function TeamHierarchyReport() {
                 const params = new URLSearchParams({ year });
                 if (month > 0) params.append('month', month);
                 const res = await api.get(`/reports/team-hierarchy?${params}`);
-                setReportData(res.data.employees || []);
+                // Defensa extra: un colaborador aparece una sola vez
+                const seen = new Set();
+                const unique = (res.data.employees || []).filter(emp => {
+                    if (seen.has(emp.id)) return false;
+                    seen.add(emp.id);
+                    return true;
+                });
+                setReportData(unique);
                 setRootManager(res.data.root_manager || null);
             } catch (error) {
                 console.error("Error fetching hierarchy report:", error);

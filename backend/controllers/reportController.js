@@ -403,24 +403,33 @@ exports.getTeamHierarchyReport = async (req, res) => {
   const month = parseInt(req.query.month) || 0;
 
   const monthCondition = month > 0 ? 'AND MONTH(vr.created_at) = ?' : '';
-  // params en orden de aparición: rootId (CTE) → year (JOIN) → [month]
-  const params = month > 0 ? [rootId, year, month] : [rootId, year];
+  // params en orden de aparición: rootId x3 (CTE) → year (JOIN) → [month]
+  const params = month > 0 ? [rootId, rootId, rootId, year, month] : [rootId, rootId, rootId, year];
 
   try {
     const [rows] = await db.query(`
       WITH RECURSIVE team_tree AS (
-        -- Nivel 1: reportes directos del supervisor logueado
-        SELECT id, manager_id, 1 AS depth
+        -- Nivel 1: reportes directos del supervisor logueado.
+        -- path = ids ya visitados (incluye la raíz) para cortar ciclos (ej. A supervisa a B y B a A).
+        SELECT id, manager_id, 1 AS depth,
+               CAST(CONCAT(',', ?, ',', id, ',') AS CHAR(4000)) AS path
         FROM users
-        WHERE manager_id = ? AND is_active = 1
+        WHERE manager_id = ? AND is_active = 1 AND id <> ?
 
         UNION ALL
 
-        -- Descendientes: colaboradores cuyo jefe ya está en el árbol
-        SELECT u.id, u.manager_id, tt.depth + 1
+        -- Descendientes: colaboradores cuyo jefe ya está en el árbol y que NO fueron visitados
+        SELECT u.id, u.manager_id, tt.depth + 1,
+               CONCAT(tt.path, u.id, ',')
         FROM users u
         JOIN team_tree tt ON u.manager_id = tt.id
-        WHERE u.is_active = 1 AND tt.depth < 10   -- cota anti-ciclos
+        WHERE u.is_active = 1
+          AND tt.depth < 10
+          AND LOCATE(CONCAT(',', u.id, ','), tt.path) = 0
+      ),
+      -- Una sola fila por colaborador (nivel más cercano a la raíz)
+      nodes AS (
+        SELECT id, MIN(depth) AS depth FROM team_tree GROUP BY id
       )
       SELECT
         u.id, u.full_name, u.email, u.employee_number, u.position,
@@ -437,7 +446,7 @@ exports.getTeamHierarchyReport = async (req, res) => {
           WHERE uda.user_id = u.id
             AND uda.adjustment_type IN ('monthly_auto', 'manual')
         ), 0) as extra_days
-      FROM team_tree tt
+      FROM nodes tt
       JOIN users u  ON u.id = tt.id
       LEFT JOIN users m ON u.manager_id = m.id
       LEFT JOIN vacation_requests vr ON u.id = vr.employee_id
