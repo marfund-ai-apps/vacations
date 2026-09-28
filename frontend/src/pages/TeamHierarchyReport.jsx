@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Download, Filter, ShieldCheck, Users } from 'lucide-react';
+import { REPORT_YEARS, isFutureYear } from '../utils/reportYears';
 
 const MONTHS = [
     { value: 0, label: 'Todos los meses' },
@@ -197,8 +198,8 @@ export default function TeamHierarchyReport() {
                             onChange={e => setYear(e.target.value)}
                             className="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-sm"
                         >
-                            {[2023, 2024, 2025, 2026, 2027].map(y => (
-                                <option key={y} value={y}>{y}</option>
+                            {REPORT_YEARS.map(y => (
+                                <option key={y} value={y} disabled={isFutureYear(y)}>{y}</option>
                             ))}
                         </select>
                     </div>

@@ -2,6 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Download, Filter, X } from 'lucide-react';
+// Usados por el filtro de Año (oculto temporalmente más abajo)
+// eslint-disable-next-line no-unused-vars
+import { REPORT_YEARS, isFutureYear } from '../utils/reportYears';
 
 const MONTHS = [
     { value: 0, label: 'Todos los meses' },
@@ -13,11 +16,9 @@ const MONTHS = [
 
 const MANAGER_ROLES = ['manager', 'hr_admin', 'super_admin'];
 
-// El sistema inició en julio 2026: no mostrar años anteriores ni meses futuros
-const START_YEAR = 2026;
+// El sistema inició en julio 2026: años 2026–2030, futuros deshabilitados; sin meses futuros
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1; // 1-12
-const AVAILABLE_YEARS = Array.from({ length: CURRENT_YEAR - START_YEAR + 1 }, (_, i) => CURRENT_YEAR - i);
 
 export default function Reports() {
     const [reportData, setReportData] = useState([]);
@@ -182,8 +183,8 @@ export default function Reports() {
                             }}
                             className="rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 text-sm"
                         >
-                            {AVAILABLE_YEARS.map(y => (
-                                <option key={y} value={y}>{y}</option>
+                            {REPORT_YEARS.map(y => (
+                                <option key={y} value={y} disabled={isFutureYear(y)}>{y}</option>
                             ))}
                         </select>
                     </div>
