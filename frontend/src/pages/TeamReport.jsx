@@ -170,39 +170,6 @@ export default function TeamReport() {
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-2 pb-1.5">
-                        <input
-                            id="benefitFilter"
-                            type="checkbox"
-                            checked={benefitFilter}
-                            onChange={e => setBenefitFilter(e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500 cursor-pointer"
-                        />
-                        <label htmlFor="benefitFilter" className="text-sm text-gray-700 cursor-pointer select-none whitespace-nowrap">
-                            Solo con Beneficio Antigüedad
-                        </label>
-                    </div>
-                </div>
-
-                {/* Fila 2: Filtrar por tipo */}
-                <div className="mt-3 pt-3 border-t border-gray-200 flex flex-wrap items-center gap-x-5 gap-y-2">
-                    <span className="text-xs font-medium text-gray-500 whitespace-nowrap">Mostrar solo empleados con:</span>
-                    {[
-                        { key: 'vacation',   label: 'Vacaciones',      color: 'text-red-600'   },
-                        { key: 'permission', label: 'Permisos',         color: 'text-gray-500'  },
-                        { key: 'absence',    label: 'Ausencias',        color: 'text-gray-500'  },
-                        { key: 'seniority',  label: 'B. Antigüedad',   color: 'text-amber-600' },
-                    ].map(({ key, label, color }) => (
-                        <label key={key} className="flex items-center gap-1.5 cursor-pointer select-none">
-                            <input
-                                type="checkbox"
-                                checked={typeFilters[key]}
-                                onChange={e => setTypeFilters(prev => ({ ...prev, [key]: e.target.checked }))}
-                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
-                            />
-                            <span className={`text-sm font-medium ${color}`}>{label}</span>
-                        </label>
-                    ))}
                 </div>
             </div>
 
