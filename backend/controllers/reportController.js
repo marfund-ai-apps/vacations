@@ -393,3 +393,69 @@ exports.getTeamReport = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener reporte del equipo' });
   }
 };
+
+// GET /api/reports/team-hierarchy — Reporte de Equipos (Sub-supervisión)
+// Devuelve el árbol descendente COMPLETO del supervisor logueado:
+// su equipo directo + los equipos de los colaboradores que a su vez son supervisores (recursivo).
+exports.getTeamHierarchyReport = async (req, res) => {
+  const rootId = req.user.id;              // la raíz SIEMPRE es el usuario logueado
+  const year = req.query.year || new Date().getFullYear();
+  const month = parseInt(req.query.month) || 0;
+
+  const monthCondition = month > 0 ? 'AND MONTH(vr.created_at) = ?' : '';
+  // params en orden de aparición: rootId (CTE) → year (JOIN) → [month]
+  const params = month > 0 ? [rootId, year, month] : [rootId, year];
+
+  try {
+    const [rows] = await db.query(`
+      WITH RECURSIVE team_tree AS (
+        -- Nivel 1: reportes directos del supervisor logueado
+        SELECT id, manager_id, 1 AS depth
+        FROM users
+        WHERE manager_id = ? AND is_active = 1
+
+        UNION ALL
+
+        -- Descendientes: colaboradores cuyo jefe ya está en el árbol
+        SELECT u.id, u.manager_id, tt.depth + 1
+        FROM users u
+        JOIN team_tree tt ON u.manager_id = tt.id
+        WHERE u.is_active = 1 AND tt.depth < 10   -- cota anti-ciclos
+      )
+      SELECT
+        u.id, u.full_name, u.email, u.employee_number, u.position,
+        u.base_vacation_days, u.manager_id, u.benefit_extra_day,
+        m.full_name AS manager_name, tt.depth,
+        EXISTS (SELECT 1 FROM users s WHERE s.manager_id = u.id AND s.is_active = 1) AS is_supervisor,
+        COALESCE(SUM(CASE WHEN vr.request_type = 'vacation'           AND vr.status = 'approved' THEN rdr.business_days ELSE 0 END), 0) as vacation_days,
+        COALESCE(SUM(CASE WHEN vr.request_type = 'permission'         AND vr.status = 'approved' THEN rdr.business_days ELSE 0 END), 0) as permission_days,
+        COALESCE(SUM(CASE WHEN vr.request_type = 'justified_absence'  AND vr.status = 'approved' THEN rdr.business_days ELSE 0 END), 0) as absence_days,
+        COALESCE(SUM(CASE WHEN vr.request_type = 'seniority_benefit'  AND vr.status = 'approved' THEN rdr.business_days ELSE 0 END), 0) as seniority_benefit_days,
+        COALESCE((
+          SELECT SUM(uda.days_added)
+          FROM user_day_adjustments uda
+          WHERE uda.user_id = u.id
+            AND uda.adjustment_type IN ('monthly_auto', 'manual')
+        ), 0) as extra_days
+      FROM team_tree tt
+      JOIN users u  ON u.id = tt.id
+      LEFT JOIN users m ON u.manager_id = m.id
+      LEFT JOIN vacation_requests vr ON u.id = vr.employee_id
+        AND YEAR(vr.created_at) = ?
+        ${monthCondition}
+      LEFT JOIN request_date_ranges rdr ON vr.id = rdr.request_id
+      GROUP BY u.id, u.full_name, u.email, u.employee_number, u.position,
+               u.base_vacation_days, u.manager_id, u.benefit_extra_day, m.full_name, tt.depth
+      ORDER BY tt.depth, m.full_name, u.full_name
+    `, params);
+
+    // Datos de la raíz (para encabezado del reporte)
+    const [rootRows] = await db.query('SELECT id, full_name FROM users WHERE id = ?', [rootId]);
+    const rootManager = rootRows.length ? rootRows[0] : { id: rootId, full_name: '' };
+
+    res.json({ year, month, root_manager: rootManager, employees: rows });
+  } catch (err) {
+    console.error('Error en getTeamHierarchyReport:', err);
+    res.status(500).json({ message: 'Error al obtener reporte jerárquico de equipos' });
+  }
+};

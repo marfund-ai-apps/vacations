@@ -8,6 +8,7 @@ import MyRequests from './pages/MyRequests';
 import PendingApprovals from './pages/PendingApprovals';
 import Reports from './pages/Reports';
 import TeamReport from './pages/TeamReport';
+import TeamHierarchyReport from './pages/TeamHierarchyReport';
 import Admin from './pages/Admin';
 import AllRequests from './pages/AllRequests';
 import Profile from './pages/Profile';
@@ -34,6 +35,9 @@ function App() {
           </Route>
           <Route element={<ProtectedRoute roles={['manager']} />}>
             <Route path="/reports/team" element={<TeamReport />} />
+          </Route>
+          <Route element={<ProtectedRoute roles={['manager', 'hr_admin', 'super_admin']} />}>
+            <Route path="/reports/team-hierarchy" element={<TeamHierarchyReport />} />
           </Route>
 
           {/* Admin routes, only visible to super_admin and hr_admin */}

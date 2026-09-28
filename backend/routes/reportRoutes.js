@@ -21,4 +21,7 @@ router.get('/all', requireRole('hr_admin', 'super_admin'), reportController.getA
 // Reporte de mi equipo (solo managers)
 router.get('/team', requireRole('manager'), reportController.getTeamReport);
 
+// Reporte de Equipos (Sub-supervisión) — árbol descendente del supervisor logueado
+router.get('/team-hierarchy', requireRole('manager', 'hr_admin', 'super_admin'), reportController.getTeamHierarchyReport);
+
 module.exports = router;

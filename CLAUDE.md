@@ -222,6 +222,16 @@ All routes are implemented. Role-gated routes:
 - Badge **"Beneficio usado"** (ámbar) / **"Beneficio disponible"** (gris) junto al nombre
 - El CSV exporta solo las filas filtradas
 
+### Reporte de Equipos (Sub-supervisión) — jerárquico
+- Página: `frontend/src/pages/TeamHierarchyReport.jsx` · Ruta: `/reports/team-hierarchy` · Menú "Reportes" (`REPORT_ITEMS`, rol `manager`)
+- Endpoint: `GET /api/reports/team-hierarchy` — `requireRole('manager','hr_admin','super_admin')`; controller `getTeamHierarchyReport`
+- **Árbol descendente completo** del supervisor logueado vía **CTE recursiva** de MySQL 8.0 (recorre `manager_id` hacia abajo, cota `depth < 10` anti-ciclos). La **raíz siempre es `req.user.id`** (un supervisor no puede ver árboles ajenos)
+- El backend devuelve lista plana + `depth` + `is_supervisor` (EXISTS de subordinados activos) + `root_manager`; el **frontend agrupa por `manager_id`** en secciones "Equipo de \<Supervisor\>" (equipo directo primero)
+- Badge **"Supervisor"** (ícono `ShieldCheck`, índigo) junto a quien tiene equipo a cargo
+- **Sin subtotales ni total general** (los saldos por colaborador no son sumables). Filtros: solo **Año** y **Mes**
+- Mismas columnas y regla de saldo que "Reporte de Mi Equipo": `Saldo Final = base + incrementos − vacaciones`. Convive con `/reports/team` (no lo reemplaza)
+- Plan: `plans/plan_reporte_equipos_supervisores.md`
+
 ### Anulación de solicitudes (`annulled`)
 - Solo `super_admin` puede anular vía `PUT /api/requests/:id/annul`
 - La solicitud **no se elimina** — cambia `status` a `'annulled'` y guarda `annulment_reason`, `annulled_by`, `annulled_at`
