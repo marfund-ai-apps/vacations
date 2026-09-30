@@ -19,9 +19,7 @@ export default function NewRequest() {
         notes: ''
     });
     const [halfDay, setHalfDay] = useState(false);
-    const [saldos, setSaldos] = useState(null); // { base_avail, bono_avail } — solo super_admin (fase prueba)
-
-    const isSuperAdmin = user?.role === 'super_admin';
+    const [saldos, setSaldos] = useState(null); // { base_avail, bono_avail } — todos los roles (Fase 2)
 
     useEffect(() => {
         const fetchManagers = async () => {
@@ -36,13 +34,12 @@ export default function NewRequest() {
         fetchManagers();
     }, []);
 
-    // Saldos base/bono para la vista previa del auto-split (solo super_admin en fase de prueba)
+    // Saldos base/bono para la vista previa del auto-split
     useEffect(() => {
-        if (!isSuperAdmin) return;
         api.get('/reports/employee-report')
             .then(res => setSaldos(res.data.summary))
             .catch(() => { });
-    }, [isSuperAdmin]);
+    }, []);
 
     // Helper para calcular días hábiles excluyendo sábados y domingos (simplificado)
     const calculateBusinessDays = (start, end) => {
@@ -75,10 +72,10 @@ export default function NewRequest() {
     const showSeniorityOption = user?.benefit_extra_day && !user?.benefit_extra_day_used;
     const reasonDisabled = isSeniorityBenefit;
 
-    // Vista previa del auto-split (solo super_admin, tipo Vacaciones)
+    // Vista previa del auto-split (tipo Vacaciones)
     const baseAvail = saldos ? Math.max(parseFloat(saldos.base_avail) || 0, 0) : null;
     const bonoAvail = saldos ? Math.max(parseFloat(saldos.bono_avail) || 0, 0) : null;
-    const willSplit = isSuperAdmin && isVacation && baseAvail !== null && businessDays > 0 && businessDays > baseAvail;
+    const willSplit = isVacation && baseAvail !== null && businessDays > 0 && businessDays > baseAvail;
     const splitBase = willSplit ? baseAvail : businessDays;
     const splitBono = willSplit ? Math.round((businessDays - baseAvail) * 100) / 100 : 0;
     const bonoInsufficient = willSplit && bonoAvail !== null && splitBono > bonoAvail + 1e-9;
@@ -292,7 +289,7 @@ export default function NewRequest() {
                                 </div>
                             )}
 
-                            {isSuperAdmin && isVacation && saldos && (
+                            {isVacation && saldos && (
                                 <div className="sm:col-span-6 rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
                                     <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">
                                         Saldos (modo prueba · super_admin)

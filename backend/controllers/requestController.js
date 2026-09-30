@@ -4,8 +4,9 @@ const crypto = require('crypto');
 const { getSaldos } = require('../utils/saldos');
 const { splitByBusinessDays } = require('../utils/splitFechas');
 
-// ¿El consumo de bono (auto-split) está activo para este usuario? (fase de prueba: solo super_admin)
-const bonoConsumoActivo = (user) => user?.role === 'super_admin';
+// ¿El consumo de bono (auto-split) está activo para este usuario?
+// Fase 2 (aprobada 2026-09-29): liberado para TODOS los roles (antes: solo super_admin).
+const bonoConsumoActivo = (user) => Boolean(user);
 
 // Generar número correlativo de solicitud (conn-aware para transacciones con múltiples inserts)
 async function generateRequestNumber(conn = db) {
@@ -17,7 +18,7 @@ async function generateRequestNumber(conn = db) {
     return `VAC-${year}-${String(count).padStart(4, '0')}`;
 }
 
-// POST /api/requests — Crear nueva solicitud (con auto-split base+bono para super_admin)
+// POST /api/requests — Crear nueva solicitud (con auto-split base+bono)
 exports.createRequest = async (req, res) => {
     const { request_type, reason, notes, manager_id, date_ranges } = req.body;
     const employee_id = req.user.id;
@@ -48,7 +49,7 @@ exports.createRequest = async (req, res) => {
 
         const totalDays = (date_ranges || []).reduce((s, r) => s + parseFloat(r.business_days || 0), 0);
 
-        // ¿Auto-split? Solo super_admin + vacation cuando la base no alcanza y hay que usar bono
+        // ¿Auto-split? vacation cuando la base no alcanza y hay que usar bono
         let doSplit = false, baseUsed = totalDays;
         if (bonoConsumoActivo(req.user) && request_type === 'vacation') {
             const { baseAvail, bonoAvail } = await getSaldos(employee_id, conn);

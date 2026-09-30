@@ -111,11 +111,11 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
 - Helper: `backend/utils/beneficioAnios.js` (`calcDiasBeneficioBono`) y espejo frontend `frontend/src/utils/beneficio.js` (preview en vivo)
 - Se recalcula al guardar la Ficha (`userController` create/update) y cada **1 de enero 02:00 (America/Guatemala)** vía cron `backend/jobs/recalcBeneficioAnios.js` (no acumulable)
 - **Backfill inicial:** `database/migration_fecha_ingreso_beneficio.sql` usa referencia fija **2026**
-- **Visibilidad:** el dato solo se muestra a `super_admin`/`hr_admin` (la Ficha vive en `/admin`, ya restringido). No se expone a `manager`/`employee`
-- **Consumo del bono — FASE DE PRUEBA (solo `super_admin`):** al pedir Vacaciones, si la base no alcanza, el backend hace **auto-split**: crea 2 solicitudes vinculadas por `vacation_requests.split_group_id` — una `vacation` (base, días tempranos) + una `seniority_benefit` (bono, días finales). Gate: `bonoConsumoActivo(user) = role === 'super_admin'` en `requestController.js`. Otros roles: comportamiento anterior sin cambios.
+- **Visibilidad:** la Ficha (fecha de ingreso / días beneficio) vive en `/admin` (`super_admin`/`hr_admin`). Las **tarjetas del bono en el Dashboard** son visibles para **todos los roles** desde la Fase 2
+- **Consumo del bono — FASE 2 (liberado a TODOS los roles, 2026-09-29):** al pedir Vacaciones, si la base no alcanza, el backend hace **auto-split**: crea 2 solicitudes vinculadas por `vacation_requests.split_group_id` — una `vacation` (base, días tempranos) + una `seniority_benefit` (bono, días finales). Gate: `bonoConsumoActivo(user) = Boolean(user)` en `requestController.js` (antes: solo `super_admin`).
   - Saldos (calculados) en `backend/utils/saldos.js` (`getSaldos`); split de fechas por días hábiles en `backend/utils/splitFechas.js`.
   - **Aprobación y anulación AGRUPADAS**: decidir/anular una del grupo aplica a ambas (`makeDecision`/`annulRequest` con `split_group_id`). **Un solo correo combinado** (`n8nService.buildSplitDatesTable`).
-  - Bono disponible = `dias_beneficio_anno_laboral − SUM(seniority_benefit aprobado del año)`. Se permite consumo fraccionario. Expuesto en `getMyReport.summary` (`base_avail`/`bono_avail`/`bono_used`/`bono_allot`) y previsualizado en `NewRequest.jsx` (solo super_admin).
+  - Bono disponible = `dias_beneficio_anno_laboral − SUM(seniority_benefit aprobado del año)`. Se permite consumo fraccionario. Expuesto en `getMyReport.summary` (`base_avail`/`bono_avail`/`bono_used`/`bono_allot`) y previsualizado en `NewRequest.jsx` (todos los roles).
   - Migración: `database/migration_split_group_bono.sql` (**correr antes de desplegar el backend**, si no, toda creación de solicitud falla por columna faltante).
   - Checkpoint de retorno antes de la prueba: tag `checkpoint-pre-consumo-bono`.
 - Política de uso completa documentada en `plans/Plan_detalla_Consumo_Ingreso_beneficio.md`.
@@ -201,8 +201,8 @@ All routes are implemented. Role-gated routes:
 ### Dashboard — KPIs
 - **Fila 1 — solo vacaciones** (4 tarjetas): Saldo Inicial | **Días Vacaciones Agregados** | Días Consumidos | **Días Vacaciones Disponibles Hoy**
   - La ecuación cuadra exacta en pantalla: `Saldo Inicial + Días Vacaciones Agregados − Días Consumidos = Días Vacaciones Disponibles Hoy`. **El bono NO entra en la Fila 1.**
-- **Fila 2** (5 tarjetas si `showBono`, 2 si no): Bono por antigüedad | Bono usado (año) | **Días Beneficio disponibles** | Permisos Personales | Ausencia Justificada
-  - `showBono = ['super_admin','hr_admin'].includes(user?.role)`. Para `employee`/`manager` la Fila 2 muestra solo Permisos + Ausencia.
+- **Fila 2** (5 tarjetas): Bono por antigüedad | Bono usado (año) | **Días Beneficio disponibles** | Permisos Personales | Ausencia Justificada
+  - `showBono = true` desde la Fase 2 (antes solo `super_admin`/`hr_admin`); todos los roles ven las 5 tarjetas.
 - Fórmulas backend (`getMyReport`):
   - `total_base_days` = `base_vacation_days` (saldo base importado — nunca lo modifica el cron ni ajustes manuales)
   - `total_extra_days` (Días Vacaciones Agregados) = SUM(`monthly_auto` + `manual`, excl. `initial_balance`). **Ya NO incluye `seniority_benefit`.**

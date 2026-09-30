@@ -39,7 +39,7 @@ export default function Dashboard() {
     const summary = report?.summary || { total_base_days: 0, total_extra_days: 0, total_consumed_days: 0, total_available_days: 0, total_permission_days: 0, total_absence_days: 0 };
     const history = report?.history || [];
     const adjustments = report?.adjustments || [];
-    const showBono = ['super_admin', 'hr_admin'].includes(user?.role); // visibilidad del bono
+    const showBono = true; // Fase 2: tarjetas del bono visibles para todos los roles
 
     const pendingHistory = history.filter(req => req.status === 'pending');
     const processedHistory = history.filter(req => req.status !== 'pending');
