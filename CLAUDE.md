@@ -224,6 +224,10 @@ All routes are implemented. Role-gated routes:
 - Badge **"Beneficio usado"** (ámbar) / **"Beneficio disponible"** (gris) junto al nombre
 - El CSV exporta solo las filas filtradas
 
+### Columna "Días Beneficio disponibles" en reportes
+- Presente en **Reporte General**, **Reporte de Mi Equipo** y **Reporte de Equipos (Sub-supervisión)**, a la derecha de "Saldo Final" (badge ámbar; `—` si 0). También en el CSV de cada uno.
+- Backend: constante `BONO_AVAIL_SQL` en `reportController.js` → `bono_avail = dias_beneficio_anno_laboral − seniority_benefit aprobado del año en curso` (misma fórmula que `getSaldos` y el grid de Admin). **No** depende del filtro de mes (es un saldo). Se agregó `u.dias_beneficio_anno_laboral` a los `GROUP BY` (ONLY_FULL_GROUP_BY).
+
 ### Reporte de Equipos (Sub-supervisión) — jerárquico
 - Página: `frontend/src/pages/TeamHierarchyReport.jsx` · Ruta: `/reports/team-hierarchy` · Menú "Reportes" (`REPORT_ITEMS`, rol `manager`)
 - Endpoint: `GET /api/reports/team-hierarchy` — `requireRole('manager','hr_admin','super_admin')`; controller `getTeamHierarchyReport`

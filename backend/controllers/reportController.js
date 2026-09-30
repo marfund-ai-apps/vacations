@@ -1,6 +1,18 @@
 const db = require('../config/db');
 const { getSaldos } = require('../utils/saldos');
 
+// Días Beneficio disponibles por colaborador (misma fórmula que getSaldos / grid de Admin):
+// asignado del año − seniority_benefit aprobado del año en curso. Independiente del filtro de mes.
+const BONO_AVAIL_SQL = `(
+          COALESCE(u.dias_beneficio_anno_laboral, 0)
+          - COALESCE((SELECT SUM(rdr_b.business_days)
+                      FROM vacation_requests vr_b
+                      JOIN request_date_ranges rdr_b ON vr_b.id = rdr_b.request_id
+                      WHERE vr_b.employee_id = u.id AND vr_b.status = 'approved'
+                        AND vr_b.request_type = 'seniority_benefit'
+                        AND YEAR(vr_b.created_at) = YEAR(CURDATE())), 0)
+        ) AS bono_avail`;
+
 // GET /api/reports/employee-report (Dashboard del usuario logueado)
 exports.getMyReport = async (req, res) => {
   const id = req.user.id;
@@ -327,6 +339,7 @@ exports.getAllEmployeesReport = async (req, res) => {
           WHERE uda.user_id = u.id
             AND uda.adjustment_type IN ('monthly_auto', 'manual')
         ), 0) as extra_days,
+        ${BONO_AVAIL_SQL},
         COUNT(DISTINCT vr.id) as total_requests
       FROM users u
       LEFT JOIN users m ON u.manager_id = m.id
@@ -337,7 +350,7 @@ exports.getAllEmployeesReport = async (req, res) => {
       LEFT JOIN request_date_ranges rdr ON vr.id = rdr.request_id
       WHERE u.is_active = 1
       GROUP BY u.id, u.full_name, u.email, u.employee_number, u.position,
-               u.base_vacation_days, u.manager_id, u.benefit_extra_day,
+               u.base_vacation_days, u.manager_id, u.benefit_extra_day, u.dias_beneficio_anno_laboral,
                m.full_name, m.role
       ORDER BY u.full_name
     `, params);
@@ -373,7 +386,8 @@ exports.getTeamReport = async (req, res) => {
           FROM user_day_adjustments uda
           WHERE uda.user_id = u.id
             AND uda.adjustment_type IN ('monthly_auto', 'manual')
-        ), 0) as extra_days
+        ), 0) as extra_days,
+        ${BONO_AVAIL_SQL}
       FROM users u
       LEFT JOIN users m ON u.manager_id = m.id
       LEFT JOIN vacation_requests vr ON u.id = vr.employee_id
@@ -382,7 +396,7 @@ exports.getTeamReport = async (req, res) => {
       LEFT JOIN request_date_ranges rdr ON vr.id = rdr.request_id
       WHERE u.manager_id = ?
       GROUP BY u.id, u.full_name, u.email, u.employee_number, u.position,
-               u.base_vacation_days, u.manager_id, u.benefit_extra_day,
+               u.base_vacation_days, u.manager_id, u.benefit_extra_day, u.dias_beneficio_anno_laboral,
                m.full_name, m.role
       ORDER BY u.full_name
     `, params);
@@ -445,7 +459,8 @@ exports.getTeamHierarchyReport = async (req, res) => {
           FROM user_day_adjustments uda
           WHERE uda.user_id = u.id
             AND uda.adjustment_type IN ('monthly_auto', 'manual')
-        ), 0) as extra_days
+        ), 0) as extra_days,
+        ${BONO_AVAIL_SQL}
       FROM nodes tt
       JOIN users u  ON u.id = tt.id
       LEFT JOIN users m ON u.manager_id = m.id
@@ -454,7 +469,8 @@ exports.getTeamHierarchyReport = async (req, res) => {
         ${monthCondition}
       LEFT JOIN request_date_ranges rdr ON vr.id = rdr.request_id
       GROUP BY u.id, u.full_name, u.email, u.employee_number, u.position,
-               u.base_vacation_days, u.manager_id, u.benefit_extra_day, m.full_name, tt.depth
+               u.base_vacation_days, u.manager_id, u.benefit_extra_day, u.dias_beneficio_anno_laboral,
+               m.full_name, tt.depth
       ORDER BY tt.depth, m.full_name, u.full_name
     `, params);
 

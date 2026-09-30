@@ -97,7 +97,7 @@ export default function Reports() {
 
     const handleExportCSV = () => {
         if (!filteredData.length) return;
-        const headers = ["Código Colaborador", "Nombre", "Email", "Posición", "Supervisor", "Días Base", "Incrementos", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "B. Antigüedad (info)", "Saldo Final"];
+        const headers = ["Código Colaborador", "Nombre", "Email", "Posición", "Supervisor", "Días Base", "Incrementos", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "B. Antigüedad (info)", "Saldo Final", "Días Beneficio disponibles"];
         const rows = filteredData.map(emp => {
             const vacDays = parseFloat(emp.vacation_days) || 0;
             const baseDays = parseFloat(emp.base_vacation_days) || 0;
@@ -115,6 +115,7 @@ export default function Reports() {
                 parseFloat(emp.absence_days) || 0,
                 parseFloat(emp.seniority_benefit_days) || 0,
                 (baseDays + extraDays - vacDays).toFixed(2),
+                parseFloat(emp.bono_avail) || 0,
             ];
         });
         const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
@@ -281,12 +282,13 @@ export default function Reports() {
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Ausencias</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-amber-600">B. Antigüedad</th>
                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-indigo-50">Saldo Final</th>
+                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-amber-700 bg-amber-50">Días Beneficio<br /><span className="font-normal text-xs">disponibles</span></th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 bg-white">
                                         {filteredData.length === 0 ? (
                                             <tr>
-                                                <td colSpan="10" className="py-8 text-center text-sm text-gray-500">
+                                                <td colSpan="11" className="py-8 text-center text-sm text-gray-500">
                                                     {reportData.length === 0
                                                         ? 'No hay datos para el período seleccionado.'
                                                         : 'Ningún colaborador coincide con los filtros aplicados.'}
@@ -339,6 +341,15 @@ export default function Reports() {
                                                         </td>
                                                         <td className={`whitespace-nowrap px-3 py-4 text-sm font-bold text-center bg-indigo-50 ${saldoFinal < 0 ? 'text-red-600' : 'text-indigo-600'}`}>
                                                             {saldoFinal.toFixed(2)}
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-center bg-amber-50">
+                                                            {parseFloat(emp.bono_avail) > 0 ? (
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200">
+                                                                    {parseFloat(emp.bono_avail)}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-gray-300 text-xs">—</span>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 );
