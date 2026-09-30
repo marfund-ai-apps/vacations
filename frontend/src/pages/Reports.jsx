@@ -272,17 +272,17 @@ export default function Reports() {
                                 <table className="min-w-full divide-y divide-gray-300">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 w-24">Código</th>
-                                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
-                                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-500">Supervisor</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-blue-50">Días Base</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-green-700 bg-green-50">Incrementos</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-red-700">Vacaciones</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Permisos</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Ausencias</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-amber-600">Bono Antigüedad<br /><span className="font-normal text-xs">Utilizados</span></th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-indigo-50">Saldo Final</th>
-                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-amber-700 bg-amber-50">Días Beneficio<br /><span className="font-normal text-xs">disponibles</span></th>
+                                            <th scope="col" className="py-3 pl-4 pr-2 text-left text-xs font-semibold text-gray-900 w-16">Código</th>
+                                            <th scope="col" className="px-2 py-3 text-left text-xs font-semibold text-gray-900">Colaborador</th>
+                                            <th scope="col" className="px-2 py-3 text-left text-xs font-semibold text-gray-500">Supervisor</th>
+                                            <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-900 bg-blue-50">Días Base</th>
+                                            <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-green-700 bg-green-50">Incrementos</th>
+                                            <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-red-700">Vacaciones</th>
+                                            <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-500">Permisos</th>
+                                            <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-500">Ausencias</th>
+                                            <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-amber-600">Bono Antigüedad<br /><span className="font-normal text-[10px]">Utilizados</span></th>
+                                            <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-900 bg-indigo-50">Saldo Final</th>
+                                            <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-amber-700 bg-amber-50">Días Beneficio<br /><span className="font-normal text-[10px]">disponibles</span></th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200 bg-white">
@@ -302,10 +302,10 @@ export default function Reports() {
                                                 const saldoFinal = baseDays + extraDays - vacDays;
                                                 return (
                                                     <tr key={emp.id}>
-                                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                        <td className="whitespace-nowrap py-3 pl-4 pr-2 text-sm">
                                                             <span className="font-mono font-semibold text-indigo-600 text-xs">{emp.employee_number || '—'}</span>
                                                         </td>
-                                                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                        <td className="px-2 py-3 text-sm max-w-[220px]">
                                                             <div className="font-medium text-gray-900 flex items-center gap-2">
                                                                 {emp.full_name}
                                                                 {/* [BENEFICIO ANTIGUO — DESACTIVADO] badge basado en benefit_extra_day
@@ -316,33 +316,33 @@ export default function Reports() {
                                                                 ) : null}
                                                                 */}
                                                             </div>
-                                                            <div className="text-gray-500 text-xs">{emp.email}</div>
+                                                            <div className="text-gray-500 text-xs break-all">{emp.email}</div>
                                                         </td>
-                                                        <td className="whitespace-nowrap px-3 py-4 text-xs text-gray-400">
+                                                        <td className="px-2 py-3 text-xs text-gray-400 max-w-[130px] leading-snug">
                                                             {emp.manager_name || '—'}
                                                         </td>
-                                                        <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-blue-700 text-center bg-blue-50">
+                                                        <td className="whitespace-nowrap px-2 py-3 text-sm font-semibold text-blue-700 text-center bg-blue-50">
                                                             {baseDays}
                                                         </td>
-                                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-green-700 text-center font-medium bg-green-50">
+                                                        <td className="whitespace-nowrap px-2 py-3 text-sm text-green-700 text-center font-medium bg-green-50">
                                                             {extraDays > 0 ? `+${extraDays}` : '0'}
                                                         </td>
-                                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-red-600 text-center font-medium">
+                                                        <td className="whitespace-nowrap px-2 py-3 text-sm text-red-600 text-center font-medium">
                                                             {vacDays > 0 ? `-${vacDays}` : '0'}
                                                         </td>
-                                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-400 text-center">
+                                                        <td className="whitespace-nowrap px-2 py-3 text-sm text-gray-400 text-center">
                                                             {parseFloat(emp.permission_days) || 0}
                                                         </td>
-                                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-400 text-center">
+                                                        <td className="whitespace-nowrap px-2 py-3 text-sm text-gray-400 text-center">
                                                             {parseFloat(emp.absence_days) || 0}
                                                         </td>
-                                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-amber-600 text-center font-medium">
+                                                        <td className="whitespace-nowrap px-2 py-3 text-sm text-amber-600 text-center font-medium">
                                                             {parseFloat(emp.seniority_benefit_days) > 0 ? parseFloat(emp.seniority_benefit_days) : '—'}
                                                         </td>
-                                                        <td className={`whitespace-nowrap px-3 py-4 text-sm font-bold text-center bg-indigo-50 ${saldoFinal < 0 ? 'text-red-600' : 'text-indigo-600'}`}>
+                                                        <td className={`whitespace-nowrap px-2 py-3 text-sm font-bold text-center bg-indigo-50 ${saldoFinal < 0 ? 'text-red-600' : 'text-indigo-600'}`}>
                                                             {saldoFinal.toFixed(2)}
                                                         </td>
-                                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-center bg-amber-50">
+                                                        <td className="whitespace-nowrap px-2 py-3 text-sm text-center bg-amber-50">
                                                             {parseFloat(emp.bono_avail) > 0 ? (
                                                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200">
                                                                     {parseFloat(emp.bono_avail)}
