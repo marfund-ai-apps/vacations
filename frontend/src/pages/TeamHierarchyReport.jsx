@@ -71,7 +71,7 @@ export default function TeamHierarchyReport() {
 
     const handleExportCSV = () => {
         if (!reportData.length) return;
-        const headers = ["Equipo de", "Código Colaborador", "Nombre", "Email", "Posición", "Es Supervisor", "Días Base", "Incrementos", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "B. Antigüedad (info)", "Saldo Final", "Días Beneficio disponibles"];
+        const headers = ["Equipo de", "Código Colaborador", "Nombre", "Email", "Posición", "Es Supervisor", "Días Base", "Incrementos", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "Bono Antigüedad Utilizados", "Saldo Final", "Días Beneficio disponibles"];
         const rows = reportData.map(emp => {
             const vacDays = parseFloat(emp.vacation_days) || 0;
             const baseDays = parseFloat(emp.base_vacation_days) || 0;
@@ -271,7 +271,7 @@ export default function TeamHierarchyReport() {
                                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-red-700">Vacaciones</th>
                                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Permisos</th>
                                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Ausencias</th>
-                                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-amber-600">B. Antigüedad</th>
+                                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-amber-600">Bono Antigüedad<br /><span className="font-normal text-xs">Utilizados</span></th>
                                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-indigo-50">Saldo Final</th>
                                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-amber-700 bg-amber-50">Días Beneficio<br /><span className="font-normal text-xs">disponibles</span></th>
                                                         </tr>

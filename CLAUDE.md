@@ -217,7 +217,7 @@ All routes are implemented. Role-gated routes:
 ### Reportes Generales — filtros avanzados
 - **Año + Mes** → van al backend (`?year=2026&month=5`); mes filtra los JOINs de solicitudes
 - **Supervisor/Coordinador** → select client-side; lista solo usuarios con `role IN ('manager','hr_admin','super_admin')`
-- **Tipo de movimiento** → 4 checkboxes (Vacaciones/Permisos/Ausencias/B. Antigüedad); filtra filas con > 0 días en el tipo marcado
+- **Tipo de movimiento** → 4 checkboxes (Vacaciones/Permisos/Ausencias/Bono Antigüedad); filtra filas con > 0 días en el tipo marcado
 - **Solo con Beneficio Antigüedad** → filtra `benefit_extra_day = 1` (sin importar si ya fue usado)
 - Contador "Mostrando X de Y" cuando hay filtros activos; botón "Limpiar filtros (N)"
 - Columna **Supervisor** visible en la tabla
