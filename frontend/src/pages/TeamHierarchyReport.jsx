@@ -71,7 +71,7 @@ export default function TeamHierarchyReport() {
 
     const handleExportCSV = () => {
         if (!reportData.length) return;
-        const headers = ["Equipo de", "Código Colaborador", "Nombre", "Email", "Posición", "Es Supervisor", "Días Base", "Incrementos", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "Bono Antigüedad Utilizados", "Saldo Final", "Días Beneficio disponibles"];
+        const headers = ["Equipo de", "Código Colaborador", "Nombre", "Email", "Posición", "Es Supervisor", "Saldo Inicial", "Incrementos", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "Bono Antigüedad Utilizados", "Saldo Final", "Días Beneficio disponibles"];
         const rows = reportData.map(emp => {
             const vacDays = parseFloat(emp.vacation_days) || 0;
             const baseDays = parseFloat(emp.base_vacation_days) || 0;
@@ -266,7 +266,7 @@ export default function TeamHierarchyReport() {
                                                             <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 w-24">Código</th>
                                                             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Colaborador</th>
                                                             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-500">Supervisor</th>
-                                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-blue-50">Días Base</th>
+                                                            <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900 bg-blue-50">Saldo Inicial</th>
                                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-green-700 bg-green-50">Incrementos</th>
                                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-red-700">Vacaciones</th>
                                                             <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-500">Permisos</th>

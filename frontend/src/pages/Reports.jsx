@@ -97,7 +97,7 @@ export default function Reports() {
 
     const handleExportCSV = () => {
         if (!filteredData.length) return;
-        const headers = ["Código Colaborador", "Nombre", "Email", "Posición", "Supervisor", "Días Base", "Incrementos", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "Bono Antigüedad Utilizados", "Saldo Final", "Días Beneficio disponibles"];
+        const headers = ["Código Colaborador", "Nombre", "Email", "Posición", "Supervisor", "Saldo Inicial", "Incrementos", "Vacaciones Consumidas", "Permisos (info)", "Ausencias (info)", "Bono Antigüedad Utilizados", "Saldo Final", "Días Beneficio disponibles"];
         const rows = filteredData.map(emp => {
             const vacDays = parseFloat(emp.vacation_days) || 0;
             const baseDays = parseFloat(emp.base_vacation_days) || 0;
@@ -275,7 +275,7 @@ export default function Reports() {
                                             <th scope="col" className="py-3 pl-4 pr-2 text-left text-xs font-semibold text-gray-900 w-16">Código</th>
                                             <th scope="col" className="px-2 py-3 text-left text-xs font-semibold text-gray-900">Colaborador</th>
                                             <th scope="col" className="px-2 py-3 text-left text-xs font-semibold text-gray-500">Supervisor</th>
-                                            <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-900 bg-blue-50">Días Base</th>
+                                            <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-900 bg-blue-50">Saldo Inicial</th>
                                             <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-green-700 bg-green-50">Incrementos</th>
                                             <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-red-700">Vacaciones</th>
                                             <th scope="col" className="px-2 py-3 text-center text-xs font-semibold text-gray-500">Permisos</th>
