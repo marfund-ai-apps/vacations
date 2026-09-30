@@ -45,7 +45,8 @@ npm run preview  # Preview production build
 
 ### Regla de descuento de días
 - **Solo `request_type = 'vacation'` aprobada descuenta días** del saldo del colaborador
-- `permission`, `justified_absence` y `seniority_benefit` aprobadas **no descuentan** — se registran como informativas
+- `permission`, `justified_absence` y `seniority_benefit` aprobadas **no descuentan** la base — se registran como informativas
+- `seniority_benefit` hoy es la **parte bono** de un auto-split: no descuenta la base, pero **sí consume el bono** (`bono_avail = dias_beneficio_anno_laboral − seniority_benefit aprobado del año`)
 - `seniority_benefit` aparece en ámbar en la UI; `permission`/`justified_absence` en gris
 - Esta regla aplica en `reportController.js` (queries de `getMyReport` y `getAllEmployeesReport`) y en `Dashboard.jsx` (timeline de movimientos)
 
@@ -74,6 +75,9 @@ npm run preview  # Preview production build
 | `GET` | `/api/reports/employee/:id` | `manager`, `hr_admin`, `super_admin` | Reporte individual |
 | `GET` | `/api/reports/employee/:id/detail` | `manager`, `hr_admin`, `super_admin` | Historial unificado del colaborador |
 | `GET` | `/api/reports/all` | `hr_admin`, `super_admin` | Reporte general de todos los colaboradores |
+| `GET` | `/api/reports/team` | `manager`, `super_admin` | Reporte de Mi Equipo (reportes directos del logueado) |
+| `GET` | `/api/reports/team-hierarchy` | `manager`, `super_admin` | Reporte de Equipos (Sub-supervisión), árbol recursivo del logueado |
+| `GET` | `/api/users` | `hr_admin`, `super_admin` | Grid de Admin; incluye `available_days` y `bono_avail` calculados |
 | `PUT` | `/api/requests/:id/annul` | `super_admin` | Anular solicitud (cambia status a `annulled`, devuelve días si aplica) |
 
 ### Database Schema (MySQL 8.0+)
@@ -116,8 +120,8 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
   - Saldos (calculados) en `backend/utils/saldos.js` (`getSaldos`); split de fechas por días hábiles en `backend/utils/splitFechas.js`.
   - **Aprobación y anulación AGRUPADAS**: decidir/anular una del grupo aplica a ambas (`makeDecision`/`annulRequest` con `split_group_id`). **Un solo correo combinado** (`n8nService.buildSplitDatesTable`).
   - Bono disponible = `dias_beneficio_anno_laboral − SUM(seniority_benefit aprobado del año)`. Se permite consumo fraccionario. Expuesto en `getMyReport.summary` (`base_avail`/`bono_avail`/`bono_used`/`bono_allot`) y previsualizado en `NewRequest.jsx` (todos los roles).
-  - Migración: `database/migration_split_group_bono.sql` (**correr antes de desplegar el backend**, si no, toda creación de solicitud falla por columna faltante).
-  - Checkpoint de retorno antes de la prueba: tag `checkpoint-pre-consumo-bono`.
+  - Migración: `database/migration_split_group_bono.sql` — **ya aplicada en producción** (columna `split_group_id` + índice `idx_vr_split_group`). En un entorno nuevo, correrla antes de desplegar el backend.
+  - Tag `checkpoint-pre-consumo-bono`: **obsoleto** desde la Fase 2 (se borra en la Fase E del plan de cierre).
 - Política de uso completa documentada en `plans/Plan_detalla_Consumo_Ingreso_beneficio.md`.
 - `mysql2` pool con `dateStrings: ['DATE']` para que `fecha_ingreso` (y demás `DATE`) no sufran corrimiento de zona horaria
 
@@ -166,7 +170,7 @@ Aplica en: `Dashboard.jsx` (timeline "Movimientos de Días"), `MyRequests.jsx`, 
 
 ### Código Colaborador (`employee_number`)
 - Se muestra en **todas** las vistas con estilo `font-mono font-semibold text-indigo-600`
-- Aparece antes del nombre en: `Admin.jsx`, `AllRequests.jsx`, `PendingApprovals.jsx`, `Reports.jsx`, `CollaboratorDetailModal.jsx`
+- Aparece antes del nombre en: `Admin.jsx`, `AllRequests.jsx`, `PendingApprovals.jsx`, `Reports.jsx`, `TeamReport.jsx`, `TeamHierarchyReport.jsx`, `CollaboratorDetailModal.jsx`
 - Es la primera columna en todos los CSV exportados
 - Es la clave de búsqueda en la importación masiva de saldos
 
@@ -185,8 +189,11 @@ All routes are implemented. Role-gated routes:
 ### Navbar — dos filas
 - **Fila 1** (h-14): Logo MAR Fund + nombre usuario + badge de rol
 - **Fila 2** (h-11): Links de navegación planos con hover `bg-indigo-50`
-- Dropdown "Reportes" con submenú para `hr_admin`/`super_admin`
-- Items visibles por rol definidos en el array `NAV_ITEMS` dentro de `Navbar.jsx`
+- Dropdown "Reportes" visible para `manager`/`hr_admin`/`super_admin`; sus items están en el array `REPORT_ITEMS`:
+  - **Reporte General** → `hr_admin`, `super_admin`
+  - **Reporte de Equipo** → `manager`, `super_admin`
+  - **Reporte de Equipos (Sub-supervisión)** → `manager`, `super_admin`
+- Items del menú principal visibles por rol definidos en el array `NAV_ITEMS` dentro de `Navbar.jsx`
 
 ### Admin page — funcionalidades
 - Búsqueda en tiempo real por nombre o correo
@@ -195,6 +202,8 @@ All routes are implemented. Role-gated routes:
 - **Columnas del grid:** Código · Colaborador · Cargo · Rol · Supervisor (sortable) · **Días Vacaciones Disponibles** (sortable) · **Días Beneficio disponibles** (sortable, badge ámbar; `—` si 0) · Acciones
   - `available_days` y `bono_avail` los calcula el backend `getAllUsers` con subqueries correlacionadas (misma fórmula que el dashboard/`getSaldos`). Reemplazaron a las columnas "Días Vac." (`base_vacation_days`) y "Días Beneficio (Años Laborales)" (`dias_beneficio_anno_laboral`)
   - Frontend resiliente: si el backend viejo no manda `available_days`, muestra `base_vacation_days` de respaldo
+- Tabla compactada: acciones solo con íconos (tooltip `title`), `text-xs`, sin scroll horizontal
+- Filtro **"Solo con Días Beneficio"** (checkbox) y columnas Supervisor / Días Vacaciones / Días Beneficio **ordenables** (asc/desc)
 - **Exportar CSV**: exporta colaboradores del filtro activo con Código Colaborador como primera columna (incluye Fecha Ingreso y Días Beneficio Años Laborales)
 - **Cargar Saldos**: carga CSV con saldos iniciales (flujo de dos pasos: previsualización → confirmar)
 - **+ Días**: modal para agregar días manualmente con motivo
@@ -215,15 +224,25 @@ All routes are implemented. Role-gated routes:
   - Saldos de bono (vía `utils/saldos.js` → `getSaldos`): `bono_allot` (=`dias_beneficio_anno_laboral`), `bono_used` (seniority_benefit aprobado del año), `bono_avail` (=allot−used)
 - **Nota:** `initial_balance` en `user_day_adjustments` es solo histórico — **no** se suma a `total_available_days` (ya está en `base_vacation_days`)
 
+### Reportes — columnas comunes (General, Mi Equipo, Sub-supervisión)
+- **Columnas:** Código · Colaborador · Supervisor · **Saldo Inicial** (`base_vacation_days`, antes "Días Base") · **Incrementos** (`extra_days`) · Vacaciones · Permisos · Ausencias · **Bono Antigüedad Utilizados** (`seniority_benefit_days`, antes "B. Antigüedad") · **Saldo Final** · **Días Beneficio disponibles** (`bono_avail`)
+- `Saldo Final = Saldo Inicial + Incrementos − Vacaciones` en los 3 reportes y sus CSV
+- **Sin subtotales ni totales** en ningún reporte (los saldos por colaborador no son sumables)
+- **Filtro Año:** 2026–2030; los años futuros aparecen **deshabilitados** (helper `frontend/src/utils/reportYears.js`: `REPORT_YEARS`, `isFutureYear`)
+
 ### Reportes Generales — filtros avanzados
-- **Año + Mes** → van al backend (`?year=2026&month=5`); mes filtra los JOINs de solicitudes
+- **Año + Mes** → van al backend (`?year=2026&month=5`); mes filtra los JOINs de solicitudes. **Ocultos temporalmente** en la UI (bloque comentado, ya preparado con `REPORT_YEARS`)
 - **Supervisor/Coordinador** → select client-side; lista solo usuarios con `role IN ('manager','hr_admin','super_admin')`
 - **Tipo de movimiento** → 4 checkboxes (Vacaciones/Permisos/Ausencias/Bono Antigüedad); filtra filas con > 0 días en el tipo marcado
-- **Solo con Beneficio Antigüedad** → filtra `benefit_extra_day = 1` (sin importar si ya fue usado)
+- ⛔ **Solo con Beneficio Antigüedad** y badge **"Beneficio usado/disponible"** → **desactivados** (esquema antiguo; ver `plans/plan_cierre_beneficio_antiguo.md`)
 - Contador "Mostrando X de Y" cuando hay filtros activos; botón "Limpiar filtros (N)"
-- Columna **Supervisor** visible en la tabla
-- Badge **"Beneficio usado"** (ámbar) / **"Beneficio disponible"** (gris) junto al nombre
+- Tabla **compactada** (`text-xs` en encabezados, `px-2`/`py-3`, Colaborador y Supervisor con salto de línea) para evitar scroll horizontal
 - El CSV exporta solo las filas filtradas
+
+### Reporte de Mi Equipo
+- Página `frontend/src/pages/TeamReport.jsx` · Ruta `/reports/team` · Endpoint `GET /api/reports/team` (`getTeamReport`) — roles `manager`, `super_admin`
+- Muestra los **reportes directos** del usuario logueado (`WHERE u.manager_id = req.user.id`)
+- Filtros visibles: solo **Año** y **Mes** (los filtros por tipo y beneficio están ocultos para supervisores)
 
 ### Columna "Días Beneficio disponibles" en reportes
 - Presente en **Reporte General**, **Reporte de Mi Equipo** y **Reporte de Equipos (Sub-supervisión)**, a la derecha de "Saldo Final" (badge ámbar; `—` si 0). También en el CSV de cada uno.
@@ -232,7 +251,8 @@ All routes are implemented. Role-gated routes:
 ### Reporte de Equipos (Sub-supervisión) — jerárquico
 - Página: `frontend/src/pages/TeamHierarchyReport.jsx` · Ruta: `/reports/team-hierarchy` · Menú "Reportes" (`REPORT_ITEMS`, roles `manager` y `super_admin`)
 - Endpoint: `GET /api/reports/team-hierarchy` — `requireRole('manager','super_admin')`; controller `getTeamHierarchyReport`
-- **Árbol descendente completo** del supervisor logueado vía **CTE recursiva** de MySQL 8.0 (recorre `manager_id` hacia abajo, cota `depth < 10` anti-ciclos). La **raíz siempre es `req.user.id`** (un supervisor no puede ver árboles ajenos)
+- **Árbol descendente completo** del supervisor logueado vía **CTE recursiva** de MySQL 8.0 (recorre `manager_id` hacia abajo). La **raíz siempre es `req.user.id`** (un supervisor no puede ver árboles ajenos)
+- **Anti-ciclos y sin duplicados:** la CTE lleva un `path` con los ids visitados (incluida la raíz) y no revisita nodos (`LOCATE(CONCAT(',',id,','), path) = 0`), más cota `depth < 10`; luego `nodes` deja **una fila por colaborador** (`MIN(depth) GROUP BY id`). El frontend además deduplica por `id`. Motivo: en los datos hay supervisión mutua (José Ruiz ↔ Automatizaciones IA) que antes repetía cada subárbol hasta la cota
 - El backend devuelve lista plana + `depth` + `is_supervisor` (EXISTS de subordinados activos) + `root_manager`; el **frontend agrupa por `manager_id`** en secciones "Equipo de \<Supervisor\>" (equipo directo primero)
 - Badge **"Supervisor"** (ícono `ShieldCheck`, índigo) junto a quien tiene equipo a cargo
 - **Sin subtotales ni total general** (los saldos por colaborador no son sumables). Filtros: solo **Año** y **Mes**
@@ -242,7 +262,8 @@ All routes are implemented. Role-gated routes:
 ### Anulación de solicitudes (`annulled`)
 - Solo `super_admin` puede anular vía `PUT /api/requests/:id/annul`
 - La solicitud **no se elimina** — cambia `status` a `'annulled'` y guarda `annulment_reason`, `annulled_by`, `annulled_at`
-- **Devolución de días:** `vacation` aprobada → días se recuperan automáticamente (el query de consumo filtra `status = 'approved'`); `seniority_benefit` aprobada → resetea `benefit_extra_day_used = 0`; `permission`/`justified_absence` → sin acción
+- **Devolución de días:** `vacation` aprobada → días se recuperan automáticamente (el query de consumo filtra `status = 'approved'`); `seniority_benefit` → el bono se recupera solo (se calcula con `status = 'approved'`); `permission`/`justified_absence` → sin acción. *(Histórico: `seniority_benefit` sin split reseteaba `benefit_extra_day_used = 0`.)*
+- **Split base + bono:** anular cualquiera de las dos partes anula **ambas** (mismo `split_group_id`)
 - Badge "Anulada" (gris + ícono `Ban`) en: `AllRequests.jsx`, `MyRequests.jsx`, `Dashboard.jsx`, `PendingApprovals.jsx`
 - En `AllRequests.jsx` (solo `super_admin`): botón "Anular" por fila + modal con aviso de devolución de días + textarea obligatorio; motivo visible como tooltip instantáneo sobre ícono circular `bg-indigo-600` (posición `fixed` para evitar clipping por `overflow-hidden` de la tabla)
 - En `CollaboratorDetailModal`: `getEmployeeDetail` incluye `status IN ('approved','annulled')`; anuladas con `color_type: 'annulled'` → texto tachado, fila opaca
@@ -307,8 +328,12 @@ All routes are implemented. Role-gated routes:
 - **MySQL ONLY_FULL_GROUP_BY**: Activo en producción. Nunca mezclar `SUM()` con columnas no agrupadas en el mismo SELECT.
 - **import-balances requiere columnas exactas**: El CSV debe tener `No. Colaborador` y `Saldo Inicial` (o `Código Colaborador` como alias). Sensible a mayúsculas y espacios. El parser maneja BOM UTF-8 de Excel automáticamente.
 - **preview-balances no guarda nada**: Es solo lectura — úsalo para validar el archivo antes de ejecutar la carga real.
-- **seniority_benefit permite fines de semana**: El tipo no usa días hábiles — el frontend fuerza `business_days: 1` en el payload y omite la validación `businessDays <= 0`. No aplicar esta lógica a otros tipos.
-- **Reporte general muestra 0 si no hay solicitudes aprobadas en el año**: Las columnas Vacaciones/Permisos/Ausencias/B. Antigüedad filtran por `YEAR(vr.created_at)`. Si el año seleccionado no tiene solicitudes aprobadas, todas muestran 0 — es correcto, no es un error.
+- **seniority_benefit permite fines de semana** *(histórico — solo aplicaba al día extra manual, hoy desactivado)*: el frontend forzaba `business_days: 1`. La parte bono del auto-split usa días hábiles normales.
+- **Reporte general muestra 0 si no hay solicitudes aprobadas en el año**: Las columnas Vacaciones/Permisos/Ausencias/Bono Antigüedad Utilizados filtran por `YEAR(vr.created_at)`. Si el año seleccionado no tiene solicitudes aprobadas, todas muestran 0 — es correcto, no es un error. *(Días Beneficio disponibles NO depende de ese filtro: es un saldo del año en curso.)*
+- **Bono usado se imputa por fecha de creación**: `bono_used` usa `YEAR(created_at)`, no la fecha de goce. Una solicitud creada en diciembre con días de enero cuenta en el año de creación.
+- **Datos: ciclos en `manager_id`**: hay supervisión mutua (José Ruiz ↔ Automatizaciones IA). El reporte jerárquico ya lo tolera, pero conviene corregirlo en Admin → Ficha → Supervisor.
+- **Deploy sin entorno local**: todo se sube con `git push origin main` y se despliega en Easypanel (backend `vacations-app` → frontend `vacations-app-frontend` → Ctrl+Shift+R). Si cambia `frontend/package.json` (ej. `xlsx`), hace falta `npm install` antes del build. Si solo se despliega el frontend, las columnas nuevas que dependen del backend salen vacías o en 0.
+- **Webhooks N8N**: en el `.env` apuntan a `/webhook-test/` (modo test); en producción deben ser `/webhook/` (Active). Ver `Informe_Auditoria_Sistemas.md`.
 - **Anulación no afecta reportes generales**: `getAllEmployeesReport` solo suma `status = 'approved'`. Solicitudes anuladas no aparecen en los totales — correcto por diseño.
 - **Tooltip de motivo anulación usa `position: fixed`**: No uses `title` nativo (delay del browser no controlable). El tooltip custom con `onMouseEnter` + `getBoundingClientRect()` evita clipping por `overflow-hidden` de la tabla.
 - **Motivo/Justificación requerido para vacaciones**: `reasonDisabled = isSeniorityBenefit` — solo Beneficio Antigüedad deshabilita el campo. Vacaciones, Permisos y Ausencias lo requieren.
@@ -327,9 +352,14 @@ See `.env.example` (root) for the full template with Spanish comments.
 - `backend/config/passport.js` — Google OAuth strategy con auto-registro de usuarios
 - `backend/services/n8nService.js` — Integración con webhooks de N8N; `formatRequestType()` mapea todos los tipos (incluye `seniority_benefit`)
 - `backend/jobs/monthlyVacationIncrement.js` — Cron incremento 1.25 días mensual
-- `backend/jobs/annualBenefitReset.js` — Cron 1 de enero: resetea `benefit_extra_day_used` para elegibles
-- `backend/controllers/userController.js` — `generateAdjustmentNumber()`, `addDayAdjustment()`, `getDayAdjustments()`
-- `backend/controllers/reportController.js` — `getMyReport()` (KPIs desglosados por tipo), `getEmployeeDetail()` (incluye anuladas), `getAllEmployeesReport()` (filtros año+mes, manager, benefit_extra_day)`
+- `backend/jobs/annualBenefitReset.js` — ⛔ Cron del beneficio antiguo (arranque comentado en `server.js`)
+- `backend/jobs/recalcBeneficioAnios.js` — Cron 1 de enero 02:00: recalcula `dias_beneficio_anno_laboral`
+- `backend/utils/saldos.js` — `getSaldos()`: saldos base y bono (fuente única de las fórmulas)
+- `backend/utils/splitFechas.js` — División de rangos por días hábiles para el auto-split
+- `backend/utils/beneficioAnios.js` — `calcDiasBeneficioBono()`
+- `backend/controllers/requestController.js` — `createRequest` (auto-split, `bonoConsumoActivo`), `makeDecision`/`annulRequest` agrupados por `split_group_id`
+- `backend/controllers/userController.js` — `generateAdjustmentNumber()`, `addDayAdjustment()`, `getDayAdjustments()`, `getAllUsers()` (con `available_days` y `bono_avail`)
+- `backend/controllers/reportController.js` — `getMyReport()` (KPIs), `getEmployeeDetail()` (modal del colaborador), `getAllEmployeesReport()`, `getTeamReport()`, `getTeamHierarchyReport()` (CTE recursiva); constante `BONO_AVAIL_SQL`
 - `backend/controllers/importController.js` — `previewBalances()` (previsualización sin guardar) + `importInitialBalances()` (carga real desde CSV)
 - `frontend/src/App.jsx` — Definición de rutas
 - `frontend/src/context/AuthContext.jsx` — Estado global de autenticación
@@ -338,8 +368,19 @@ See `.env.example` (root) for the full template with Spanish comments.
 - `frontend/src/components/layout/MainLayout.jsx` — Layout base con `overflow-x-auto`
 - `frontend/src/components/CollaboratorDetailModal.jsx` — Modal de historial detallado del colaborador
 - `frontend/src/pages/Admin.jsx` — Gestión de usuarios: búsqueda, filtro, paginación, CSV, carga saldos, reporte
+- `frontend/src/pages/Reports.jsx` — Reporte General
+- `frontend/src/pages/TeamReport.jsx` — Reporte de Mi Equipo
+- `frontend/src/pages/TeamHierarchyReport.jsx` — Reporte de Equipos (Sub-supervisión)
+- `frontend/src/pages/NewRequest.jsx` — Nueva solicitud con vista previa del auto-split
+- `frontend/src/utils/reportYears.js` — Años del filtro de reportes (2026–2030, futuros deshabilitados)
+- `frontend/src/utils/beneficio.js` — Espejo frontend de `calcDiasBeneficioBono`
+- `Informe_Auditoria_Sistemas.md` — Infraestructura (Easypanel, VPS, BD, N8N, GitHub), hallazgos y guía de migración de VPS
 - `database/schema.sql` — DDL completo incluyendo `user_day_adjustments` con enum `initial_balance`
 - `database/reset_solicitudes.sql` — Script para limpiar solicitudes sin tocar usuarios ni saldos
 - `plans/` — Planes de desarrollo, guías y documentación de apoyo
 - `plans/Plan_Cambios_Finales_APP_Vacaciones.md` — Historial sesiones 23/05/2026: Beneficio Antigüedad, N8N CC RRHH, columna Tipo, rediseño KPIs
 - `plans/Plan_actualizacion_010626_eliminacion_solicitud.md` — Sesión 01/06/2026: anulación de solicitudes, filtros reportes, motivo vacaciones
+- `plans/Plan_actualizacion_300926_bono_reportes.md` — **Sesiones 30/08–30/09/2026**: consumo del bono (Fase 2), cierre del beneficio antiguo, Dashboard, modal del colaborador, Admin, reportes (Sub-supervisión, columnas, renombres), bitácora de commits y pendientes
+- `plans/Plan_detalla_Consumo_Ingreso_beneficio.md` — Política de consumo del bono por años laborales
+- `plans/plan_reporte_equipos_supervisores.md` — Diseño del Reporte de Equipos (Sub-supervisión)
+- `plans/plan_cierre_beneficio_antiguo.md` — Cierre del beneficio antiguo (Fase A aplicada; Fases B–E pendientes)
