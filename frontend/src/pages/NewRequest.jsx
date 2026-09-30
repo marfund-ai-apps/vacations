@@ -69,7 +69,9 @@ export default function NewRequest() {
     const businessDays = halfDay ? Math.max(0, rawBusinessDays - 0.5) : rawBusinessDays;
     const isVacation = formData.request_type === 'vacation';
     const isSeniorityBenefit = formData.request_type === 'seniority_benefit';
-    const showSeniorityOption = user?.benefit_extra_day && !user?.benefit_extra_day_used;
+    // [BENEFICIO ANTIGUO — DESACTIVADO] El día extra manual (benefit_extra_day) fue reemplazado por el
+    // bono por años laborales, que se consume solo vía auto-split. Ver plans/plan_cierre_beneficio_antiguo.md
+    // const showSeniorityOption = user?.benefit_extra_day && !user?.benefit_extra_day_used;
     const reasonDisabled = isSeniorityBenefit;
 
     // Vista previa del auto-split (tipo Vacaciones)
@@ -180,9 +182,11 @@ export default function NewRequest() {
                                         <option value="vacation">Vacaciones</option>
                                         <option value="permission">Permiso Personal</option>
                                         <option value="justified_absence">Ausencia Justificada</option>
+                                        {/* [BENEFICIO ANTIGUO — DESACTIVADO] opción manual reemplazada por el auto-split del bono
                                         {showSeniorityOption && (
                                             <option value="seniority_benefit">Beneficio Antigüedad</option>
                                         )}
+                                        */}
                                     </select>
                                 </div>
                             </div>

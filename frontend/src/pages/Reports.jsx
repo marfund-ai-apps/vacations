@@ -219,6 +219,8 @@ export default function Reports() {
                         </select>
                     </div>
 
+                    {/* [BENEFICIO ANTIGUO — DESACTIVADO] filtro basado en benefit_extra_day.
+                        Ver plans/plan_cierre_beneficio_antiguo.md
                     <div className="flex items-center gap-2 pb-1.5">
                         <input
                             id="benefitFilter"
@@ -231,6 +233,7 @@ export default function Reports() {
                             Solo con Beneficio Antigüedad
                         </label>
                     </div>
+                    --- fin BENEFICIO ANTIGUO */}
                 </div>
 
                 {/* Fila 2: Filtrar por tipo */}
@@ -303,11 +306,13 @@ export default function Reports() {
                                                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                                                             <div className="font-medium text-gray-900 flex items-center gap-2">
                                                                 {emp.full_name}
+                                                                {/* [BENEFICIO ANTIGUO — DESACTIVADO] badge basado en benefit_extra_day
                                                                 {emp.benefit_extra_day ? (
                                                                     <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${parseFloat(emp.seniority_benefit_days) > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
                                                                         {parseFloat(emp.seniority_benefit_days) > 0 ? 'Beneficio usado' : 'Beneficio disponible'}
                                                                     </span>
                                                                 ) : null}
+                                                                */}
                                                             </div>
                                                             <div className="text-gray-500 text-xs">{emp.email}</div>
                                                         </td>

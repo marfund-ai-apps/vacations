@@ -124,11 +124,13 @@ export default function TeamHierarchyReport() {
                                 <ShieldCheck className="w-3 h-3" /> Supervisor
                             </span>
                         ) : null}
+                        {/* [BENEFICIO ANTIGUO — DESACTIVADO] badge basado en benefit_extra_day
                         {emp.benefit_extra_day ? (
                             <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${parseFloat(emp.seniority_benefit_days) > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
                                 {parseFloat(emp.seniority_benefit_days) > 0 ? 'Beneficio usado' : 'Beneficio disponible'}
                             </span>
                         ) : null}
+                        */}
                     </div>
                     <div className="text-gray-500 text-xs">{emp.email}</div>
                 </td>

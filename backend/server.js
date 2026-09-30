@@ -91,8 +91,10 @@ app.listen(PORT, '0.0.0.0', () => {
   // Iniciar jobs programados
   const { startMonthlyVacationIncrement } = require('./jobs/monthlyVacationIncrement');
   startMonthlyVacationIncrement();
-  const { startAnnualBenefitReset } = require('./jobs/annualBenefitReset');
-  startAnnualBenefitReset();
+  // [BENEFICIO ANTIGUO — DESACTIVADO] reset anual de benefit_extra_day_used; reemplazado por recalcBeneficioAnios.
+  // Ver plans/plan_cierre_beneficio_antiguo.md
+  // const { startAnnualBenefitReset } = require('./jobs/annualBenefitReset');
+  // startAnnualBenefitReset();
   const { startRecalcBeneficioAnios } = require('./jobs/recalcBeneficioAnios');
   startRecalcBeneficioAnios();
 });

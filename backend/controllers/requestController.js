@@ -27,7 +27,16 @@ exports.createRequest = async (req, res) => {
     try {
         await conn.beginTransaction();
 
-        // Validaciones del Beneficio Antigüedad "viejo" (solicitud directa, no auto-split)
+        // [BENEFICIO ANTIGUO — DESACTIVADO] ya no se permite pedir 'seniority_benefit' de forma directa:
+        // el bono por años laborales solo se consume vía auto-split al pedir Vacaciones.
+        // Ver plans/plan_cierre_beneficio_antiguo.md
+        if (request_type === 'seniority_benefit') {
+            await conn.rollback(); conn.release();
+            return res.status(400).json({
+                message: 'El Beneficio Antigüedad ya no se solicita por separado. Solicita Vacaciones: si tu saldo base no alcanza, el sistema usará tus Días Beneficio automáticamente.'
+            });
+        }
+        /* Validaciones del esquema viejo (benefit_extra_day / benefit_extra_day_used):
         if (request_type === 'seniority_benefit') {
             const [userRows] = await conn.query(
                 'SELECT benefit_extra_day, benefit_extra_day_used FROM users WHERE id = ?', [employee_id]
@@ -46,6 +55,7 @@ exports.createRequest = async (req, res) => {
                 return res.status(400).json({ message: 'El Beneficio Antigüedad corresponde exactamente a 1 día completo.' });
             }
         }
+        --- fin validaciones esquema viejo */
 
         const totalDays = (date_ranges || []).reduce((s, r) => s + parseFloat(r.business_days || 0), 0);
 

@@ -222,11 +222,13 @@ export default function TeamReport() {
                                                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                                                             <div className="font-medium text-gray-900 flex items-center gap-2">
                                                                 {emp.full_name}
+                                                                {/* [BENEFICIO ANTIGUO — DESACTIVADO] badge basado en benefit_extra_day
                                                                 {emp.benefit_extra_day ? (
                                                                     <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${parseFloat(emp.seniority_benefit_days) > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
                                                                         {parseFloat(emp.seniority_benefit_days) > 0 ? 'Beneficio usado' : 'Beneficio disponible'}
                                                                     </span>
                                                                 ) : null}
+                                                                */}
                                                             </div>
                                                             <div className="text-gray-500 text-xs">{emp.email}</div>
                                                         </td>

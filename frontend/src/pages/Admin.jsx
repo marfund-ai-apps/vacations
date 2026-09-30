@@ -846,7 +846,9 @@ export default function Admin() {
                             </div>
                         </div>
 
-                        {/* Beneficio Antigüedad */}
+                        {/* [BENEFICIO ANTIGUO — DESACTIVADO] checks benefit_extra_day / benefit_extra_day_used.
+                            Reemplazado por "Días Beneficio (Años Laborales)" calculado desde fecha_ingreso.
+                            Ver plans/plan_cierre_beneficio_antiguo.md
                         <div>
                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Beneficio Antigüedad</p>
                             <div className="space-y-3">
@@ -870,6 +872,7 @@ export default function Admin() {
                                 </label>
                             </div>
                         </div>
+                        --- fin BENEFICIO ANTIGUO */}
 
                     </div>
 

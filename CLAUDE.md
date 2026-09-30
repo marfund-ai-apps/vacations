@@ -121,7 +121,8 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
 - Política de uso completa documentada en `plans/Plan_detalla_Consumo_Ingreso_beneficio.md`.
 - `mysql2` pool con `dateStrings: ['DATE']` para que `fecha_ingreso` (y demás `DATE`) no sufran corrimiento de zona horaria
 
-### Cron Job — Reset anual de Beneficio Antigüedad
+### Cron Job — Reset anual de Beneficio Antigüedad — ⛔ DESACTIVADO (2026-09-29)
+- **Su arranque está comentado en `server.js`** (esquema antiguo retirado; ver `plans/plan_cierre_beneficio_antiguo.md`). Lo reemplaza `recalcBeneficioAnios.js`.
 - Archivo: `backend/jobs/annualBenefitReset.js`
 - Schedule producción: `5 6 1 1 *` (1 de enero a las 00:05am, `America/Guatemala`)
 - Acción: pone `benefit_extra_day_used = 0` a todos los usuarios con `benefit_extra_day = 1`
@@ -137,6 +138,7 @@ El contador `VAC-` es compartido entre `vacation_requests` y `user_day_adjustmen
 - Implementado en `backend/controllers/importController.js`
 
 ### Beneficio Antigüedad (`seniority_benefit`)
+> ⛔ **Esquema antiguo DESACTIVADO (2026-09-29)** — el "día extra manual" (`benefit_extra_day` / `benefit_extra_day_used`) quedó **comentado** con la marca `[BENEFICIO ANTIGUO — DESACTIVADO]` en `NewRequest.jsx`, `Admin.jsx` (Ficha), `Reports.jsx`, `TeamReport.jsx`, `TeamHierarchyReport.jsx` y `server.js` (cron). `createRequest` **rechaza** `seniority_benefit` directo (400); ahora `seniority_benefit` **solo lo genera el auto-split** (parte bono). Las columnas de BD siguen existiendo hasta la Fase D. Plan completo: `plans/plan_cierre_beneficio_antiguo.md`. Lo que sigue abajo describe el comportamiento **histórico**.
 - `request_type` = `seniority_benefit` en `vacation_requests` — 1 día extra anual para colaboradores con 3+ años
 - Solo visible en Nueva Solicitud si `user.benefit_extra_day = true` Y `user.benefit_extra_day_used = false`
 - **No descuenta** `base_vacation_days`; al ser aprobada, marca `benefit_extra_day_used = true` en el colaborador
