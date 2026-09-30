@@ -18,10 +18,11 @@ router.get('/employee/:id/detail', requireRole('hr_admin', 'super_admin', 'manag
 // Reporte de todos (RRHH)
 router.get('/all', requireRole('hr_admin', 'super_admin'), reportController.getAllEmployeesReport);
 
-// Reporte de mi equipo (solo managers)
-router.get('/team', requireRole('manager'), reportController.getTeamReport);
+// Reportes de equipo: managers y super_admin (algunos super_admin también supervisan).
+// La raíz siempre es el usuario logueado (req.user.id). RRHH (hr_admin) no tiene equipo a cargo.
+router.get('/team', requireRole('manager', 'super_admin'), reportController.getTeamReport);
 
 // Reporte de Equipos (Sub-supervisión) — árbol descendente del supervisor logueado
-router.get('/team-hierarchy', requireRole('manager', 'hr_admin', 'super_admin'), reportController.getTeamHierarchyReport);
+router.get('/team-hierarchy', requireRole('manager', 'super_admin'), reportController.getTeamHierarchyReport);
 
 module.exports = router;

@@ -180,6 +180,7 @@ All routes are implemented. Role-gated routes:
 - Public (authenticated): `/dashboard`, `/new-request`, `/my-requests`, `/pending-approvals`, `/reports`, `/profile`
 - `hr_admin` + `super_admin` only: `/admin`, `/all-requests`
 - `super_admin` only: `/admin/inactive`
+- `manager` + `super_admin` (NO `hr_admin`): `/reports/team`, `/reports/team-hierarchy` — algunos super_admin también supervisan; RRHH no tiene equipo a cargo. Backend `GET /api/reports/team` y `/team-hierarchy` con el mismo gate
 
 ### Navbar — dos filas
 - **Fila 1** (h-14): Logo MAR Fund + nombre usuario + badge de rol
@@ -229,8 +230,8 @@ All routes are implemented. Role-gated routes:
 - Backend: constante `BONO_AVAIL_SQL` en `reportController.js` → `bono_avail = dias_beneficio_anno_laboral − seniority_benefit aprobado del año en curso` (misma fórmula que `getSaldos` y el grid de Admin). **No** depende del filtro de mes (es un saldo). Se agregó `u.dias_beneficio_anno_laboral` a los `GROUP BY` (ONLY_FULL_GROUP_BY).
 
 ### Reporte de Equipos (Sub-supervisión) — jerárquico
-- Página: `frontend/src/pages/TeamHierarchyReport.jsx` · Ruta: `/reports/team-hierarchy` · Menú "Reportes" (`REPORT_ITEMS`, rol `manager`)
-- Endpoint: `GET /api/reports/team-hierarchy` — `requireRole('manager','hr_admin','super_admin')`; controller `getTeamHierarchyReport`
+- Página: `frontend/src/pages/TeamHierarchyReport.jsx` · Ruta: `/reports/team-hierarchy` · Menú "Reportes" (`REPORT_ITEMS`, roles `manager` y `super_admin`)
+- Endpoint: `GET /api/reports/team-hierarchy` — `requireRole('manager','super_admin')`; controller `getTeamHierarchyReport`
 - **Árbol descendente completo** del supervisor logueado vía **CTE recursiva** de MySQL 8.0 (recorre `manager_id` hacia abajo, cota `depth < 10` anti-ciclos). La **raíz siempre es `req.user.id`** (un supervisor no puede ver árboles ajenos)
 - El backend devuelve lista plana + `depth` + `is_supervisor` (EXISTS de subordinados activos) + `root_manager`; el **frontend agrupa por `manager_id`** en secciones "Equipo de \<Supervisor\>" (equipo directo primero)
 - Badge **"Supervisor"** (ícono `ShieldCheck`, índigo) junto a quien tiene equipo a cargo

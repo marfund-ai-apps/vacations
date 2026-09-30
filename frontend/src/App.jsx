@@ -33,10 +33,9 @@ function App() {
           <Route element={<ProtectedRoute roles={['hr_admin', 'super_admin']} />}>
             <Route path="/reports" element={<Reports />} />
           </Route>
-          <Route element={<ProtectedRoute roles={['manager']} />}>
+          {/* Reportes de equipo: managers y super_admin (algunos super_admin también supervisan) */}
+          <Route element={<ProtectedRoute roles={['manager', 'super_admin']} />}>
             <Route path="/reports/team" element={<TeamReport />} />
-          </Route>
-          <Route element={<ProtectedRoute roles={['manager', 'hr_admin', 'super_admin']} />}>
             <Route path="/reports/team-hierarchy" element={<TeamHierarchyReport />} />
           </Route>
 

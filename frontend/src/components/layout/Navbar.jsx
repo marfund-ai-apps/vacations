@@ -26,8 +26,9 @@ const NAV_ITEMS = [
 
 const REPORT_ITEMS = [
     { name: 'Reporte General', href: '/reports', icon: FileBarChart2, description: 'Resumen de todos los colaboradores', roles: ['hr_admin', 'super_admin'] },
-    { name: 'Reporte de Equipo', href: '/reports/team', icon: FileBarChart2, description: 'Resumen de tu equipo', roles: ['manager'] },
-    { name: 'Reporte de Equipos (Sub-supervisión)', href: '/reports/team-hierarchy', icon: FileBarChart2, description: 'Tu equipo y los equipos a cargo de tus supervisores', roles: ['manager'] },
+    // Reportes de equipo: managers y super_admin (algunos super_admin también supervisan). RRHH no tiene equipo a cargo.
+    { name: 'Reporte de Equipo', href: '/reports/team', icon: FileBarChart2, description: 'Resumen de tu equipo', roles: ['manager', 'super_admin'] },
+    { name: 'Reporte de Equipos (Sub-supervisión)', href: '/reports/team-hierarchy', icon: FileBarChart2, description: 'Tu equipo y los equipos a cargo de tus supervisores', roles: ['manager', 'super_admin'] },
 ];
 
 export default function Navbar() {
